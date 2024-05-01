@@ -3743,7 +3743,7 @@ def bfs(visited, node):
                                 + " partition " + str(partition_name) + " using workers.")
                             DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
                         else:
-#brc: increnetal groups
+#brc: incremental groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
                             # then use FS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(...)
                             logger.info("BFS: calling generate_DAG_info_incremental_groups for"
@@ -3814,7 +3814,17 @@ def bfs(visited, node):
                                 # we have generated a state for leaf task group_name. 
                                 BFS_generate_DAG_info.leaf_tasks_of_groups_incremental.remove(group_name)
 
-
+#brc: use of DAG_info: we get DAG_info from generate partition/group and
+# then we decide what to do with it, which includes deposit it. We
+# pass DAG_info on deposit() with a complete flag.
+# deposit() will do the deallocate - if we do this deallocation 
+# every time we avoid a long running occasional loop. But we only 
+# call deposit() when we want to deposit so no need to generate
+# DAG completely if we are not going to deposit() and we are not 
+# going to save DAG when current partition is 2 or current 
+# partition is 1 and complete.
+# So when do we call deposit()? When do we save/need DAG (partition == 1 or 2)?
+#brc: use of DAG_info: current partition is 1 check complete
                             if DAG_info.get_DAG_info_is_complete():
                                 # if there is only one partition in the DAG, save the partition and the DAG_info and 
                                 # start the DAG_excutor_driver. Otherwise, we do all of this when we get partition 2,
@@ -3939,7 +3949,7 @@ def bfs(visited, node):
                                         # partition indices in partitions[] start with 0, so current partition i
                                         # is in partitions[i-1] and previous partition is partitions[i-2]
                                         cloudpickle.dump(partitions[current_partition_number-2], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
+#brc: use of DAG_info: check complete and if so output last partition (always output previous partition)
                                     # the current partition might be the last partition in the DAG, if so
                                     # save the partition to a file. Below we will save the DAG_info.
                                     if DAG_info.get_DAG_info_is_complete():
@@ -4033,6 +4043,7 @@ def bfs(visited, node):
                                         logger.info("")
                                         i += 1
 
+#brc: use of DAG_info: check complete and if so output groups of last partition (always output groups of previous partition)
                                     # The current partition might be the last partition in the DAG, if so
                                     # save the partition's groups to a file. Below we will save the DAG_info
                                     # which is input by workers/lambdas for DAG execution.
@@ -4092,6 +4103,7 @@ def bfs(visited, node):
                                 # incomplete partition 3, instead we would publish the next DAG
                                 # generated, with complete partitions 1, 2, and 3, and incomplete
                                 # partition 4. So every other generated DAG would be published.
+#brc: use of DAG_info: check complete as part of decision to publish
                                 if current_partition_number == 2 or (
                                     DAG_info.get_DAG_info_is_complete() or (
                                     num_incremental_DAGs_generated % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
@@ -4122,7 +4134,7 @@ def bfs(visited, node):
                                             # these leaf tasks were added.)
                                             # We need the states of these leaf tasks so we can 
                                             # create the work that is added to the work_queue.
-
+#brc: use of DAG_info: if publish then get DAG_states and DAG_map (when using partitions)
                                             logger.trace("BFS: new leaf tasks (some may be for partition/group 2):" + str(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental))
                                             DAG_states_incremental = DAG_info.get_DAG_states()
                                             # This is DAG_states of DAG_info
@@ -4228,14 +4240,13 @@ def bfs(visited, node):
     # So if they get the 4, they can, add it to their continue queue and
     # call get_work again?
 
-
+#brc: use of DAG_info: if publish then get DAG_states and DAG_map (when using groups)
                                             logger.trace("BFS: new leaf tasks (some may be for partition/group 2): " + str(BFS_generate_DAG_info.leaf_tasks_of_groups_incremental))
                                             DAG_states_incremental = DAG_info.get_DAG_states()
                                             logger.trace("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
                                             #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
-#brc: issue: don't do this for lambdas?
                                             if DAG_executor_constants.USING_WORKERS or not DAG_executor_constants.USING_WORKERS:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
                                                 for name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental:
@@ -4278,9 +4289,7 @@ def bfs(visited, node):
     #brc: leaf tasks
                                                     #work_queue.put(work_tuple)
                                                     new_leaf_task_work_tuples.append(work_tuple)
-                                            else:
-                                                pass # complete for lambdas
-                                                # start a lambda with empty input payload (like DAG_executor_driver)
+                                            #else: # No else, do above for workers and lambdas
 
                                             BFS_generate_DAG_info.leaf_tasks_of_groups_incremental.clear()
                                             #logger.trace("BFS: leaf tasks after clear: " + str(BFS_generate_DAG_info.leaf_tasks_of_groups_incremental))
@@ -4300,6 +4309,7 @@ def bfs(visited, node):
                                     #     logging.shutdown()
                                     #     os._exit(0) 
 #brc: leaf tasks
+#brc: use of DAG_info: if publish then get complete and pass to deposit()
                                     DAG_info_is_complete = DAG_info.get_DAG_info_is_complete()
                                     # If current_partition_number is 2 this partition/group 2 may be the 
                                     # start of a new component, i.e., a leaf task. But if so then the 
@@ -4310,6 +4320,7 @@ def bfs(visited, node):
 
                                     if (current_partition_number) == 2:
                                         new_leaf_task_work_tuples = []
+#brc: use of DAG_info: if publish then pass DAG_info on deposit()
                                     DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete)
                                     # deposit starts a lambda with empty input payload (like DAG_executor_driver)
                                     # when the leaf task becomes complete (the leaf task on this
@@ -4341,6 +4352,7 @@ def bfs(visited, node):
                                     file_name = "./DAG_info.pickle"
 #brc: incremental
                                     #DAG_info_dictionary = DAG_info.DAG_info_dictionary
+#brc: use of DAG_info: if publish and current partition is 2 then get data dictionary  and save DAG to file
                                     DAG_info_dictionary = DAG_info.get_DAG_info_dictionary()
                                     with open(file_name, 'wb') as handle:
                                         cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -4362,6 +4374,7 @@ def bfs(visited, node):
                                     # is the last partition in the DAG; if so, save this complete
                                     # DAG_info to file. (If this is partition 2, we always
                                     # save the DAG_info since we will also start the DAG_executor_driver.)
+#brc: use of DAG_info: if publish and current partition is not 2 then get complete and save DAG if complete (for debugging)
                                     if DAG_info.get_DAG_info_is_complete():
                                         file_name = "./DAG_info_complete.pickle"
                                         with open(file_name, 'wb') as handle:
@@ -4394,9 +4407,10 @@ def bfs(visited, node):
                             # All of these parameters are immutable: string, int, boolean
                             global DAG_generator_for_multithreaded_DAG_generation
                             partition_tuple = (partition_name, current_partition_number,to_be_continued)
-                            DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(partition_tuple)
+                            #DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(partition_tuple)
+                            DAG_generator_for_multithreaded_DAG_generation.deposit(partition_tuple)
                         else:
-#brc: increnetal groups
+#brc: incremental groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
                             # then use FS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(...)
                             #logger.info("BFS: calling deposit for"
@@ -4409,17 +4423,18 @@ def bfs(visited, node):
                             copy_of_groups_of_partitions = copy.copy(groups_of_partitions)
                             group_tuple = (partition_name,current_partition_number,
                                 copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued)
-                            DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(group_tuple)
+                            #DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(group_tuple)
+                            DAG_generator_for_multithreaded_DAG_generation.deposit(group_tuple)
                             # we are done with groups_of_current_partition so clear it so it is empty at start
                             # of next partition.
-#brc: gocp
+#brc: gocp                  # don't clear this yet as we use it below for deallocation.
                             #groups_of_current_partition.clear()
                             #logger.trace("BFS: after calling deposit for"
                             #    + " partition " + str(partition_name) + " groups_of_current_partition: "
                             #    + str(groups_of_current_partition)
                             #    + ", groups_of_partitions: " + str(groups_of_partitions))
 
-                            pass # ToDo: if DAG_info is complete then ....
+                            # DAG_info is savd by generator_thread when incremental DAG generation completes
                 
 
                 if not(DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):

@@ -15,7 +15,7 @@ For non-incremental DAG generation, Instead of generating the
 DAG_info at the end of bfs(), bfs deposits the next partition
 or group it collects in a buffer and a DAG generator thread 
 withdraws the partition or group and adds it to DAG_info. 
-So we ar overlapping the execution of bfs(), which builds the 
+So we are overlapping the execution of bfs(), which builds the 
 partitions/groups, with DAG_info generation by the generator_thread. 
 Here we are essentially multithreading bfs() - one thread to 
 identify the partitions/groups and one thread to build the 
@@ -112,7 +112,7 @@ def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
             # we are done with DAG generation
             break
 
-    # save the DAG_info n a file to be read by DAG_execution_driver.
+    # save the DAG_info in a file to be read by DAG_execution_driver.
     file_name = "./DAG_info.pickle"                  
     DAG_info_dictionary = DAG_info.get_DAG_info_dictionary()
     with open(file_name, 'wb') as handle:
