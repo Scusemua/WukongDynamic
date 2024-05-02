@@ -4075,7 +4075,7 @@ def bfs(visited, node):
 
                                 # Note: current_partition_number is not 1
                                 # Note: Deposit DAG if current partition is 2 (which means this is the 
-                                # first deposit. We only deposit the first DAG if that is the 
+                                # first deposit. We only deposit the first DAG (with 1 partition) if that is the 
                                 # only DAG that will be generated; or this is the last DAG that
                                 # can be generated, i.e., the DAG is complete, or this is the 
                                 # next DAG to generate based on the deposit interval)
@@ -4088,7 +4088,7 @@ def bfs(visited, node):
                                 # above, i.e, we don't get here so it doesn't matter that
                                 # num_incremental_DAGs_generated % INCREMENTAL_DAG_DEPOSIT_INTERVAL is True,
                                 # we won't publish the DAG when current_partition_number is unless
-                                # the ADG is complete, i.e., has a total of 1 partitions.
+                                # the DAG is complete, i.e., has a total of 1 partitions.
                                 # Note: We don't increment num_incremental_DAGs_generated until 
                                 # current_partition_number is 3. So the first DAG published has
                                 # a complete partition 1 and an incomplete partition 2. Then 
@@ -4098,12 +4098,12 @@ def bfs(visited, node):
                                 # was published. If INCREMENTAL_DAG_DEPOSIT_INTERVAL is 1, we 
                                 # would publish this DAG with complete partitions 1 and 2 and 
                                 # incomplete partition 3. This we will be publishing each DAG
-                                # that is generated. If INCREMENTAL_DAG_DEPOSIT_INTERVAL is w, we 
+                                # that is generated. If INCREMENTAL_DAG_DEPOSIT_INTERVAL is 2 we 
                                 # would not publish this DAG with complete partitions 1 and 2 and 
                                 # incomplete partition 3, instead we would publish the next DAG
                                 # generated, with complete partitions 1, 2, and 3, and incomplete
                                 # partition 4. So every other generated DAG would be published.
-#brc: use of DAG_info: check complete as part of decision to publish
+#brc: use of DAG_info: check complete as part of decision to publish.
                                 if current_partition_number == 2 or (
                                     DAG_info.get_DAG_info_is_complete() or (
                                     num_incremental_DAGs_generated % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
