@@ -417,17 +417,22 @@ except AssertionError:
 #    logging.shutdown()
 #    os._exit(0)  
 
-# generate next DAG when num_incremental_DAGs_generated mod 
+# generate next DAG when num_incremental_DAGs_generated_since_base_DAG mod 
 # incremental_interval == 0. For example, if we set this
-# value to 2, after we generate the first DAG, with a complete 
-# partition 1 and an incomplete partition 2, we will generate 
-# a new DAG when we process partition 4 (2+2) then 6, 8, etc.
+# value to 2, after we generate the DAG with a complete 
+# partition 1 and an incomplete partition 2, i.e., the base DAG, we 
+# publish the base DAG and start the ADG_execution_driver. We will then
+# generate the DAG with partitions, 1, and 2, whcih are complete and an
+# incomplete partition 3. This is the first ADG generated sicen the base
+# DAG and since 1%2 is not 0, we do not publish this DAG. We will 
+# generate a new DAG with process partition 4 and publish this DAG 
+# since 4%2 is 0. We will publish DAGs 6, 8, 10, ... etc.
 # Note: We publish the first DAG, which is a complete DAG with 
 # one partition or a DAG with a complete first partition and 
 # and incomplete second partition, then we generate the 
 # next DAG with complete paritions 1 and 2 and incomplete
 # partition 3 and we increment num_DAGs_generated to 1. we will 
-# publish the next generated DAG again when num_DAGs_generated mod
+# publish the next generated DAG again when num_incremental_DAGs_generated_since_base_DAG mod
 # INCREMENTAL_DAG_DEPOSIT_INTERVAL is 0. So if INCREMENTAL_DAG_DEPOSIT_INTERVAL
 # is 2, we will not publish the DAg with complete partitions 1 and 2
 # and incomplete partition 3 (since 1 mod 2 is not 0), but we will

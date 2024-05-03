@@ -1008,11 +1008,19 @@ websocket = None
 # count of incremental DAG generated. Note: we generate 
 # a DAG with the first partition, then we generate a DAG
 # with the first two partitions and start the DAG_executor_driver.
+# This DAG with the first two partitions is called the "base DAG".
+# We then keep a count of the number of DAGS generated after the 
+# base DAG and publish every ith DAG. 
 # Then we use this counter to determine when to generate another
-# DAG. If the incremental_interval is 2, we will generate the next DAG after
-# adding partition 4. This will be the third DAG - one with P1,
-# one with P1 and P2, and one with P!, P2, P3, and P4.
-num_incremental_DAGs_generated = 0
+# DAG. If the incremental_interval is 2, we will publish the next DAG after
+# adding partition 4. This will be the third DAG that we built - one with P1,
+# one with P1 and P2, one with P1, P@, and P#, and one with P!, P2, P3, and P4. 
+# But the DAG with P1 and P2 is the base DAG. The next DAG has P1, P2, and P3
+# and it is th 1st DAG generated after the base DAG. Since the interval is
+# 2 and 1%2 is not 0, we do not publish this ADG. The next DAG has P1, P2, P3
+# and P4. Since this is the 2nd DAG published after the base DAG, and 2%2 is 0,
+# we publish this DAG.
+num_incremental_DAGs_generated_since_base_DAG = 0
 
 #brc: incremental
     # total number of graph nodes that have been added to the 
@@ -2754,7 +2762,7 @@ def bfs(visited, node):
     # to call the run() method of DAG_executor_driver to start 
     # DAG execution.
     global invoker_thread_for_DAG_executor_driver
-    global num_incremental_DAGs_generated
+    global num_incremental_DAGs_generated_since_base_DAG
     # constant: If this value is 2 we publish every second incremental DAG generated
     global INCREMENTAL_DAG_DEPOSIT_INTERVAL
     # when this value equals the number of nodes in the graph, all nodes
@@ -3712,7 +3720,7 @@ def bfs(visited, node):
                 #    # we do not give every incremental DAG to the DAG_excutor, we only
                 #    # give every th DAG. Check if this DAG should be made available
                 #    # for ececution.
-                #    num_incremental_DAGs_generated % INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
+                #    num_incremental_DAGs_generated_since_base_DAG % INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
                 # First we take care of any leaf tasks that we found, If we are using workers
                 # the leaf tasks will be added to the work queue. If we are using lambdas
                 # then a lambda will be started (in method deposit()) to execute the leaf tasks.
@@ -3737,11 +3745,29 @@ def bfs(visited, node):
                         + " num_nodes: " + str(num_nodes) + " to_be_continued: "
                         + str(to_be_continued))
 
+#brc: use of DAG_info: generate_DAG_info is true if we need the full DAG_info information.
+# We need the full information if 
+# - current_partition_number is 1 and the DAG is complete, in which case we will save the 
+#   DAG and start the DAG_executor_driver
+# - current_partition_number is 2, in which case we will save the 
+#   DAG and start the DAG_executor_driver
+# - we will publish the DAG_info based in the num_incremental_DAGs_generated_since_base_DAG
+#   and the interval
+# - DAG_info is complete, which means we will publish the DAG_info since it is the 
+#   last incremental DAG to be generated
+# So inside DAG_generation methods we can compute this using current_partition_number
+# and isComplete, and num_incremental_DAGs_generated_since_base_DAG, except that the value of 
+# num_incremental_DAGs_generated_since_base_DAG needs to be increased by 1 when we do the 
+# calculation if current_partition_number > 2 since it gets incremented before the
+# calculation below when current_partition_number > 2.
+
                     if DAG_executor_constants.USING_WORKERS or not DAG_executor_constants.USING_WORKERS:
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                             logger.info("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
                             DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
+#brc: use of DAG_info: DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued,
+#                           num_incremental_DAGs_generated_since_base_DAG)
                         else:
 #brc: incremental groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
@@ -3762,8 +3788,12 @@ def bfs(visited, node):
                             DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(partition_name,current_partition_number,
                                 groups_of_current_partition,groups_of_partitions,
                                 to_be_continued)
+#brc: use of DAG_info:      DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(partition_name,current_partition_number,
+#                                groups_of_current_partition,groups_of_partitions,
+#                                to_be_continued,
+#                                num_incremental_DAGs_generated_since_base_DAG)
                             # we are done with groups_of_current_partition so clear it so it is empty at start
-                            # of next partition.
+                            # of next partition. No: see next comment
 #brc: gocp
                             # Note: We can no longer clear groups_of_current_partition here or in the 
                             # elif below since we need groups_of_current_partition if we are deallocating
@@ -3843,8 +3873,8 @@ def bfs(visited, node):
                                         # is in partitions[i-1] and previous partition is partitions[i-2]
                                         cloudpickle.dump(partitions[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                                    logger.trace("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated:"
-                                        + str(num_incremental_DAGs_generated)
+                                    logger.trace("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated_since_base_DAG:"
+                                        + str(num_incremental_DAGs_generated_since_base_DAG)
                                         + " current_partition_number: " + str(current_partition_number))
                                         # current partition number is 1
                                 else:
@@ -3854,8 +3884,8 @@ def bfs(visited, node):
                                         # is in partitions[i-1] and previous partition is partitions[i-2]
                                         cloudpickle.dump(groups[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                                    logger.trace("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated:"
-                                        + str(num_incremental_DAGs_generated)
+                                    logger.trace("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated_since_base_DAG:"
+                                        + str(num_incremental_DAGs_generated_since_base_DAG)
                                         + " current_group_number: " + str(1))
                                         # The only group in a complete DAG with one group is group 1
 
@@ -4071,7 +4101,7 @@ def bfs(visited, node):
                                 if current_partition_number > 2:
                                     # this is the number of DAGS generated by BFS but this
                                     # number may be greater than the number of DAGS deposited.
-                                    num_incremental_DAGs_generated += 1
+                                    num_incremental_DAGs_generated_since_base_DAG += 1
 
                                 # Note: current_partition_number is not 1
                                 # Note: Deposit DAG if current partition is 2 (which means this is the 
@@ -4080,20 +4110,20 @@ def bfs(visited, node):
                                 # can be generated, i.e., the DAG is complete, or this is the 
                                 # next DAG to generate based on the deposit interval)
                                 # Note: if current_partition_number == 2 then we did not 
-                                # increment num_incremental_DAGs_generated so it is still 0.
-                                # This means that num_incremental_DAGs_generated % INCREMENTAL_DAG_DEPOSIT_INTERVAL
-                                # will be 0 so that num_incremental_DAGs_generated % INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
+                                # increment num_incremental_DAGs_generated_since_base_DAG so it is still 0.
+                                # This means that num_incremental_DAGs_generated_since_base_DAG % INCREMENTAL_DAG_DEPOSIT_INTERVAL
+                                # will be 0 so that num_incremental_DAGs_generated_since_base_DAG % INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
                                 # is True, where current_partition_number == 2 is also True.
                                 # When current_partition_number is 1 we take a different branch
                                 # above, i.e, we don't get here so it doesn't matter that
-                                # num_incremental_DAGs_generated % INCREMENTAL_DAG_DEPOSIT_INTERVAL is True,
+                                # num_incremental_DAGs_generated_since_base_DAG % INCREMENTAL_DAG_DEPOSIT_INTERVAL is True,
                                 # we won't publish the DAG when current_partition_number is unless
                                 # the DAG is complete, i.e., has a total of 1 partitions.
-                                # Note: We don't increment num_incremental_DAGs_generated until 
+                                # Note: We don't increment num_incremental_DAGs_generated_since_base_DAG until 
                                 # current_partition_number is 3. So the first DAG published has
                                 # a complete partition 1 and an incomplete partition 2. Then 
                                 # we generate a DAG with complete partitions 1 and 2 and incomplete
-                                # partition 3. At this point, num_incremental_DAGs_generated is 1.
+                                # partition 3. At this point, num_incremental_DAGs_generated_since_base_DAG is 1.
                                 # So this starts the count of generated DAGs since the last DAG
                                 # was published. If INCREMENTAL_DAG_DEPOSIT_INTERVAL is 1, we 
                                 # would publish this DAG with complete partitions 1 and 2 and 
@@ -4106,7 +4136,7 @@ def bfs(visited, node):
 #brc: use of DAG_info: check complete as part of decision to publish.
                                 if current_partition_number == 2 or (
                                     DAG_info.get_DAG_info_is_complete() or (
-                                    num_incremental_DAGs_generated % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
+                                    num_incremental_DAGs_generated_since_base_DAG % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
                                     )):
                             
 #brc: leaf tasks
@@ -4302,8 +4332,8 @@ def bfs(visited, node):
                                     # incremental DAG is for any newer DAG than the 
                                     # first DAG (i.e., any version later than version 1.)
 
-                                    logger.info("BFS: deposit next DAG with num_incremental_DAGs_generated:"
-                                        + str(num_incremental_DAGs_generated)
+                                    logger.info("BFS: deposit next DAG with num_incremental_DAGs_generated_since_base_DAG:"
+                                        + str(num_incremental_DAGs_generated_since_base_DAG)
                                         + " current_partition_number: " + str(current_partition_number))
                                     # if not current_partition_number == 2:
                                     #     logging.shutdown()
