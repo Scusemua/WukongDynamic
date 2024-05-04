@@ -4342,11 +4342,21 @@ def bfs(visited, node):
 #brc: use of DAG_info: if publish then get complete and pass to deposit()
                                     DAG_info_is_complete = DAG_info.get_DAG_info_is_complete()
                                     # If current_partition_number is 2 this partition/group 2 may be the 
-                                    # start of a new component, i.e., a leaf task. But if so then the 
+                                    # start of a new component, i.e., a leaf task. (Note: Here we consider
+                                    # the case in which partition 1 is the only partition in its
+                                    # connecte component, so that partition 2 may be the start of
+                                    # a new connected component, i.e., a leaf task. But if so then the 
                                     # DAG_executor_driver will start a lambda to execute this leaf task so 
                                     # deposit should not also start a lambda for this leaf task.
                                     # Prevent deposit() from doing this by clearing the list of leaf taaks.
-                                    # (There should only be one leaf task in the list.)
+                                    # (There should only be one leaf task in the list.) NOte: The
+                                    # DAG_execution_driver gets the DAG that is generated after
+                                    # partition 2 is generated. This might b a DAG in which partitions
+                                    # 1 and 2 are in the same component or one on which partition
+                                    # 1 is in its own component and partition 2 is the start of 
+                                    # a new component. In the latter case, partitions 1 and 2 are 
+                                    # both leaf tasks nd the DAG_execution_driver will start a 
+                                    # lambda for ech of the leaf tasks.
 
                                     if (current_partition_number) == 2:
                                         new_leaf_task_work_tuples = []
@@ -4355,6 +4365,13 @@ def bfs(visited, node):
                                     # deposit starts a lambda with empty input payload (like DAG_executor_driver)
                                     # when the leaf task becomes complete (the leaf task on this
                                     # call to deposit has a lambda started for it on the next call to deposit.)
+                                    # Note: We are depositing a new incremental DAG as usual. Method
+                                    # deposit will start lambdas for new leaf tasks in the deposited
+                                    # DAG. But when the current partition is 2 and this partition is a 
+                                    # new leaf task we need to overide deposit()'s creation of
+                                    # a lambda to execute this leaf tasks since we will also start
+                                    # the DAG_executor_driver and it will start a lamda for this 
+                                    # leaf task.
                                 if (current_partition_number) == 2:
                                     # We just processed the second partition in a DAG that 
                                     # has more than one partition, so we can output the 

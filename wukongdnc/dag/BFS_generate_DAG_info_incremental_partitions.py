@@ -255,10 +255,99 @@ def destructor():
     Partition_DAG_map = None
     Partition_DAG_tasks = None
 
+def generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
+    # version of DAG, incremented for each DAG generated
+    global Partition_DAG_version_number
+    # Saving current_partition_name as previous_partition_name at the 
+    # end. We cannot just subtract one, e.g. PR3_1 becomes PR2_1 since
+    # the name of partition 2 might actually be PR2_1L, so we need to 
+    # save the actual name "PR2_1L" and retrive it when we process PR3_1
+    global Partition_DAG_previous_partition_name
+    global Partition_DAG_number_of_tasks
+    global Partition_DAG_number_of_incomplete_tasks
+#brc: num_nodes
+    global Partition_DAG_num_nodes_in_graph
+
+    # for debugging
+    show_generated_DAG_info = True
+
+    logger.trace("")
+    DAG_info_dictionary = {}
+    # These key/value pairs were added for incremental DAG generation.
+
+    # If there is only one partition in the entire DAG then it is complete and is version 1.
+    # Otherwise, version 1 is the DAG_info with partitions 1 and 2, where 1 is complete 
+    # and 2 is complete, if there are 2 partitons in the entire DAG, or incomplete otherwise.
+    Partition_DAG_version_number += 1
+    # if the last partition has incomplete information, then the DAG is 
+    # incomplete. When partition i is added to the DAG, it is incomplete
+    # unless it is the last partition in the DAG). It becomes complete
+    # when we add partition i+1 to the DAG. (So partition i needs information
+    # that is generated when we create partition i+1. The  
+    # (graph) nodes in partition i can only have children that are in partition 
+    # i or partition i+1. We need to know partition i's children
+    # in order for partition i to be complete. Partition i's childen
+    # are discovered while generating partition i+1.
+    # to_be_continued is a parameter to this method. It is true if all of the
+    # grpah nodes are in some partition, i.e., the graph is complete and is not
+    # to be continued.
+    Partition_DAG_is_complete = not to_be_continued # to_be_continued is a parameter
+    # number of tasks in the current incremental DAG, including the
+    # incomplete last partition, if any. For computing pagerank, the task/function
+    # is the same for all of the partitions. Thus, we really do not need to 
+    # save the task/function in the DAG, once for each task in the ADG. That is 
+    # what Dask does so we keep this for now.
+    Partition_DAG_number_of_tasks = len(Partition_DAG_tasks)
+    # For partitions, this is at most 1. When we are generating a DAG
+    # of groups, there may be many groups in the incomplete last
+    # partition and they will all be considered to be incomplete.
+    Partition_DAG_number_of_incomplete_tasks = number_of_incomplete_tasks
+#brc: num_nodes
+    # The value of num_nodes_in_graph is set by BFS_input_graph
+    # at the beginning of execution, which is before we start
+    # DAG generation.  This value does not change.
+    Partition_DAG_num_nodes_in_graph = num_nodes_in_graph
+
+    DAG_info_dictionary["DAG_version_number"] = Partition_DAG_version_number
+    DAG_info_dictionary["DAG_is_complete"] = Partition_DAG_is_complete
+    DAG_info_dictionary["DAG_number_of_tasks"] = Partition_DAG_number_of_tasks
+    DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = Partition_DAG_number_of_incomplete_tasks
+#brc: num_nodes:
+    DAG_info_dictionary["DAG_num_nodes_in_graph"] = Partition_DAG_num_nodes_in_graph
+
+#brc: Note: we are saving all the incemental DAG_info files for debugging but 
+#     we probably want to turn this off otherwise.
+
+    # filename is based on version number - Note: for partition, say 3, we
+    # have output the DAG_info with partitions 1 and 2 as version 1 so 
+    # the DAG_info for the newly added partition 3 will have partitions 1, 2, and 3 
+    # and will be version 2 but named "DAG_info_incremental_Partition_3"
+    file_name_incremental = "./DAG_info_incremental_Partition_" + str(Partition_DAG_version_number) + ".pickle"
+    with open(file_name_incremental, 'wb') as handle:
+        cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+    # for debugging
+    if show_generated_DAG_info:
+        logger.trace("DAG_version_number:")
+        logger.trace(Partition_DAG_version_number)
+        logger.trace("")
+        logger.trace("DAG_is_complete:")
+        logger.trace(Partition_DAG_is_complete)
+        logger.trace("")
+        logger.trace("DAG_number_of_tasks:")
+        logger.trace(Partition_DAG_number_of_tasks)
+        logger.trace("")
+        logger.trace("DAG_number_of_incomplete_tasks:")
+        logger.trace(Partition_DAG_number_of_incomplete_tasks)
+        logger.trace("")
+    #brc: num_nodes
+        logger.trace("DAG_num_nodes_in_graph:")
+        logger.trace(Partition_DAG_num_nodes_in_graph)
+        logger.trace("")
 
 # Called by generate_DAG_info_incremental_partitions below to generate 
 # the DAG_info object when we are using an incremental DAG of partitions.
-def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
+def generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
     global Partition_all_fanout_task_names
     global Partition_all_fanin_task_names
     global Partition_all_faninNB_task_names
@@ -583,6 +672,11 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 # to_be_continued is True if num_nodes_in_partitions < num_nodes, which means that incremeental DAG generation
 # is not complete (some graph nodes are not in any partition.)
 # current_partition_name generated as: "PR" + str(current_partition_number) + "_1"
+
+#brc: use of DAG_info: 
+#def generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued,
+#       num_incremental_DAGs_generated_since_base_DAG):
+
     global Partition_all_fanout_task_names
     global Partition_all_fanin_task_names
     global Partition_all_faninNB_task_names
@@ -839,9 +933,21 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             number_of_incomplete_tasks = 1
         else:
             number_of_incomplete_tasks = 0
-        
+
+        """
+        if current_partition_number == 2 or (
+                                DAG_info.get_DAG_info_is_complete() or (
+                                num_incremental_DAGs_generated_since_base_DAG % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
+                                )):
+        """
+#brc: use of DAG_info:
+#        if not to_be_continued:
+#            DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+#        else:
+#            DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+
         # uses global dictionary to create the DAG_info object
-        DAG_info = generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+        DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
         # If we will generate another DAG make sure state_info of 
         # current partition is not read/write shared with the DAG_executor.
@@ -1092,7 +1198,16 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             number_of_incomplete_tasks = 1
         else:
             number_of_incomplete_tasks = 0
-        DAG_info = generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+
+#brc: use of DAG_info:
+#        if not to_be_continued or current_partition_number == 2 \
+#                or num_incremental_DAGs_generated_since_base_DAG % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
+#            DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+#        else:
+#            DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+
+
+        DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
         # If we will generate another DAG make sure state_info of 
         # current partition is not read/write shared with the DAG_executor.
@@ -1476,7 +1591,15 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             number_of_incomplete_tasks = 1
         else:
             number_of_incomplete_tasks = 0
-        DAG_info = generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+
+#brc: use of DAG_info:
+#        if not to_be_continued or current_partition_number == 2 \
+#                or num_incremental_DAGs_generated_since_base_DAG % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
+#            DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+#        else:
+#            DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+
+        DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
         # If we will generate another DAG make sure that the state_info of 
         # current partition is not shared with the DAG_executor
