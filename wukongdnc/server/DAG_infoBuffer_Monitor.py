@@ -40,7 +40,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # DAG until all workers have made a request. Getting
         # new DAGs ends the round.
         self.num_waiting_workers = 0
-        # We assert the the version numbers requested by the workers
+        # We use this to assert the the version numbers requested by the workers
         # in a round are the same.
         self.requested_version_number_in_this_round = -1
 #brc: deallocate DAG

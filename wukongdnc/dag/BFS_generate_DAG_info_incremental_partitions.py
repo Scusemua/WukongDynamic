@@ -224,6 +224,8 @@ Partition_DAG_number_of_tasks = 0
 # which means we cannot execute these tasks until the next DAG is 
 # incrementally published. For partitions this is 1 or 0.
 Partition_DAG_number_of_incomplete_tasks = 0
+# True if we have built the entire graph (incrementally)
+Partition_DAG_is_complete = False
 
 #brc: num_nodes: 
 Partition_DAG_num_nodes_in_graph = 0
@@ -255,7 +257,17 @@ def destructor():
     Partition_DAG_map = None
     Partition_DAG_tasks = None
 
+# If we are not going to save or publish the DAG then there is no need
+# to generate a DAG with all of its information. We instead generate a 
+# partial DAG with the information that is needed for processing it.
+# The required information is whether or not the DAG is complete. Note
+# that the other information that we include in the DAG may be useful
+# for debugging. This information is not proportional to the number of
+# nodes/edges in the DAG.
 def generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
+    # The only partial information we need is Partition_DAG_is_complete
+    # since BFS does access this in the incrmental DAG that is returned to it.
+    # The other members aer small and may be useful for debugging.
     # version of DAG, incremented for each DAG generated
     global Partition_DAG_version_number
     # Saving current_partition_name as previous_partition_name at the 
@@ -267,6 +279,7 @@ def generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tas
     global Partition_DAG_number_of_incomplete_tasks
 #brc: num_nodes
     global Partition_DAG_num_nodes_in_graph
+    global Partition_DAG_is_complete
 
     # for debugging
     show_generated_DAG_info = True
@@ -328,6 +341,7 @@ def generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tas
 
     # for debugging
     if show_generated_DAG_info:
+        logger.trace("generate_partial_DAG_for_partitions: partial DAG:")
         logger.trace("DAG_version_number:")
         logger.trace(Partition_DAG_version_number)
         logger.trace("")
@@ -373,6 +387,7 @@ def generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
     global Partition_DAG_number_of_incomplete_tasks
 #brc: num_nodes
     global Partition_DAG_num_nodes_in_graph
+    global Partition_DAG_is_complete
 
     # for debugging
     show_generated_DAG_info = True
@@ -476,6 +491,7 @@ def generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
     num_faninNBs = len(Partition_all_faninNB_task_names)
     num_collapse = len(Partition_all_collapse_task_names)
     if show_generated_DAG_info:
+        logger.trace("generate_full_DAG_for_partitions: Full DAG:")
         logger.trace("DAG_map:")
         for key, value in Partition_DAG_map.items():
             logger.trace(str(key) + ' : ' + str(value))
@@ -934,17 +950,13 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         else:
             number_of_incomplete_tasks = 0
 
-        """
-        if current_partition_number == 2 or (
-                                DAG_info.get_DAG_info_is_complete() or (
-                                num_incremental_DAGs_generated_since_base_DAG % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
-                                )):
-        """
 #brc: use of DAG_info:
-#        if not to_be_continued:
-#            DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
-#        else:
-#            DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+# bfs will save the DAG_info if the DAG is complete, i.e., the DAG has 
+# only one partition.
+        #if not to_be_continued:
+        #    DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+        #else:
+        #    DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
         # uses global dictionary to create the DAG_info object
         DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
@@ -1200,12 +1212,77 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             number_of_incomplete_tasks = 0
 
 #brc: use of DAG_info:
-#        if not to_be_continued or current_partition_number == 2 \
-#                or num_incremental_DAGs_generated_since_base_DAG % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
-#            DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
-#        else:
-#            DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+        # We publish the DAG if the graph is complete (not to be continued).
+        # This is true whether the current partition is 1 or 2, or a later
+        # partition. If the current partition is 1 and the graph is complete,
+        # then we will save the DAG and start the DAG_executor_driver, which 
+        # will read and execute the DAG. If the current partition is 2, we save 
+        # the DAG wherher it is complete or not and start the DAG_excutor_driver,
+        # which will read and execute the DAG. (If partition 1 does not compplete
+        # the graph we do not save it; DAG execution will start with a DAG that
+        # has a complete partition 1 and an incomplete partition 2.) For partitions
+        # greater than 2, we publish the DAG on an interval that is set in 
+        # DAG_executor_constants. We also use num_incremental_DAGs_generated_since_base_DAG
+        # to determine whether to publish such a DAG. The base DAG is the one
+        # with partitions 1 and 2. After we save this base DAG, we increment 
+        # num_incremental_DAGs_generated_since_base_DAG every time we generate
+        # a DAG. So when the current partition is 3 we increment 
+        # num_incremental_DAGs_generated_since_base_DAG and it becomes 1. If
+        # the interval is 2, we do not publish this new DAG with partitions 
+        # 1, 2, and 3. We will nstead publish the DAG with partitions 1 thru 4,
+        # since num_incremental_DAGs_generated_since_base_DAG will have the value
+        # 2 and 2%2 == 0. Note however that the increment of 
+        # num_incremental_DAGs_generated_since_base_DAG doesnlt occur 
+        # until *after* this call to generate_DAG_info_incremental_partitions(),
+        # that is bfs() calls this method generate_DAG_info_incremental_partitions
+        # and after that it will increment num_incremental_DAGs_generated_since_base_DAG
+        # if current_partition is > 2. So we generate the new incremental DAG
+        # and then if we find current_partition is > 2 we increment
+        # num_incremental_DAGs_generated_since_base_DAG and use it to check
+        # whether we need to publish the new DAG. Note that the condition for 
+        # this aslo checks whether the DAG is complete or whether the 
+        # current partition is 2.
+        #
+        # This condition rflects the fact that we will have incremented
+        # num_incremental_DAGs_generated_since_base_DAG by the time we check
+        # it if current_partition_number>2, i.e, we use 
+        # (num_incremental_DAGs_generated_since_base_DAG+1
 
+        #if current_partition_number <= 2:
+        #   The current_partition_number is 1 or 2.
+        #   Note: This next condition is True if current partition is 1 and 
+        #   the DAG is complete; or if the current partition is 2 (whether
+        #   or not the DAG is complete) since we will save the DAG and start 
+        #   executing it.
+        #    if (current_partition_number == 1 and not to_be_continued) or current_partition_number == 2:
+        #        DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+        #    else:
+        #        DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+        #else:
+        #   The current_partition_number is 3 or more
+        #   Note: This next condition is True if the DAG is complete; 
+        #   or if the current partition should be published based on the 
+        #   interval. Note that we use (num_incremental_DAGs_generated_since_base_DAG+1)
+        #   For example, if we just added partition 3 to the incremental
+        #   DAG, the current value of num_incremental_DAGs_generated_since_base_DAG
+        #   is 0 since no other DAG have been generated since we generated
+        #   the base DAG (with partitions 1 and 2). So after generating this DAG with
+        #   partitions 1, 2, and 3, bfs will increment num_incremental_DAGs_generated_since_base_DAG
+        #   to 1, and use the new value 1 to determine whether to publish
+        #   this new DAG. Thus we use (num_incremental_DAGs_generated_since_base_DAG+1)
+        #   which wil be 1 to determine whether to generate a full or partial 
+        #   DAG for this DAG with partitions 1, 2, and 3. If the interval for 
+        #   publishing DAGs is 2, then 1%2 does not equal 0, so we generate a 
+        #   partial ADG, which is fine since we will not publish the DAG.
+        #   The next incremental ADG, with partitions 1-4 will be published and 
+        #   thus we will generate a full DAG (since 2%2 == 0). Note that 
+        #   if the DAG with partitions 1-3 is complete (i.e., not to be continued)
+        #   then it will be published since this condition checks not to_be_continued).
+        #    if (not to_be_continued) \
+        #         or (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
+        #        DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+        #    else:
+        #        DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
         DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
@@ -1593,11 +1670,77 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             number_of_incomplete_tasks = 0
 
 #brc: use of DAG_info:
-#        if not to_be_continued or current_partition_number == 2 \
-#                or num_incremental_DAGs_generated_since_base_DAG % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
-#            DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
-#        else:
-#            DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+        # We publish the DAG if the graph is complete (not to be continued).
+        # This is true whether the current partition is 1 or 2, or a later
+        # partition. If the current partition is 1 and the graph is complete,
+        # then we will save the DAG and start the DAG_executor_driver, which 
+        # will read and execute the DAG. If the current partition is 2, we save 
+        # the DAG wherher it is complete or not and start the DAG_excutor_driver,
+        # which will read and execute the DAG. (If partition 1 does not compplete
+        # the graph we do not save it; DAG execution will start with a DAG that
+        # has a complete partition 1 and an incomplete partition 2.) For partitions
+        # greater than 2, we publish the DAG on an interval that is set in 
+        # DAG_executor_constants. We also use num_incremental_DAGs_generated_since_base_DAG
+        # to determine whether to publish such a DAG. The base DAG is the one
+        # with partitions 1 and 2. After we save this base DAG, we increment 
+        # num_incremental_DAGs_generated_since_base_DAG every time we generate
+        # a DAG. So when the current partition is 3 we increment 
+        # num_incremental_DAGs_generated_since_base_DAG and it becomes 1. If
+        # the interval is 2, we do not publish this new DAG with partitions 
+        # 1, 2, and 3. We will nstead publish the DAG with partitions 1 thru 4,
+        # since num_incremental_DAGs_generated_since_base_DAG will have the value
+        # 2 and 2%2 == 0. Note however that the increment of 
+        # num_incremental_DAGs_generated_since_base_DAG doesnlt occur 
+        # until *after* this call to generate_DAG_info_incremental_partitions(),
+        # that is bfs() calls this method generate_DAG_info_incremental_partitions
+        # and after that it will increment num_incremental_DAGs_generated_since_base_DAG
+        # if current_partition is > 2. So we generate the new incremental DAG
+        # and then if we find current_partition is > 2 we increment
+        # num_incremental_DAGs_generated_since_base_DAG and use it to check
+        # whether we need to publish the new DAG. Note that the condition for 
+        # this aslo checks whether the DAG is complete or whether the 
+        # current partition is 2.
+        #
+        # This condition rflects the fact that we will have incremented
+        # num_incremental_DAGs_generated_since_base_DAG by the time we check
+        # it if current_partition_number>2, i.e, we use 
+        # (num_incremental_DAGs_generated_since_base_DAG+1
+
+        #if current_partition_number <= 2:
+        #   The current_partition_number is 1 or 2.
+        #   Note: This next condition is True if current partition is 1 and 
+        #   the DAG is complete; or if the current partition is 2 (whether
+        #   or not the DAG is complete) since we will save the DAG and start 
+        #   executing it.
+        #    if (current_partition_number == 1 and not to_be_continued) or current_partition_number == 2:
+        #        DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+        #    else:
+        #        DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+        #else:
+        #   The current_partition_number is 3 or more
+        #   Note: This next condition is True if the DAG is complete; 
+        #   or if the current partition should be published based on the 
+        #   interval. Note that we use (num_incremental_DAGs_generated_since_base_DAG+1)
+        #   For example, if we just added partition 3 to the incremental
+        #   DAG, the current value of num_incremental_DAGs_generated_since_base_DAG
+        #   is 0 since no other DAG have been generated since we generated
+        #   the base DAG (with partitions 1 and 2). So after generating this DAG with
+        #   partitions 1, 2, and 3, bfs will increment num_incremental_DAGs_generated_since_base_DAG
+        #   to 1, and use the new value 1 to determine whether to publish
+        #   this new DAG. Thus we use (num_incremental_DAGs_generated_since_base_DAG+1)
+        #   which wil be 1 to determine whether to generate a full or partial 
+        #   DAG for this DAG with partitions 1, 2, and 3. If the interval for 
+        #   publishing DAGs is 2, then 1%2 does not equal 0, so we generate a 
+        #   partial ADG, which is fine since we will not publish the DAG.
+        #   The next incremental ADG, with partitions 1-4 will be published and 
+        #   thus we will generate a full DAG (since 2%2 == 0). Note that 
+        #   if the DAG with partitions 1-3 is complete (i.e., not to be continued)
+        #   then it will be published since this condition checks not to_be_continued).
+        #    if (not to_be_continued) \
+        #         or (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
+        #        DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+        #    else:
+        #        DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
         DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
