@@ -4433,11 +4433,15 @@ def bfs(visited, node):
                                         with open(file_name, 'wb') as handle:
                                             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
+                                    if current_partition_number == 4:
+                                        logger.info("here: current_partition_number is " 
+                                            + str(current_partition_number))
+                                        logging.shutdown()
+                                        os._exit(0)
+                                    else:
+                                        logger.info("here: current_partition_number is " 
+                                            + str(current_partition_number))
 
-                                    logger.info("here: current_partition_number is " 
-                                        + str(current_partition_number))
-                                    logging.shutdown()
-                                    os._exit(0)
                             
                             else:
                                 pass 

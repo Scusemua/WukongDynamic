@@ -354,7 +354,7 @@ def generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tas
 
     # for debugging
     if show_generated_DAG_info:
-        logger.info("generate_partial_DAG_for_partitions: partial DAG:")
+        logger.info("generate_DAG_info_incremental_partitions: generate_partial_DAG_for_partitions: partial DAG:")
         logger.info("DAG_version_number:")
         logger.info(str(Partition_DAG_version_number))
         logger.info("")
@@ -507,7 +507,7 @@ def generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
     num_faninNBs = len(Partition_all_faninNB_task_names)
     num_collapse = len(Partition_all_collapse_task_names)
     if show_generated_DAG_info:
-        logger.info("generate_full_DAG_for_partitions: Full DAG:")
+        logger.info("generate_DAG_info_incremental_partitions: generate_full_DAG_for_partitions: Full DAG:")
         logger.trace("DAG_map:")
         for key, value in Partition_DAG_map.items():
             logger.trace(str(key) + ' : ' + str(value))
