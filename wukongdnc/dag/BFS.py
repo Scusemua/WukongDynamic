@@ -4436,8 +4436,8 @@ def bfs(visited, node):
                                     if current_partition_number == 4:
                                         logger.info("here: current_partition_number is " 
                                             + str(current_partition_number))
-                                        logging.shutdown()
-                                        os._exit(0)
+                                        #logging.shutdown()
+                                        #os._exit(0)
                                     else:
                                         logger.info("here: current_partition_number is " 
                                             + str(current_partition_number))
