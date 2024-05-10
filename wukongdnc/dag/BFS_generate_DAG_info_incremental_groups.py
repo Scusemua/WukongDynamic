@@ -1135,7 +1135,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         
         return DAG_info
 
-    else:
+    else: # current_partition_number >= 2
         # Flag to indicate whether we are processing the first group_name of the groups in the 
         # previous partition. Used and reset below.
         #first_previous_group = True
@@ -1990,6 +1990,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         logger.info("generate_DAG_for_groups: number_of_groups_of_previous_partition_that_cannot_be_executed:"
             + str(number_of_groups_of_previous_partition_that_cannot_be_executed))
     
+#brc: use of DAG_info: This is for current_partition_number >=2 with 
+# sendwrs == None case and senders != None case.  We need to add condition
+# for full/partial DAG generation.
+
         DAG_info = generate_full_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
             number_of_groups_of_previous_partition_that_cannot_be_executed)
         #if current_partition_number == 3:
