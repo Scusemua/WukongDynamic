@@ -1005,9 +1005,10 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # We only execute the first DAG, i.e., the DAG that only has
         # partition 1 if this DAG is complete. In that case, bfs will
         # not need to modify the incremental DAG since there are no more 
-        # partitions. This measn we do not actually have to do this copy
+        # partitions. This means we do not actually have to do this copy
         # business; we do it here to be conistent with the other cases.
-        # i.e., whenever we wuill execute the DAG we make these copies.
+        # i.e., whenever we will execute the DAG we make these copies.
+        # This is not alot of code to excute since the DAG has only 1 partition.
         #if to_be_continued:
         if not to_be_continued:
             DAG_info_DAG_map = DAG_info.get_DAG_map()
@@ -1284,7 +1285,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # (num_incremental_DAGs_generated_since_base_DAG+1) here.
 
         if current_partition_number <= 2:
-            #The current_partition_number is 2.
+            #The current_partition_number is 2 - if it were 1 we would have 
+            # taken the branch above.
             try:
                 msg = "[Error]: generate_DAG_info_incremental_partitions:" \
                     + " current_partition_number <= 2 but it is not 2, it is " \
@@ -1295,16 +1297,10 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
-            #Note: This next condition is True if current partition is 1 and 
-            #the DAG is complete; or if the current partition is 2 (whether
-            #or not the DAG is complete) since we will save the DAG and start 
-            #executing it.
-            #if (current_partition_number == 1 and not to_be_continued) or current_partition_number == 2:
-            if current_partition_number == 2:
-                DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
-            #else:
-            #    # current_partition_number is 1 but not to_be_continued, i.e., DAG is complete
-            #    DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+            # if the current partition is 2 (whether
+            # or not the DAG is complete) bfs will save the DAG and start 
+            # executing it, so generate a full DAG
+            DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
         else:
             #   The current_partition_number is 3 or more
             #   Note: This next condition is True if the DAG is complete; 
@@ -1764,16 +1760,22 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # (num_incremental_DAGs_generated_since_base_DAG+1) here.
 
         if current_partition_number <= 2:
-        #   The current_partition_number is 1 or 2.
-        #   Note: This next condition is True if current partition is 1 and 
-        #   the DAG is complete; or if the current partition is 2 (whether
-        #   or not the DAG is complete) since we will save the DAG and start 
-        #   executing it.
-            if (current_partition_number == 1 and not to_be_continued) or current_partition_number == 2:
-                DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
-            else:
-                # current_partition_number is 1 but not to_be_continued
-                DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
+            #The current_partition_number is 2 - if it were 1 we would have 
+            # taken the first main branch above.
+            try:
+                msg = "[Error]: generate_DAG_info_incremental_partitions:" \
+                    + " current_partition_number <= 2 but it is not 2, it is " \
+                    + str(current_partition_number)
+                assert current_partition_number == 2 , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                    logging.shutdown()
+                    os._exit(0)
+            # if the current partition is 2 (whether
+            # or not the DAG is complete) bfs will save the DAG and start 
+            # executing it, so generate a full DAG
+            DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
         else:
             #   The current_partition_number is 3 or more
             #   Note: This next condition is True if the DAG is complete; 
