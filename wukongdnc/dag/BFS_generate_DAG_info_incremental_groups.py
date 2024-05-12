@@ -1140,6 +1140,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         
         # This will be set to 2
         Group_next_state += 1
+
+#brc: use of DAG_info:
+        # We only execute the first DAG, i.e., the DAG that only has
+        # partition 1 if this DAG is complete. In that case, bfs will
+        # not need to modify the incremental DAG since there are no more 
+        # partitions. So here we do not do the copies like we do at the end
+        # of the other branches. 
         
         return DAG_info
 
@@ -1998,9 +2005,11 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         logger.info("generate_DAG_for_groups: number_of_groups_of_previous_partition_that_cannot_be_executed:"
             + str(number_of_groups_of_previous_partition_that_cannot_be_executed))
     
-#brc: use of DAG_info: This is for current_partition_number >=2 with 
-# senders == None case and senders != None case.  We need to add condition
-# for full/partial DAG generation.
+#brc: use of DAG_info: This is for current_partition_number >=2 for both the
+# senders == None case and the senders != None case.  We need to add condition
+# for full/partial DAG generation. Not that in the partition version 
+# we do the generate for the senders == None branch and a generate for the
+# other branch separately. Here we do one generate after the branches.
 
         DAG_info = generate_full_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
             number_of_groups_of_previous_partition_that_cannot_be_executed)
@@ -2049,7 +2058,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # (num_incremental_DAGs_generated_since_base_DAG+1) here.
 
         if current_partition_number <= 2:
-            #The current_partition_number is 2 - if it were 1 we would have 
+            #The current_partition_number must be 2 - if it were 1 we would have 
             # taken the branch above.
             try:
                 msg = "[Error]: generate_DAG_info_incremental_partitions:" \
@@ -2063,7 +2072,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     os._exit(0)
             # if the current partition is 2 (whether
             # or not the DAG is complete) bfs will save the DAG and start 
-            # executing it, so generate a full DAG
+            # executing it, so generate a full DAG.
             DAG_info = generate_full_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
         else:
             #   The current_partition_number is 3 or more
@@ -2118,9 +2127,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
 #brc: use of DAG_info:
         # We only need to make the copies if we will be publishing/executing 
-        # this DAG.
+        # this DAG. Note not to_be_continued ==> complete
         #if current_partition_number == 2 or (
-        #     DAG_info.get_DAG_info_is_complete() or (
+        #     not to_be_continued or (
         #     (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
         #     )):
         if to_be_continued:

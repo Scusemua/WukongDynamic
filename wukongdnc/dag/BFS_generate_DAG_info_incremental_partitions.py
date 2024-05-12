@@ -1354,7 +1354,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # We only need to make the copies if we will be publishing/executing 
         # this DAG.
         if current_partition_number == 2 or (
-             DAG_info.get_DAG_info_is_complete() or (
+             not to_be_continued or (
              (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
              )):
             if to_be_continued:
@@ -1820,7 +1820,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # We only need to make the copies if we will be publishing/executing 
         # this DAG.
         if current_partition_number == 2 or (
-             DAG_info.get_DAG_info_is_complete() or (
+             not to_be_continued or (
              (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
              )):
             if to_be_continued:
