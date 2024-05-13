@@ -3786,14 +3786,16 @@ def bfs(visited, node):
                             # for all of the nodes in all of the groups?
                             # Note: We use num_nodes when we are deallocating on-the-fly - we only deallocate
                             # when the input graph is large.
+#brc: use of DAG_info:  
                             #DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(partition_name,current_partition_number,
                             #    groups_of_current_partition,groups_of_partitions,
                             #    to_be_continued)
-#brc: use of DAG_info:      
+    
                             DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(partition_name,current_partition_number,
                                 groups_of_current_partition,groups_of_partitions,
                                 to_be_continued,
                                 num_incremental_DAGs_generated_since_base_DAG)
+
                             # we are done with groups_of_current_partition so clear it so it is empty at start
                             # of next partition. No: see next comment
 #brc: gocp
