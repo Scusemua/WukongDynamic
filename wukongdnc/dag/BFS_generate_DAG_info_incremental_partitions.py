@@ -707,7 +707,11 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 
 # to_be_continued is True if num_nodes_in_partitions < num_nodes, which means that incremeental DAG generation
 # is not complete (some graph nodes are not in any partition.)
-# current_partition_name generated as: "PR" + str(current_partition_number) + "_1"
+# current_partition_name generated as: "PR" + str(current_partition_number) + "_1".
+# The base DAG is the DAG with complete partition 1 and incomplete partition 2. This is 
+# the first DAG to be executed assuming the DAG has more than one partition.
+# num_incremental_DAGs_generated_since_base_DAG is the number of DAGs generated since
+# the base DAG; we publish every ith incremental ADG generated, where i can be set. 
 
 
     global Partition_all_fanout_task_names
@@ -972,7 +976,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         #DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 #brc: use of DAG_info:
 # bfs will save the DAG_info if the DAG is complete, i.e., the DAG has 
-# only one partition.
+# only one partition. In that case, we need a full DAG_info; otherwise, we can generate a
+# partial DAG info (since the DAG will not be executed - the first DAG executed in the base DAG
+# (with complete partition 1 and incomplete partition 2))
         if not to_be_continued:
             DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
         else:
@@ -1009,6 +1015,13 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # business; we do it here to be conistent with the other cases.
         # i.e., whenever we will execute the DAG we make these copies.
         # This is not alot of code to excute since the DAG has only 1 partition.
+        #
+        # Note: The DAG_executor gets a copy so that the 
+        # DAG_executor is not reading a field of DAG_info that bfs can 
+        # write/modify, which creates a race condition - wull DAG_excutor
+        # read the DAG info of current DAG before bfs modifies the info as 
+        # part of generating the next DAG.)
+
         #if to_be_continued:
         if not to_be_continued:
             DAG_info_DAG_map = DAG_info.get_DAG_map()
@@ -1352,7 +1365,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 
 #brc: use of DAG_info:
         # We only need to make the copies if we will be publishing/executing 
-        # this DAG.
+        # this DAG. Note: not DAG is to_be_continued ==> DAG is complete
         if current_partition_number == 2 or (
              not to_be_continued or (
              (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
@@ -1818,7 +1831,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         #
 #brc: use of DAG_info:
         # We only need to make the copies if we will be publishing/executing 
-        # this DAG.
+        # this DAG. Note: not DAG is to_be_continued ==> DAG is complete
         if current_partition_number == 2 or (
              not to_be_continued or (
              (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0

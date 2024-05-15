@@ -806,10 +806,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 # groups_of_current_partition is a list of groups in the current partition.
 # groups_of_partitions is a list of the groups_of_current_partition. We need
 # this to get the groups of the previous partition and th previous previous partition. 
+# The base DAG is the DAG with complete partition 1 and incomplete partition 2. This is 
+# the first DAG to be executed assuming the DAG has more than one partition.
+# num_incremental_DAGs_generated_since_base_DAG is the number of DAGs generated since
+# the base DAG; we publish every ith incremental ADG generated, where i can be set. 
 
 # Note: We use num_nodes_in_graph when we are deallocating on-the-fly - we only deallocate
-# when the input graph is large.
-
+# when the number of nodes in the input graph is large.
 
     global Group_all_fanout_task_names
     global Group_all_fanin_task_names
@@ -1127,7 +1130,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         #    number_of_groups_of_previous_partition_that_cannot_be_executed)
         
 # bfs will save the DAG_info if the DAG is complete, i.e., the DAG has 
-# only one partition.
+# only one partition. In that case, we need a full DAG_info; otherwise, we can generate a
+# partial DAG info (since the DAG will not be executed - the first DAG executed in the base DAG
+# (with complete partition 1 and incomplete partition 2))
         if not to_be_continued:
             DAG_info = generate_full_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,    #brc: bug fix:
                 number_of_groups_of_previous_partition_that_cannot_be_executed)
@@ -1147,7 +1152,11 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # partition 1 if this DAG is complete. In that case, bfs will
         # not need to modify the incremental DAG since there are no more 
         # partitions. So here we do not do the copies like we do at the end
-        # of the other branches. 
+        # of the other branches. (The DAG_executor gets a copy so that the 
+        # DAG_executor is not reading a field of DAG_info that bfs can 
+        # write/modify, which creates a race condition - wull DAG_excutor
+        # read the DAG info of current DAG before bfs modifies the info as 
+        # part of generating the next DAG.)
         
         return DAG_info
 
@@ -2006,11 +2015,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         logger.info("generate_DAG_for_groups: number_of_groups_of_previous_partition_that_cannot_be_executed:"
             + str(number_of_groups_of_previous_partition_that_cannot_be_executed))
     
-#brc: use of DAG_info: This is for current_partition_number >=2 for both the
-# senders == None case and the senders != None case.  We need to add condition
-# for full/partial DAG generation. Not that in the partition version 
-# we do the generate for the senders == None branch and a generate for the
-# other branch separately. Here we do one generate after the branches.
+#brc: use of DAG_info: 
+        #This is for current_partition_number >=2 for both the
+        # senders == None case and the senders != None case.  Below we added a condition
+        # for choosing full/partial DAG generation. Note that in the partition version 
+        # we have this conditon in the senders == None branch and this condition is also in
+        # the other bracnch. Here we have the condition after both of these branches (i.e,.
+        # after the if-statement)
 
         #DAG_info = generate_full_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
         #    number_of_groups_of_previous_partition_that_cannot_be_executed)
@@ -2130,8 +2141,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # written be DAG_generator, are not really being shared. Funny.
 
 #brc: use of DAG_info:
-        # We only need to make the copies if we will be publishing/executing 
-        # this DAG. Note not to_be_continued ==> complete
+        # We only need to make these copies if we will be publishing/executing 
+        # this DAG. Note: not DAG is to_be_continued ==> DAG is complete
         if current_partition_number == 2 or (
                 not to_be_continued or (
                 (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0

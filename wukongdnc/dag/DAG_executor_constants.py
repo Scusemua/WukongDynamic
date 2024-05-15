@@ -33,6 +33,7 @@ logger.addHandler(ch)
 # os_exit(0) program when an exception is raised
 EXIT_PROGRAM_ON_EXCEPTION = True
 SERVERLESS_PLATFORM_IS_AWS = True
+#
 # BFS collects a lot of information during DAG generation.
 # Deallocate this information during DAG_generation when it is no longer needed.
 #
@@ -83,13 +84,24 @@ DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_SENDERS_AND_RECEIVERS = False
 # (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)
 THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY = 1
 #
+# We also manage the size of the incremental DAG generated during incremental
+# DAG generation. This is not considered to be part of "deallocation" since
+# we do not deallocate memory. We do not save/publish every incremental DAG 
+# that is generated. For example, we do not save/publish the DAG that has a 
+# single incomplete partition 1. Also, in general, we publish (i.e., deposit
+# into a buffer that the DAG_executor can withdraw from) every ith incremental
+# DAG that is generated. For these published DAGs, the DAG contains full information
+# about the DAG (fanins/fanouts for every task/state); otherwise the DAG contains
+# only partital information since DAGs that are not published are not executed.
+# The partal information is small and size and useful for debugging.
+#
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
-# local, i.e., on one machine.
+# locally, i.e., on one machine.
 RUN_ALL_TASKS_LOCALLY = True         # vs run tasks remotely (in Lambdas)
 # True if we want to bypass the call to lambda_client.invoke() so that we
 # do not actually create a real Lambda; instead, invoke_lambda_DAG_executor()
-# in invoker.y will call lambda_handler(payload_json,None) directly, where
-# lambda_handler() is defned locally in invoker.py, i.e., is not the actual
+# in invoker.py will call lambda_handler(payload_json,None) directly, where
+# lambda_handler() is defined locally in invoker.py, i.e., is not the actual
 # handler, which is defined in handlerDAG.py. This lets us test the code
 # for real lambdas without actually creating real Lambdas.
 # Note: if this is True then RUN_ALL_TASKS_LOCALLY must be False. 
@@ -99,10 +111,13 @@ BYPASS_CALL_TO_INVOKE_REAL_LAMBDA = (not RUN_ALL_TASKS_LOCALLY) and True
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-# Note: When using partitions instead of groups, partition i 
-# has a collapse to partition i+1, so there are no synch objects
-# needed when we are using partitions, so it does not matter
+# Note: When using partitions instead of groups, partition i always
+# has a collapse to partition i+1, i.e., no fanins/fanouts, so there are no synch
+# objects needed when we are using partitions. Thus, it does not matter
 # whether we set STORE_FANINS_FANINNBS_LOCALLY to True or False.
+# Note: if A has a collapse to B, then A has a singl fanout which is B and B has
+# a single fanin which is A. This clustering is determined statically. Runtime task
+# clustering can also be done. See below.
 STORE_FANINS_FANINNBS_LOCALLY = True
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
@@ -116,21 +131,29 @@ CREATE_ALL_FANINS_FANINNBS_ON_START = True
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
-# This results in the creation of many threads and is only use to test the logic 
-# of the Lambda code.
+# This results in the creation of many threads and is only used to test the logic 
+# of the Lambda code. (A better way to test the Lambda code is to use BYPASS_CALL_TO_INVOKE_REAL_LAMBDA)
 USING_WORKERS = True
-# True when we are not using Lambas and tasks are executed by threads instead of processes. 
-# False when we are not using lambdas and are using multiprocesssing 
+# True when we are not using Lambas, and tasks are executed by threads instead of processes. 
+# False when we are not using lambdas and are using multiprocesssing (i.e., processes instead of threads) 
 USING_THREADS_NOT_PROCESSES = True
 # When USING_WORKERS, this is how many threads or processes in the pool.
 # When not using workers, this value is ignored.
 NUM_WORKERS = 1
-# Use one or more worker processes (NUM_WORKERS) with one or more threads
+# Use one or more worker processes (NUM_WORKERS) that each have one or more threads.
 USE_MULTITHREADED_MULTIPROCESSING = False
 NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 2
 
-# if using lambdas to store synch objects, run tcp_server_lambda.
-# if store in regular python functions instead of real Lambdas
+# We can store fanins/fanouts inside Lambda functions using the fanins/fanouts built using 
+# the "Select" consruct. So when we do a, say, fanin operation, we are calling 
+# a lambda function and passing the fanout/fanin data. The fanin/fanout operation will
+# be performed whcih will trigger the executioon of the associated fanout/fanin task 
+# in the same lambda.
+# - if using lambdas to store synch objects, run tcp_server_lambda.
+# We can also simulate lambda functions using regular python funtions. This allos
+# us to test this code for storing sync objects n lambdas without having to 
+# actually use real lambdas.
+# - if storing objects in regular python functions instead of real Lambdas
 # set using_Lambda_Function_Simulator = True
 FANIN_TYPE = "DAG_executor_FanIn"
 FANINNB_TYPE = "DAG_executor_FanInNB"
@@ -164,7 +187,7 @@ USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
 SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
 USING_DAG_ORCHESTRATOR = False
-# map ech synch object by name to the function it resided in. if we create
+# map each synch object by name to the function it resided in. if we create
 # all objects on start we msut map the objects to function so we can get the
 # function an onject is in. If we do not create objects on start then
 # we will crate them on the fly. We can still map he objects to functions -
