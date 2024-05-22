@@ -11,7 +11,7 @@ from . import DAG_executor_constants
 logger = logging.getLogger(__name__)
 
 """
-For non-incremental DAG generation, Instead of generating the
+For *non-incremental* DAG generation, instead of generating the
 DAG_info at the end of bfs(), bfs deposits the next partition
 or group it collects in a buffer and a DAG generator thread 
 withdraws the partition or group and adds it to DAG_info. 
@@ -50,15 +50,15 @@ def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
 
     while(True):
         DAG_info = None
-        # get the nect partition/group from the FIFO buffer
+        # get the next partition/group from the FIFO buffer
         # During incremental DAG generation, bfs() calls
         # BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups
-        # and passes 5 parameters. In our cse, bfs)( packs these 5 
+        # and passes 5 parameters. In our case, bfs() packs these 5 
         # parameters into a tuple and deposits the tuple into buffer
-        # from which the generaor_thread withdrws the tuple. The 
+        # from which the generator_thread withdrws the tuple. The 
         # generator thread withdraws the tuple, unpacks it, and passes
         # the parameters to DAG_generator_for_multithreaded_DAG_generation.generate_DAG_info_multithreaded_groups
-        # whcih simply passes the paramers on to 
+        # whcih simply passes the paramaters on to 
         # BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups
         # or the version for partitions.
         #
@@ -81,7 +81,7 @@ def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
             #logger.info("generator_thread: calling generate.")
 
             # This will simply pass the parameters in the tuple to the 
-            # same method BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups
+            # same mBFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groupsethod 
             # that is used during incremental DAG generation. That is,
             # during incremental DAG generation, bfs() calls
             # BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups

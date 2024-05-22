@@ -1126,13 +1126,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 #brc: use of DAG_info:
        
         #DAG_info = generate_full_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
-    #brc: bug fix:
+#brc: bug fix:
         #    number_of_groups_of_previous_partition_that_cannot_be_executed)
         
-# bfs will save the DAG_info if the DAG is complete, i.e., the DAG has 
-# only one partition. In that case, we need a full DAG_info; otherwise, we can generate a
-# partial DAG info (since the DAG will not be executed - the first DAG executed in the base DAG
-# (with complete partition 1 and incomplete partition 2))
+        # Save the DAG_info if the DAG is complete, i.e., the DAG has 
+        # only one partition. In that case, we need a full DAG_info; otherwise, we can generate a
+        # partial DAG info (since the DAG will not be executed - the first DAG executed is the base DAG
+        # (with complete partition 1 and incomplete partition 2))
         if not to_be_continued:
             DAG_info = generate_full_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,    #brc: bug fix:
                 number_of_groups_of_previous_partition_that_cannot_be_executed)
@@ -2016,7 +2016,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             + str(number_of_groups_of_previous_partition_that_cannot_be_executed))
     
 #brc: use of DAG_info: 
-        #This is for current_partition_number >=2 for both the
+        # This is for current_partition_number >=2 for both the
         # senders == None case and the senders != None case.  Below we added a condition
         # for choosing full/partial DAG generation. Note that in the partition version 
         # we have this conditon in the senders == None branch and this condition is also in

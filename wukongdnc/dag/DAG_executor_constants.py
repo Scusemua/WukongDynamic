@@ -86,14 +86,14 @@ THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY = 1
 #
 # We also manage the size of the incremental DAG generated during incremental
 # DAG generation. This is not considered to be part of "deallocation" since
-# we do not deallocate memory. We do not save/publish every incremental DAG 
+# we do not deallocate memory. We simply do not save/publish every incremental DAG 
 # that is generated. For example, we do not save/publish the DAG that has a 
 # single incomplete partition 1. Also, in general, we publish (i.e., deposit
 # into a buffer that the DAG_executor can withdraw from) every ith incremental
 # DAG that is generated. For these published DAGs, the DAG contains full information
 # about the DAG (fanins/fanouts for every task/state); otherwise the DAG contains
-# only partital information since DAGs that are not published are not executed.
-# The partal information is small and size and useful for debugging.
+# only partital information, since DAGs that are not published are not executed.
+# The partal information is small in size and useful for debugging.
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # locally, i.e., on one machine.

@@ -975,10 +975,10 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # uses global dictionary to create the DAG_info object
         #DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 #brc: use of DAG_info:
-# bfs will save the DAG_info if the DAG is complete, i.e., the DAG has 
-# only one partition. In that case, we need a full DAG_info; otherwise, we can generate a
-# partial DAG info (since the DAG will not be executed - the first DAG executed in the base DAG
-# (with complete partition 1 and incomplete partition 2))
+        # bfs will save the DAG_info if the DAG is complete, i.e., the DAG has 
+        # only one partition. In that case, we need a full DAG_info; otherwise, we can generate a
+        # partial DAG info (since the DAG will not be executed - the first DAG executed in the base DAG
+        # (with complete partition 1 and incomplete partition 2))
         if not to_be_continued:
             DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
         else:

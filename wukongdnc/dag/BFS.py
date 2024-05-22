@@ -3745,21 +3745,23 @@ def bfs(visited, node):
                         + " num_nodes: " + str(num_nodes) + " to_be_continued: "
                         + str(to_be_continued))
 
-#brc: use of DAG_info: generate_DAG_info is true if we need the full DAG_info information.
-# We need the full information if 
-# - current_partition_number is 1 and the DAG is complete, in which case we will save the 
-#   DAG and start the DAG_executor_driver
-# - current_partition_number is 2, in which case we will save the 
-#   DAG and start the DAG_executor_driver
-# - we will publish the DAG_info based in the num_incremental_DAGs_generated_since_base_DAG
-#   and the interval
-# - DAG_info is complete, which means we will publish the DAG_info since it is the 
-#   last incremental DAG to be generated
-# So inside DAG_generation methods we can compute this using current_partition_number
-# and isComplete, and num_incremental_DAGs_generated_since_base_DAG, except that the value of 
-# num_incremental_DAGs_generated_since_base_DAG needs to be increased by 1 when we do the 
-# calculation if current_partition_number > 2 since it gets incremented before the
-# calculation below when current_partition_number > 2.
+#brc: use of DAG_info:
+                    # The DAG_info objects generated have full informatio about the DAG
+                    # if we will execute the DAG and partitial information otherwise.
+                    # We need the full information if:
+                    # - current_partition_number is 1 and the DAG is complete, in which case we will save the 
+                    #   DAG and start the DAG_executor_driver
+                    # - current_partition_number is 2, in which case we will save the 
+                    #   DAG and start the DAG_executor_driver
+                    # - we will publish the DAG_info based om the num_incremental_DAGs_generated_since_base_DAG
+                    #   and the interval specified in DAG_executor_constants.
+                    # - DAG_info is complete, which means we will publish the DAG_info since it is the 
+                    #   last incremental DAG to be generated
+                    # Inside DAG_generation methods we determine full or partial using current_partition_number
+                    # and isComplete, and num_incremental_DAGs_generated_since_base_DAG, except that the value of 
+                    # num_incremental_DAGs_generated_since_base_DAG needs to be increased by 1 when we do the 
+                    # calculation if current_partition_number > 2 since it gets incremented before the
+                    # calculation below when current_partition_number > 2.
 
                     if DAG_executor_constants.USING_WORKERS or not DAG_executor_constants.USING_WORKERS:
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
@@ -3848,16 +3850,6 @@ def bfs(visited, node):
                                 # we have generated a state for leaf task group_name. 
                                 BFS_generate_DAG_info.leaf_tasks_of_groups_incremental.remove(group_name)
 
-#brc: use of DAG_info: we get DAG_info from generate partition/group and
-# then we decide what to do with it, which includes deposit it. We
-# pass DAG_info on deposit() with a complete flag.
-# deposit() will do the deallocate - if we do this deallocation 
-# every time we avoid a long running occasional loop. But we only 
-# call deposit() when we want to deposit so no need to generate
-# DAG completely if we are not going to deposit() and we are not 
-# going to save DAG when current partition is 2 or current 
-# partition is 1 and complete.
-# So when do we call deposit()? When do we save/need DAG (partition == 1 or 2)?
 #brc: use of DAG_info: current partition is 1 check complete
                             if DAG_info.get_DAG_info_is_complete():
                                 # if there is only one partition in the DAG, save the partition and the DAG_info and 
@@ -4454,7 +4446,13 @@ def bfs(visited, node):
                         pass # code for workers and lambdas is the same
  
                 elif DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_MUTLITHREADED_NONINCREMENTAL_BFS:
-                    # partitioning is over when all graph nodes have been
+                    # This is *non-increental* DAG generation. Here, bfs makes the newly generated partition/groups
+                    # available to a separate thread (through a buffer). The thread will withdraw
+                    # the deposited tuples, call the inc partition/group to add the group/partition 
+                    # to the DAG. So bfs can generate the groups/partitions while the thread is 
+                    # adding them (in the orfer generatd) to the DAG. (We can have a seperate 
+                    # implemntation of multithreaded (*incremental*) DAG generation.
+                    # Partitioning is over when all graph nodes have been
                     # put in some partition
                     num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
                     # to_be_continued set to False when the DAG has been completely generated
