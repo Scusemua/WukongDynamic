@@ -566,7 +566,7 @@ USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 # incremental DAG generation in which the DAG is executed concurrently 
 # with bfs() generating the partitions/groups and the DAG_info object.
 # Consider also the combination of USE_INCREMENTAL_DAG_GENERATION and 
-# USE_MUTLITHREADED_BFS. (an incremental ADG generator thread runs 
+# USE_MUTLITHREADED_BFS. (an incremental DAG generator thread runs 
 # concurrently with bfs. In this case, we would need to put the 
 # code in bfs that runs after the call to generate the next incremental
 # part of the DAG (deposit the new incremental DAG in the buffer where 

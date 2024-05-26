@@ -4446,14 +4446,14 @@ def bfs(visited, node):
                         pass # code for workers and lambdas is the same
  
                 elif DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_MUTLITHREADED_NONINCREMENTAL_BFS:
-                    # This is *non-increental* DAG generation. Here, bfs makes the newly generated partition/groups
-                    # available to a separate thread (through a buffer). The thread will withdraw
-                    # the deposited tuples, call the inc partition/group to add the group/partition 
+                    # This is *non-increental* DAG generation. Here, bfs makes the newly generated partition/groups information
+                    # available as a tuple to a separate thread (through a buffer.deposit). The thread will withdraw
+                    # the deposited tuples, and call the normal incremental partition/group method to add the group/partition 
                     # to the DAG. So bfs can generate the groups/partitions while the thread is 
-                    # adding them (in the orfer generatd) to the DAG. (We can have a seperate 
+                    # adding them (in the order generatd) to the DAG. (We can have a seperate 
                     # implemntation of multithreaded (*incremental*) DAG generation.
                     # Partitioning is over when all graph nodes have been
-                    # put in some partition
+                    # put in some partition and the incremental DAG has been completely generated.
                     num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
                     # to_be_continued set to False when the DAG has been completely generated
                     to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
@@ -4469,7 +4469,14 @@ def bfs(visited, node):
                             #    + " partition " + str(partition_name) + " using workers.")
                             # All of these parameters are immutable: string, int, boolean
                             global DAG_generator_for_multithreaded_DAG_generation
-                            partition_tuple = (partition_name, current_partition_number,to_be_continued)
+#brc: use of DAG_info:
+                            # We need to pass num_incremental_DAGs_generated_since_base_DAG so we can tell whether
+                            # we will be publishing the incremental DAG that is generated. num_incremental_DAGs_generated_since_base_DAG
+                            # is incemented by bfs() and read by the incrmental DAG generation routines.
+                            #partition_tuple = (partition_name, current_partition_number,to_be_continued)
+                            partition_tuple = (partition_name, current_partition_number,to_be_continued,
+                                num_incremental_DAGs_generated_since_base_DAG)
+                            
                             #DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(partition_tuple)
                             DAG_generator_for_multithreaded_DAG_generation.deposit(partition_tuple)
                         else:
@@ -4484,8 +4491,15 @@ def bfs(visited, node):
 
                             copy_of_groups_of_current_partition = copy.copy(groups_of_current_partition)
                             copy_of_groups_of_partitions = copy.copy(groups_of_partitions)
+#brc: use of DAG_info:
+                            # We need to pass num_incremental_DAGs_generated_since_base_DAG so we can tell whether
+                            # we will be publishing the incremental DAG that is generated. num_incremental_DAGs_generated_since_base_DAG
+                            # is incemented by bfs() and read by the incrmental DAG generation routines.
+                            #group_tuple = (partition_name,current_partition_number,
+                            #    copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued)
                             group_tuple = (partition_name,current_partition_number,
-                                copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued)
+                                copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued,
+                                    num_incremental_DAGs_generated_since_base_DAG)
                             #DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(group_tuple)
                             DAG_generator_for_multithreaded_DAG_generation.deposit(group_tuple)
                             # we are done with groups_of_current_partition so clear it so it is empty at start
