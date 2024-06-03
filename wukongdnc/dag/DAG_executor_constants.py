@@ -33,68 +33,7 @@ logger.addHandler(ch)
 # os_exit(0) program when an exception is raised
 EXIT_PROGRAM_ON_EXCEPTION = True
 SERVERLESS_PLATFORM_IS_AWS = True
-#
-# BFS collects a lot of information during DAG generation.
-# Deallocate this information during DAG_generation when it is no longer needed.
-#
-# At the end_of_current_frontier in bfs() we deallocate the
-# nodeIndex_to_partition_partitionIndex_group_groupIndex_map for each 
-# npartition ode in the previous partition. (this map maintain information for 
-# each node.) When the bfs search of the entire graph is complete we clear this
-# map, i.e., the current parttion must be cleared since we will not have a chance
-# to clear it as the previous_partition in bfs() (since bfs is done) - it
-# is the only partiton whose nodes are in the map.
-DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY = False
-# Do the same for the nodes of the input graph. That is, we are done with graph nodes
-# that correspond to a partition node in previous_partition. Delete each graph node using
-# the ID of the partition node. Graph node i is stored with key i (in dictionary nodes{}). 
-# When the bfs search of the entire graph is complete we clear the remaining 
-# graph nodes, which correspond to the partition nodes in the final 
-# partition - nodes.clear(). Noet: this covers both the case where we
-# generate partitions and the case where we generate groups (as the nodes
-# in the groups of a partition are the same as the nodes in the partition.)
-DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_GRAPH_NODES_ON_THE_FLY = False
-# Right after we generate the next incremental DAG, we deallocate, we 
-# deallocte the partitions/groups from partitions[]/groups[] that we 
-# no longer need. That is, the previous partition / the groups in the 
-# previous partition. These partition/groups have been output and we will
-# not use them again. When the bfs search of the entire graph is complete 
-# we clear the remaining partitions/groups, which correspond to the final 
-# partition/groups in the final partition - partitions.clear()/nodes.clear()
-DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_PARTITIONS_GROUPS_NAMES = True
-# In BFS_generate_DAG_info_incremental_groups.py, we clear the Senders
-# and Receivers map for the groups in the previous previous partition
-# del Group_senders[previous_previous_group] where previous_previous_group
-# is a group in the previous previous partition. Likewise
-# del Group_receivers[previous_previous_group].
-# Partition_senders, Parttition_receievers, Group_senders, and Group_receivers
-# represent the edges in the DAG, Partition/Group senders[x] are the partition/groups
-# that receive inputs from partition/group x. Partition/Group receivers[x] are the 
-# partition/groups that send inputs to partition/group x. We use these
-# edges when we build the DAG. Durng incremental ADG generation,
-# BFS_generate_DAG_info_incremental_groups.py and
-# BFS_generate_DAG_info_incremental_partitions.py buld the ADG and 
-# deallocate the Partition/Group senders and Partition/Group receivers
-# that are no longer needed. Durng non-incremental DAG generation,
-# the DAG is built after the bfs() search concludes and then the
-# Partition/Group senders and Partition/Group receivers are deallocated.
-DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_SENDERS_AND_RECEIVERS = False
-# We may want to do the above deallocations only for large input graphs
-# so we guard the dellocations above with 
-# (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)
-THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY = 1
-#
-# We also manage the size of the incremental DAG generated during incremental
-# DAG generation. This is not considered to be part of "deallocation" since
-# we do not deallocate memory. We simply do not save/publish every incremental DAG 
-# that is generated. For example, we do not save/publish the DAG that has a 
-# single incomplete partition 1. Also, in general, we publish (i.e., deposit
-# into a buffer that the DAG_executor can withdraw from) every ith incremental
-# DAG that is generated. For these published DAGs, the DAG contains full information
-# about the DAG (fanins/fanouts for every task/state); otherwise the DAG contains
-# only partital information, since DAGs that are not published are not executed.
-# The partal information is small in size and useful for debugging.
-#
+
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # locally, i.e., on one machine.
 RUN_ALL_TASKS_LOCALLY = True         # vs run tasks remotely (in Lambdas)
@@ -577,6 +516,75 @@ USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 # and does what needs to be done with the DAG, instead of returning the 
 # DAG to bfs() and letting bfs() deal with the new DAG.)
 USE_MUTLITHREADED_NONINCREMENTAL_BFS = COMPUTE_PAGERANK and False
+
+# BFS collects a lot of information during DAG generation for pagerank.
+# Deallocate this information during DAG_generation when it is no longer needed.
+#
+# At the end_of_current_frontier in bfs() we deallocate the
+# nodeIndex_to_partition_partitionIndex_group_groupIndex_map for each 
+# npartition ode in the previous partition. (this map maintains information for 
+# each node.) When the bfs search of the entire graph is complete we clear this
+# map, i.e., the current parttion must be cleared since we will not have had a chance
+# to clear it as the previous_partition in bfs() (since bfs is done) - it
+# will be the only partition whose nodes are in the map. 
+# Note: We do this for non-incremental and incrmental DAg generation.
+DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY = COMPUTE_PAGERANK and False
+# Do the same for the nodes of the input graph. That is, we are done with graph nodes
+# that correspond to a partition node in previous_partition. Delete each graph node using
+# the ID of the partition node. Graph node i is stored with key i (in dictionary nodes{}). 
+# When the bfs search of the entire graph is complete we clear the remaining 
+# graph nodes, which correspond to the partition nodes in the final 
+# partition - nodes.clear(). Noet: this covers both the case where we
+# generate partitions and the case where we generate groups (as the nodes
+# in the groups of a partition are the same as the nodes in the partition.)
+# Note: We do this for non-incremental and incrmental DAg generation.
+DEALLOCATE_BFS_GRAPH_NODES_ON_THE_FLY = COMPUTE_PAGERANK and False
+# Right after we generate the next incremental DAG, bfs
+# deallocate the partitions/groups from partitions[]/groups[] that it 
+# no longer need. That is, the previous partition / the groups in the 
+# previous partition. These partition/groups have been output and we will
+# not use them again. When the bfs search of the entire graph is complete 
+# we clear the remaining partitions/groups, which correspond to the final 
+# partition/groups in the final partition - partitions.clear()
+# partition_names.clear(), groups.clear(), group_names.clear().
+# Note: We do this for incremental DAG generation only.
+DEALLOCATE_BFS_PARTITIONS_GROUPS_NAMES = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and True
+# In BFS_generate_DAG_info_incremental_groups.py, we clear the Senders
+# and Receivers map for the groups in the previous previous partition
+# del Group_senders[previous_previous_group] where previous_previous_group
+# is a group in the previous previous partition. Likewise
+# del Group_receivers[previous_previous_group].
+# Partition_senders, Parttition_receievers, Group_senders, and Group_receivers
+# represent the edges in the DAG, Partition/Group senders[x] are the partition/groups
+# that receive inputs from partition/group x. Partition/Group receivers[x] are the 
+# partition/groups that send inputs to partition/group x. We use these
+# edges when we build the DAG. Durng incremental DAG generation,
+# BFS_generate_DAG_info_incremental_groups.py and
+# BFS_generate_DAG_info_incremental_partitions.py buld the ADG and 
+# deallocate the Partition/Group senders and Partition/Group receivers
+# that are no longer needed. Durng non-incremental DAG generation,
+# the DAG is built after the bfs() search concludes and then the
+# Partition/Group senders and Partition/Group receivers are deallocated.
+# Note: We do this for incrmental DAg generation only and this is used
+# in the incremental DAG gneration routines.
+# Note: We do this for incremental DAg generation only.
+DEALLOCATE_BFS_SENDERS_AND_RECEIVERS = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and False
+# We may want to do the above deallocations only for large input graphs
+# so we guard the dellocations above with 
+# (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)
+THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY = 1
+#
+# We also manage the size of the incremental DAG generated during incremental
+# DAG generation. This is not considered to be part of "deallocation" since
+# we do not deallocate memory. We simply do not save/publish every incremental DAG 
+# that is generated. For example, we do not save/publish the DAG that has a 
+# single incomplete partition 1. Also, in general, we publish (i.e., deposit
+# into a buffer that the DAG_executor can withdraw from) every ith incremental
+# DAG that is generated. For these published DAGs, the DAG contains full information
+# about the DAG (fanins/fanouts for every task/state); otherwise the DAG contains
+# only partital information, since DAGs that are not published are not executed.
+# The partal information is small in size and useful for debugging.
+#
 
 try:
     msg = "[Error]: Configuration error: if USE_MUTLITHREADED_BFS" + " then must not USE_INCREMENTAL_DAG_GENERATION ."
@@ -3286,7 +3294,7 @@ def test35():
     RUN_ALL_TASKS_LOCALLY = True
     BYPASS_CALL_TO_INVOKE_REAL_LAMBDA = (not RUN_ALL_TASKS_LOCALLY) and True 
     STORE_FANINS_FANINNBS_LOCALLY = True 
-    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
     USING_WORKERS = True
     USING_THREADS_NOT_PROCESSES = True
     NUM_WORKERS = 2
@@ -3314,7 +3322,7 @@ def test35():
     NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
     NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
     SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
-    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and True
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
     INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
     ENABLE_RUNTIME_TASK_CLUSTERING = COMPUTE_PAGERANK and False
     MIN_PARTITION_GROUP_SIZE_FOR_CLUSTERING = 5
@@ -3322,10 +3330,14 @@ def test35():
     WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
     TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
     USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and False
-    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and False
     USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
     USE_MUTLITHREADED_NONINCREMENTAL_BFS = COMPUTE_PAGERANK and False
     INPUT_ALL_GROUPS_PARTITIONS_AT_START = COMPUTE_PAGERANK and False
+
+# status: runnning non-icremental non-mutithreaded, i.e., regular. Turned off dealloc 
+# for partition/group/names when non-incremental. Test partitions and groups.
+# let dealloc be settable for test cases?
 
 #Test36: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored locally

@@ -1982,7 +1982,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     + str(state_info_of_previous_previous_group))     
                 
                 # deallocate the Group_senders and Group_receivers for previous_previous_group
-                if DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_SENDERS_AND_RECEIVERS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                if DAG_executor_constants.DEALLOCATE_BFS_SENDERS_AND_RECEIVERS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                     try:
                         del Group_senders[previous_previous_group]
                         logger.info("BFS_generate_DAG_info_incremental_groups: deallocate Group_senders: " + previous_previous_group)

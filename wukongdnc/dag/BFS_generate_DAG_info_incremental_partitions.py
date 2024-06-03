@@ -806,7 +806,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # node and thus has no senders. This is true about partition 1 and
     # this is assserted by the caller (BFS()) of this method.
 
-    if DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_SENDERS_AND_RECEIVERS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+    if DAG_executor_constants.DEALLOCATE_BFS_SENDERS_AND_RECEIVERS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
         # Between calls to generate_DAG_info_incremental_partitions we add names to
         # Partition_senders, we can clear all of them.
         Partition_senders.clear()
