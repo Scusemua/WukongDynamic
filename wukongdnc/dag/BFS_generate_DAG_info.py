@@ -64,9 +64,9 @@ partitions_num_shadow_nodes_map = {}
 num_nodes_in_graph = 0
 
 def destructor():
-
-# Deallocate memory for the remaining Senders and Receivers. 
-# When we aer doing incremental DAG generatio, we deallocate Senders and Receivers 
+# deallocate data structures for non-incemental DAG generation. This includes
+# the leaf node structuers and the shadow node structures and the Senders and Receivers. 
+# When we are doing incremental DAG generatio, we deallocate Senders and Receivers 
 # in the incremental DAG generation methods as we go. Here we deallocate the remaining 
 # Senders and Receivers. (The final Sender and Receivers that were generated, i.e., for 
 # the last partition/groups.)

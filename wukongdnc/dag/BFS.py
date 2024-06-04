@@ -1032,6 +1032,7 @@ num_incremental_DAGs_generated_since_base_DAG = 0
 num_nodes_in_partitions = 0
 
 def destructor():
+    # deallocate memory. Called at the end of bfs() (i.e., at the end of graph generation for pagerank)
     global visited
     global BFS_queue
     global partitions

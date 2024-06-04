@@ -548,7 +548,7 @@ DEALLOCATE_BFS_GRAPH_NODES_ON_THE_FLY = COMPUTE_PAGERANK and False
 # partition/groups in the final partition - partitions.clear()
 # partition_names.clear(), groups.clear(), group_names.clear().
 # Note: We do this for incremental DAG generation only.
-DEALLOCATE_BFS_PARTITIONS_GROUPS_NAMES = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and True
+DEALLOCATE_BFS_PARTITIONS_GROUPS_NAMES = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and False
 # In BFS_generate_DAG_info_incremental_groups.py, we clear the Senders
 # and Receivers map for the groups in the previous previous partition
 # del Group_senders[previous_previous_group] where previous_previous_group

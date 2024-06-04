@@ -231,6 +231,7 @@ Partition_DAG_is_complete = False
 Partition_DAG_num_nodes_in_graph = 0
 
 def destructor():
+    # deallocate memory. Called at the end of bfs()
     global Partition_all_fanout_task_names
     global Partition_all_fanin_task_names
     global Partition_all_faninNB_task_names
