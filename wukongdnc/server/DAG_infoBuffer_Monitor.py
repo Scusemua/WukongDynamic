@@ -138,7 +138,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # Note: all the synchronization is to ensure that all workers are
         # using the same version of the DAG - no worker can get the next
         # version of the DAG until all workers have requested a new version,
-        # except when the DAG is complete in whihc case we do not require all 
+        # except when the DAG is complete in which case we do not require all 
         # the workers to have requested a new version (using withdraw) since
         # they are guaranted to all get the last version (as there aer no more DAGs 
         # deposited after that.)
@@ -191,13 +191,13 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # last DAG next, as by definition of "last DAG" there are no other
             # DAGs they can get. This would allow workers to return "early" with 
             # the last DAG, and start excuting it before other workers have 
-            # called to get the last DAG. Allowing workers to ork on the penultimate
-            # DAG while workers start early on the last ADG might cause problems
+            # called to get the last DAG. Allowing workers to work on the penultimate
+            # DAG while workers start early on the last DAG might cause problems
             # though since some tasks in the last DAG will not be in the penultimte
             # (next to last) DAG.
             # Note: No worker can get reenter the monitor for the next round until all
             # the waiting workers in this round have left the monitor.
-            # Reset for the next round. Noet that if this is the last DAG
+            # Reset for the next round. Note that if this is the last DAG
             # there is no next round.
             self.requested_version_number_in_this_round = -1
             logger.info("DAG_infoBuffer_Monitor: deposit() signal waiting writers:"
@@ -271,14 +271,16 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # Round is over so reset self.requested_version_number_in_this_round
             # Note: self.requested_version_number_in_this_round will have been reset
             # before the next round, if any, starts.
-            # Note: No worker can get reenter the monitor for the next round until all
+            # Note: No worker can reenter the monitor for the next round until all
             # the waiting workers in this round have left the monitor.
             self.requested_version_number_in_this_round = -1
 
             DAG_info = self.current_version_DAG_info
 #brc leaf tasks
             new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
-            self.current_version_new_leaf_tasks.clear()
+#brc: Issue: Add if. Also, above works if there is only 1 worker?
+            if self.num_waiting_workers == 0:
+                self.current_version_new_leaf_tasks.clear()
 
             logger.trace("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
                 + str(DAG_info.get_DAG_version_number()))
@@ -326,7 +328,9 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             DAG_info = self.current_version_DAG_info
 #brc leaf tasks
             new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
-            self.current_version_new_leaf_tasks.clear()
+#brc: Issue: Add if. Also, above works if there is only 1 worker?
+            if self.num_waiting_workers == 0:
+                self.current_version_new_leaf_tasks.clear()
             # cascaded wakeup, i.e., if there are more than one worker waiting,
             # the deposit() will wakeup the first worker with its
             # signal_c_and_exit_monitor(). The first waitng worker will wakeup

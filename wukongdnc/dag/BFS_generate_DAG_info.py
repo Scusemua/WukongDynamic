@@ -180,7 +180,16 @@ generate state i+1 with to be continued = True
 def generate_DAG_info():
     #Given Partition_senders, Partition_receivers, Group_senders, Group_receievers
 
+    # if building DAG of partitions instead of groups
     if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        # initialize Partition information.
+        # bfs.dfs_parent() built the Seners and Receivers maps, which represent the 
+        # nodes and edges in the graph. We use the Sender and Receivers to 
+        # build these Partition_foo structures and generate DAG_info from 
+        # the Partition_foo structures as in:
+        # DAG_info = {}
+        # DAG_info["DAG_map"] = Partition_DAG_map
+        # ...
         Partition_all_fanout_task_names = []
         Partition_all_fanin_task_names = []
         Partition_all_faninNB_task_names = []
@@ -670,8 +679,16 @@ def generate_DAG_info():
                 logger.trace(DAG_num_nodes_in_graph)
                 logger.trace("")
 
-    else:
+    else: # generate DAG of groups instead of partitions
 
+        # initialize Partition information.
+        # bfs.dfs_parent() built the Seners and Receivers maps, which represent the 
+        # nodes and edges in the graph. We use the Sender and Receivers to 
+        # build these Partition_foo structures and generate DAG_info from 
+        # the Partition_foo structures as in 
+        # DAG_info = {}
+        # DAG_info["DAG_map"] = Group_DAG_map
+        # ...
         Group_all_fanout_task_names = []
         Group_all_fanin_task_names = []
         Group_all_faninNB_task_names = []
