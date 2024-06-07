@@ -195,10 +195,15 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # DAG while workers start early on the last DAG might cause problems
             # though since some tasks in the last DAG will not be in the penultimte
             # (next to last) DAG.
-            # Note: No worker can get reenter the monitor for the next round until all
-            # the waiting workers in this round have left the monitor.
             # Reset for the next round. Note that if this is the last DAG
             # there is no next round.
+            # Note: No worker can reenter the monitor for the next round until all
+            # the waiting workers in this round have left the monitor. So we can 
+            # reset this now even though there may be multiple workers waiting. That is
+            # we do not requrie that last waiting worker to wakeup to do this reset.
+            # No new workers can enter deposit or withdraw and use 
+            # requested_version_number_in_this_round until all the waiting worder have 
+            # renentered and exitid the monitor. Multiple workers may do this reset.
             self.requested_version_number_in_this_round = -1
             logger.info("DAG_infoBuffer_Monitor: deposit() signal waiting writers:"
                 + " self.requested_version_number_in_this_round: " 
@@ -255,7 +260,10 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         #if requested_current_version_number <= self.current_version_number_DAG_info:
         if (requested_current_version_number <= self.current_version_number_DAG_info \
             and self.num_waiting_workers == DAG_executor_constants.NUM_WORKERS - 1):
-            # see the note in deposit() about making this condition "if (...) or self.current_version_DAG_info_is_complete"
+            # Note: if there is only one worker then DAG_executor_constants.NUM_WORKERS is 1
+            # so DAG_executor_constants.NUM_WORKERS - 1 is 0 which equals self.num_waiting_workers
+            # so this worker will not wait.
+            # See the note in deposit() about making this condition "if (...) or self.current_version_DAG_info_is_complete"
             try:
                 msg = "[Error]: DAG_infoBuffer_Monitor: withdraw:" \
                     + " DAG is complete but request version number is not <= current version number." \
@@ -272,13 +280,22 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # Note: self.requested_version_number_in_this_round will have been reset
             # before the next round, if any, starts.
             # Note: No worker can reenter the monitor for the next round until all
-            # the waiting workers in this round have left the monitor.
+            # the waiting workers in this round have left the monitor. So we can 
+            # reset this now even though there may be multiple workers waiting. that is
+            # we do not rqurie that last waiting worker to wakeup to do this reset.
+            # No new workers can enter deposit or withdraw and use 
+            # requested_version_number_in_this_round until all the waiting worder have 
+            # renentered and exitid the monitor. Multiple workers may do this reset.
             self.requested_version_number_in_this_round = -1
 
             DAG_info = self.current_version_DAG_info
 #brc leaf tasks
             new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
-#brc: Issue: Add if. Also, above works if there is only 1 worker?
+            # Note that all the waiting workers need to get a copy of
+            # self.current_version_new_leaf_tasks. So we cannot clear it until all the 
+            # waiting workers have made their copy, i.e., until self.num_waiting_workers 
+            # is 0. There may be no waiting workers, i.e., there is only one worer and it 
+            # is executing here, so it will do this reset.
             if self.num_waiting_workers == 0:
                 self.current_version_new_leaf_tasks.clear()
 
@@ -325,10 +342,17 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             self._next_version.wait_c()
 #brc: same version
             self.num_waiting_workers -= 1
+            # Note: before the first waiting worker was signalled we reset 
+            # self.requested_version_number_in_this_round so we do not need to 
+            # do that here. It will remain at its reset value of -1 until all the
+            # workers have awakened and rentered and reexited the monitor.
             DAG_info = self.current_version_DAG_info
 #brc leaf tasks
             new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
-#brc: Issue: Add if. Also, above works if there is only 1 worker?
+            # Note that all the waiting workers need to get a copy of
+            # self.current_version_new_leaf_tasks. So we cannot clear it until all the 
+            # waiting workers have made their copy, i.e., until self.num_waiting_workers 
+            # is 0. 
             if self.num_waiting_workers == 0:
                 self.current_version_new_leaf_tasks.clear()
             # cascaded wakeup, i.e., if there are more than one worker waiting,
