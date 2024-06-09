@@ -292,6 +292,34 @@ def generate_DAG_info():
         # partition i has a collapse to partition i+1
         # Task senderX sends inputs to one or more other tasks
         for senderX in Partition_senders:
+#brc: issue: 
+# non-incremental: 4_1 is state 3 and 3_1 is state 5?
+#[2024-06-09 09:01:26,872][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR1_1
+#[2024-06-09 09:01:26,872][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR2_1L
+#[2024-06-09 09:01:26,872][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR4_1
+#[2024-06-09 09:01:26,887][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR6_1
+# So PR3_1 is not a sender thus it gets processed after PR4_1 and PR6_1 and PR_7_1 so 3_1's state is 6
+# Q Why do we give states to partitions in new CC before we finish first? 3_1 was ot a sender so 
+# only added it as a receiver? then when we generate dAG we process all senders first? 7_1
+# 3_! and 5_1 are just receivers. Why are they in that order?
+#[2024-06-09 09:01:26,934][DAG_executor_driver][MainProcess][MainThread]: DAG_executor_driver: DAG states:
+
+#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: PR1_1
+#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: 1
+#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: PR2_1L
+#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: 2
+#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: PR4_1
+#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: 3
+#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: PR6_1
+#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: 4
+#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: PR7_1
+#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: 5
+#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: PR3_1
+#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: 6
+#[2024-06-09 09:01:26,981][DAG_executor_driver][MainProcess][MainThread]: PR5_1
+#[2024-06-09 09:01:26,981][DAG_executor_driver][MainProcess][MainThread]: 7
+
+            logger.info("senderX: " + senderX)
             fanouts = []
     #brc: clustering
             fanout_partition_group_sizes = []
