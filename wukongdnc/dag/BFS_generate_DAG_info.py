@@ -456,7 +456,7 @@ def generate_DAG_info():
             # leaf task is not a Sender and by definition it is not a Receiver, we will
             # not see it above so we take care of it here.
             # Note: leaf tasks are the first partition/group collected by any call to 
-            # BFS(). There may be many cals to BFS(). 
+            # BFS(). There may be many calls to BFS(). 
             # Note: We could have more than one leaf partition/group that is 
             # disconnected. 
             logger.trace("generate_DAG_info: len(leaf_tasks_of_partitions)>0, add leaf tasks")
@@ -482,9 +482,35 @@ def generate_DAG_info():
                 Partition_DAG_states[name] = state
                 state += 1
 
+#brc: end of partition
         # Finish by doing the receivers that are not senders (opposite of leaf tasks);
         # these are reeivers that send no inputs to other tasks. They have no fanins/
         # faninBs, fanouts or collapses, but they do have task inputs.
+        # These partitions are the last partition of their connected component.
+        # If a component has 2 or more partitions then all of the partitins are 
+        # senders except the last one, and all of the partitions are receivers
+        # except the first one (which is a leaf). All of the senders have one
+        # receiving partition.
+        # If the component has just one partition, then it is neither a sender nor a
+        # receiver. It is a leaf and it is the single partition in its component.
+        # If a  leaf node is a sender then it is not the single partition in its component.
+        # Above, when we finf that a sender is a leaf, we remove it from the set of senders.
+        # The leaf partitions that are left are partitions that are leaf nofs and that are the 
+        # only partition in their component.
+        # Issue: 
+        # - When we loop through senders and we find a receiver that is not a sender then
+        # this erceiver is the last partition in its component, so process it right then.
+        # - For each component, keep a list of its number of partitions. We know that partition
+        # i is named "PRi_1". If we see that a component i has just one partition then 
+        # we know it is "PRi_1" and we can process PRi_1 like it is is a leaf noed that is 
+        # not a sender, i.e., like the code above.
+        # Since we will know when we get to the last Sender of a componentm, we can process
+        # the last partition and we can set the tbc fields for this last partiton and its
+        # previous partitioj to False: previous is not continued and has no tbc to continud,
+        # and same for last.
+
+        print("Partition_sink_set:")
+        print(Partition_sink_set)
         for receiverY in Partition_sink_set: # Partition_receivers:
             #if not receiverY in Partition_DAG_states:
             fanouts = []

@@ -5079,6 +5079,9 @@ def bfs(visited, node):
             logging.shutdown()
             os._exit(0)
 
+#brc: end of partition
+    print("end of bfs()")
+    print(partition_names)
 def input_graph():
     """
     c FILE                  :graph1.gr.gr
