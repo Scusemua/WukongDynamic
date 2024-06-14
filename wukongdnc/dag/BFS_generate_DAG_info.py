@@ -304,6 +304,23 @@ def generate_DAG_info():
         component_size_and_name_tuple = BFS.connected_component_sizes_and_first_partition_names[component_number-1]
         logger.info("first component size is " + str(component_size_and_name_tuple[0]))
         logger.info("first component first partition name is " + str(component_size_and_name_tuple[1]))
+
+        """
+        while component_number <= len(BFS.connected_component_sizes_and_first_partition_names):
+            component_size_and_name_tuple = BFS.connected_component_sizes_and_first_partition_names[component_number-1]
+            component_size = component_size_and_name_tuple[0]
+            component_name = component_size_and_name_tuple[1]
+            logger.info("component_number is " + str(component_number))
+            logger.info("component size is " + str(component_size))
+            logger.info("component first partition name is " + str(component_name))
+            if component_size > 1:
+                senders loop with process receiver
+            else
+                process sender
+
+            but we might want to keep "for senderX in Partition_senders:" since we will process
+            th senders in this order, we will just throw in a receiver, etc.
+        """
         logging.shutdown()
         os._exit(0)
         # partition i has a collapse to partition i+1
