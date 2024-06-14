@@ -11,6 +11,9 @@ from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
 #from .DAG_executor_constants import ENABLE_RUNTIME_TASK_CLUSTERING
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
+
+from . import BFS
+
 logger = logging.getLogger(__name__)
 
 """
@@ -286,9 +289,23 @@ def generate_DAG_info():
         """
 
         # sink nodes, i.e., nodes that do not send any inputs
-        Partition_sink_set = set()
+        # Changed this to a list to maintain the order, i.e., the order in whic we see the 
+        # receiver that is a sink, i.e., receives but does not send, is the order of the 
+        # receivers in the list.
+        #Partition_sink_set = set()
+        Partition_sink_set = [] # set()
         logger.info("Partition DAG:")
         state = 1
+
+        logger.info("generate_DAG_info")
+        logger.info("connected_component_sizes_and_first_partition_names:")
+        logger.info(BFS.connected_component_sizes_and_first_partition_names)
+        component_number = 1
+        component_size_and_name_tuple = BFS.connected_component_sizes_and_first_partition_names[component_number-1]
+        logger.info("first component size is " + str(component_size_and_name_tuple[0]))
+        logger.info("first component first partition name is " + str(component_size_and_name_tuple[1]))
+        logging.shutdown()
+        os._exit(0)
         # partition i has a collapse to partition i+1
         # Task senderX sends inputs to one or more other tasks
         for senderX in Partition_senders:
@@ -336,7 +353,7 @@ def generate_DAG_info():
                 receiver_set_for_receiverY = Partition_senders.get(receiverY)
                 if receiver_set_for_receiverY is None:
                     # receiverY does not send any inputs so it is a sink
-                    Partition_sink_set.add(receiverY)
+                    Partition_sink_set.append(receiverY)
                 # tasks that send inputs to receiverY
                 sender_set_for_receiverY = Partition_receivers[receiverY]
                 length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)

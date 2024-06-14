@@ -6132,14 +6132,15 @@ def main():
             # the first partition as a leaf node and the leaf node is always the first partition 
             # in its connected component. This name is saved by bfs() in global variable
             # connected_component_first_partition_name.
-            if len(connected_component_sizes_and_first_partition_names) == 0:
-                size_and_name_tuple = [number_of_partitions,connected_component_first_partition_name]
-                connected_component_sizes_and_first_partition_names.append(size_and_name_tuple)
-                number_of_partitions_when_current_connected_component_was_started = number_of_partitions
-            else:
-                size_and_name_tuple = [number_of_partitions - number_of_partitions_when_current_connected_component_was_started,connected_component_first_partition_name]
-                connected_component_sizes_and_first_partition_names.append(size_and_name_tuple)
-                number_of_partitions_when_current_connected_component_was_started = number_of_partitions
+            #if len(connected_component_sizes_and_first_partition_names) == 0:
+            #    size_and_name_tuple = [number_of_partitions,connected_component_first_partition_name]
+            #    connected_component_sizes_and_first_partition_names.append(size_and_name_tuple)
+            #    number_of_partitions_when_current_connected_component_was_started = number_of_partitions
+            #else:
+            size_and_name_tuple = [number_of_partitions - number_of_partitions_when_current_connected_component_was_started,
+                connected_component_first_partition_name]
+            connected_component_sizes_and_first_partition_names.append(size_and_name_tuple)
+            number_of_partitions_when_current_connected_component_was_started = number_of_partitions
             print("connected_component_sizes_and_first_partition_names:")
             print(connected_component_sizes_and_first_partition_names)
 
