@@ -297,11 +297,16 @@ def generate_DAG_info():
         logger.info("Partition DAG:")
         state = 1
 
+#brc: order
         logger.info("generate_DAG_info")
         logger.info("connected_component_sizes_and_first_partition_names:")
+        # Assert len(connected_component_sizes_and_first_partition_names) > 0
         logger.info(BFS.connected_component_sizes_and_first_partition_names)
         component_number = 1
         component_size_and_name_tuple = BFS.connected_component_sizes_and_first_partition_names[component_number-1]
+        component_size = component_size_and_name_tuple[0]
+        component_name = component_size_and_name_tuple[1]
+        # Assert len(component_size > 0)
         logger.info("first component size is " + str(component_size_and_name_tuple[0]))
         logger.info("first component first partition name is " + str(component_size_and_name_tuple[1]))
 
@@ -314,28 +319,38 @@ def generate_DAG_info():
             logger.info("component size is " + str(component_size))
             logger.info("component first partition name is " + str(component_name))
             if component_size > 1:
-                senders loop with process receiver
+                #senders loop with process receiver
+                for senderX in Partition_senders:
+                ... do all the senders
             else
-                process sender
+                process component_name as a single node component, which is the code
+                in the for name in leaf_tasks_of_partitions: loop. This will simply add
+                a single state for the parition for component_name, which has no inputs or outputs
 
-            but we might want to keep "for senderX in Partition_senders:" since we will process
-            th senders in this order, we will just throw in a receiver, etc.
+            Q: What about all the previous stuff? Didn't do it here becuase we thought we were 
+            processing parititions in order? Or with partitions, we have current, which is TBC,
+            previous whcih is not TBC and has a fanin/fanout to TBC, and previous previous
+            which is not tbc and has no fanins/fanouts,
         """
+
         logging.shutdown()
         os._exit(0)
+
         # partition i has a collapse to partition i+1
         # Task senderX sends inputs to one or more other tasks
         for senderX in Partition_senders:
-#brc: issue: 
+#brc: order
+# issue: 
 # non-incremental: 4_1 is state 3 and 3_1 is state 5?
 #[2024-06-09 09:01:26,872][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR1_1
 #[2024-06-09 09:01:26,872][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR2_1L
 #[2024-06-09 09:01:26,872][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR4_1
 #[2024-06-09 09:01:26,887][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR6_1
 # So PR3_1 is not a sender thus it gets processed after PR4_1 and PR6_1 and PR_7_1 so 3_1's state is 6
-# Q Why do we give states to partitions in new CC before we finish first? 3_1 was ot a sender so 
-# only added it as a receiver? then when we generate dAG we process all senders first? 7_1
-# 3_! and 5_1 are just receivers. Why are they in that order?
+# Q Why do we give states to partitions in new CC before we finish first? 3_1 was not a sender so 
+# only added it as a receiver? then when we generate DAG we process all senders first? 7_1
+# 3_1 and 5_1 are just receivers. Why are they in that order? A: because we do senders, then
+# leaves then sinks (erceiver-only) and it was a set so we lost order.
 #[2024-06-09 09:01:26,934][DAG_executor_driver][MainProcess][MainThread]: DAG_executor_driver: DAG states:
 
 #[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: PR1_1
@@ -370,6 +385,16 @@ def generate_DAG_info():
                 receiver_set_for_receiverY = Partition_senders.get(receiverY)
                 if receiver_set_for_receiverY is None:
                     # receiverY does not send any inputs so it is a sink
+#brc: order: We can append to Partition_sink_set and break this sender loop 
+# after we have finished this sender, i.e., at end of loop if Partition_sink_set is
+# not empty then break.
+# So do not use for loop? We will need to get back in sender loop so use a loop
+# with index into Partition_senders so we can break this and continue.
+# Actually: we aer looping through a map of senders and that is an issue since 
+# not all partitions are senders and we do not want to process senders in this order.
+# we want to process the partitions of a component. So we process sender then its
+# single receiver, etc.
+# Note: for partitions, we olnly have collapses, no fanouts!
                     Partition_sink_set.append(receiverY)
                 # tasks that send inputs to receiverY
                 sender_set_for_receiverY = Partition_receivers[receiverY]
@@ -434,7 +459,23 @@ def generate_DAG_info():
                         fanins.append(receiverY)
                         fanin_sizes.append(length_of_sender_set_for_receiverY)
 
+#brc: order
+# if we find a leaf task then we are starting a new component. increment the component number and get 
+# the next tuple. Actually, we know each component's size and when we do Partition_sink_set.append(receiverY)
+# we know receiverY should be the last partition in the component.So when we get the last partition of 
+# a component we are ready to start the next component, if there is one.
+# But: This may be the first/leaf component we see so: move the above code for the first
+# component to here. Assert we have seen all of the partitions in the previous component, if there was one.
+# Perhaps here we just check the Partition_sink_set, which can be asserted to have one
+# item, and process this partition sink as the last (receiver) node in the partition.
+
+
+            3 
+            # Generate the inputs for senderX, i.e., the partitions that send their outputs to 
+            # partition senderX. If senderX is a leaf partition, then it has no inputs - in that
+            # case we add senderX to Partition_DAG_leaf_tasks etc.
             # get the tasks that send to senderX, i.e., provide inputs for senderX
+
             sender_set_for_senderX = Partition_receivers.get(senderX)
             if sender_set_for_senderX is None:
                 # senderX is a leaf task since it is not a receiver
@@ -583,10 +624,12 @@ def generate_DAG_info():
             Partition_DAG_states[receiverY] = state
             state += 1
 
-        # Note. We could decide the Function in DAG_executor when we are
-        # about to execuet the task. The pagerank function is the same 
+        # Note. We could decide which Function to use in DAG_executor when we are
+        # about to excute the task. The pagerank function is the same 
         # for all tasks, so there is no need to package the same function
-        # in all the states of the DAG.
+        # in all the states of the DAG and grab it from the state when we excute the DAG.
+        # We package the function to be consistent with Dask (where different tasks usually
+        # have dfferent Python functions.)
         if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
             for key in Partition_DAG_states:
                 Partition_DAG_tasks[key] = PageRank_Function_Driver
