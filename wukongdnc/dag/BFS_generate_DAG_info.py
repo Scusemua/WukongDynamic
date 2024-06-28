@@ -333,8 +333,44 @@ def generate_DAG_info():
             which is not tbc and has no fanins/fanouts,
         """
 
-        logging.shutdown()
-        os._exit(0)
+        #logging.shutdown()
+        #os._exit(0)
+
+        def process_partition_sink(receiverY,senderX,state):
+            fanouts = []
+    #brc: clustering
+            fanout_partition_group_sizes = []
+            faninNBs = []
+            fanins = []
+            collapse = []
+            fanin_sizes = []
+            faninNB_sizes = []
+
+            sender_set_for_receiverY = Partition_receivers[receiverY]
+            #task_inputs = tuple(sender_set_for_receiverY)
+
+            # create a new set from sender_set_for_senderX. For 
+            # each name in sender_set_for_senderX, qualify name by
+            # prexing it with "senderX-". Example: senderX is "PR1_1"
+            # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
+            # We use qualified names since the fanouts/faninNBs for a 
+            # task in a pagerank DAG may al have diffent values. This
+            # is unlike Dask DAGs in which all fanouts/faninNBs of a task
+            # receive the same value. We denote the different outputs
+            # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
+            sender_set_for_receiverY_with_qualified_names = set()
+            # for each task senderX that sends input to receiverY, the 
+            # qualified name of the sender is senderX+"-"+senderX
+            for senderX in sender_set_for_receiverY:
+                qualified_name = str(senderX) + "-" + str(receiverY)
+                sender_set_for_receiverY_with_qualified_names.add(qualified_name)
+            # sender_set_for_senderX provides input for senderX
+            task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
+
+            Partition_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
+    #brc: clustering
+                False,  False, fanout_partition_group_sizes)
+            Partition_DAG_states[receiverY] = state
 
         # partition i has a collapse to partition i+1
         # Task senderX sends inputs to one or more other tasks
@@ -379,6 +415,7 @@ def generate_DAG_info():
             faninNB_sizes = []
             # tasks that receive inputs from senderX
             receiver_set_for_senderX = Partition_senders[senderX]
+#brc order: # do asserts: 1 or 0 receiver; and elsewhere asserts on sender and receivers
             # task receiverY may receive inputs from other tasks (all tasks receive
             # inputs from other tasks except leaf tasks)
             for receiverY in receiver_set_for_senderX:
@@ -394,8 +431,11 @@ def generate_DAG_info():
 # not all partitions are senders and we do not want to process senders in this order.
 # we want to process the partitions of a component. So we process sender then its
 # single receiver, etc.
-# Note: for partitions, we olnly have collapses, no fanouts!
+# Note: for partitions, we only have collapses, no fanouts!
                     Partition_sink_set.append(receiverY)
+                    
+                # else: assert length is 1
+
                 # tasks that send inputs to receiverY
                 sender_set_for_receiverY = Partition_receivers[receiverY]
                 length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
@@ -470,7 +510,7 @@ def generate_DAG_info():
 # item, and process this partition sink as the last (receiver) node in the partition.
 
 
-            3 
+            # 3
             # Generate the inputs for senderX, i.e., the partitions that send their outputs to 
             # partition senderX. If senderX is a leaf partition, then it has no inputs - in that
             # case we add senderX to Partition_DAG_leaf_tasks etc.
@@ -517,12 +557,18 @@ def generate_DAG_info():
                     sender_set_for_senderX_with_qualified_names.add(qualified_name)
                 # sender_set_for_senderX provides input for senderX
                 task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
+
             Partition_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
     #brc: clustering
                 False,  False, fanout_partition_group_sizes)
             Partition_DAG_states[senderX] = state
 
             state += 1
+
+            if len(Partition_sink_set) > 0:
+                process_partition_sink(receiverY,senderX,state)
+                state += 1
+                Partition_sink_set.clear()
 
         if not len(leaf_tasks_of_partitions) == 0:
             # there is a partition that is a leaf task but it is not a sender and not 
@@ -588,6 +634,9 @@ def generate_DAG_info():
         print(Partition_sink_set)
         for receiverY in Partition_sink_set: # Partition_receivers:
             #if not receiverY in Partition_DAG_states:
+#brc: order
+            # moved this into process_partition_sink above
+            """
             fanouts = []
     #brc: clustering
             fanout_partition_group_sizes = []
@@ -622,6 +671,8 @@ def generate_DAG_info():
     #brc: clustering
                 False,  False, fanout_partition_group_sizes)
             Partition_DAG_states[receiverY] = state
+            """
+            process_partition_sink(receiverY,senderX,state)
             state += 1
 
         # Note. We could decide which Function to use in DAG_executor when we are
