@@ -405,6 +405,8 @@ def generate_DAG_info():
 #[2024-06-09 09:01:26,981][DAG_executor_driver][MainProcess][MainThread]: 7
 
             logger.info("senderX: " + senderX)
+
+            # generate the fanins/fanouts/faninNBs/collapses for senderX
             fanouts = []
     #brc: clustering
             fanout_partition_group_sizes = []
@@ -415,23 +417,29 @@ def generate_DAG_info():
             faninNB_sizes = []
             # tasks that receive inputs from senderX
             receiver_set_for_senderX = Partition_senders[senderX]
-#brc order: # do asserts: 1 or 0 receiver; and elsewhere asserts on sender and receivers
+#brc order: # Do asserts: 1 or 0 receiver; and elsewhere asserts on sender and receivers
             # task receiverY may receive inputs from other tasks (all tasks receive
             # inputs from other tasks except leaf tasks)
+            # Note: receiver_set_for_senderX must have one receiver in it? 
+            # Note: senderX must have a collapse. Assert this below.
             for receiverY in receiver_set_for_senderX:
                 receiver_set_for_receiverY = Partition_senders.get(receiverY)
                 if receiver_set_for_receiverY is None:
                     # receiverY does not send any inputs so it is a sink
-#brc: order: We can append to Partition_sink_set and break this sender loop 
-# after we have finished this sender, i.e., at end of loop if Partition_sink_set is
-# not empty then break.
-# So do not use for loop? We will need to get back in sender loop so use a loop
-# with index into Partition_senders so we can break this and continue.
-# Actually: we aer looping through a map of senders and that is an issue since 
-# not all partitions are senders and we do not want to process senders in this order.
-# we want to process the partitions of a component. So we process sender then its
-# single receiver, etc.
-# Note: for partitions, we only have collapses, no fanouts!
+#brc: order: 
+                # For the partitions in a component, we process thm in order, from the 
+                # first one, which is a leaf and thus does not receive any inputs,
+                # to the last one, which is a sink and does not send any outputs.
+                # Here we save the partition that senderX sends to, which we have just 
+                # determined is a sink. After we generate the state for senderX below,
+                # we will generate the state for receiverX, which will be the only
+                # partition in Partition_sink_set.
+                # Note: we use a list for Partition_sink_set for historical reasons.
+                # We used to put all the sinks in Partition_sink_set and generate states for 
+                # all of them at the end of the senderX loop. But this resulted in the 
+                # partitions being out of order. Now we generate the state for receiverY
+                # right after we generate the state for senderX. Partition_sink_set could
+                # be a String instead of a list since we do not collect sinks.
                     Partition_sink_set.append(receiverY)
                     
                 # else: assert length is 1
@@ -565,10 +573,15 @@ def generate_DAG_info():
 
             state += 1
 
+            # After we generate the state for senderX, if senderX sends to a 
+            # partition receiverY and receiverY is a sink, i.e., it does not send 
+            # its output to any partition, we generate the state for receiverY.
             if len(Partition_sink_set) > 0:
                 process_partition_sink(receiverY,senderX,state)
                 state += 1
                 Partition_sink_set.clear()
+
+        # end of senderX loop
 
         if not len(leaf_tasks_of_partitions) == 0:
             # there is a partition that is a leaf task but it is not a sender and not 
