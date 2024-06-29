@@ -417,6 +417,14 @@ def generate_DAG_info():
             faninNB_sizes = []
             # tasks that receive inputs from senderX
             receiver_set_for_senderX = Partition_senders[senderX]
+            try:
+                msg = "[Error]: BFS_generate_DAG_info: partition " + senderX + " does not send to 1 receiver."
+                assert len(receiver_set_for_senderX) == 1 , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                    logging.shutdown()
+                    os._exit(0)
 #brc order: # Do asserts: 1 or 0 receiver; and elsewhere asserts on sender and receivers
             # task receiverY may receive inputs from other tasks (all tasks receive
             # inputs from other tasks except leaf tasks)
@@ -442,12 +450,28 @@ def generate_DAG_info():
                 # be a String instead of a list since we do not collect sinks.
                     Partition_sink_set.append(receiverY)
                     
-                # else: assert length is 1
+                else: # assert length is 1
+                    try:
+                        msg = "[Error]: BFS_generate_DAG_info: partition " + receiverY + " does not send to 1 receiver."
+                        assert len(receiver_set_for_receiverY) == 1 , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                            logging.shutdown()
+                            os._exit(0)
 
                 # tasks that send inputs to receiverY
                 sender_set_for_receiverY = Partition_receivers[receiverY]
                 length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
                 length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
+                try:
+                    msg = "[Error]: BFS_generate_DAG_info: partition " + receiverY + " does not receive from 1 sender (senderx)."
+                    assert length_of_sender_set_for_receiverY == 1 , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                        logging.shutdown()
+                        os._exit(0)
                 if length_of_sender_set_for_receiverY == 1:
                     # collapse or fanout as receiverY receives on input
                     if length_of_receiver_set_for_senderX == 1:
@@ -461,6 +485,11 @@ def generate_DAG_info():
                             pass # error only one task can collapse a given task
                         collapse.append(receiverY)
                     else:
+                        # Note: This code should be unrachable. We asserted 
+                        # length_of_receiver_set_for_senderX == 1 above. For
+                        # partitions, a partition can only have collapses, i.e.,
+                        # no fanouts or faninNBs.
+
                         # only one task sends input to receiverY and this sending 
                         # task sends to other tasks too, so senderX does a fanout 
                         # to receiverY         
@@ -476,6 +505,11 @@ def generate_DAG_info():
                             num_nodes = partitions_num_shadow_nodes_map[receiverY]
                             fanout_partition_group_sizes.append(num_nodes)
                 else:
+                    # Note: This code should be unrachable. We asserted 
+                    # length_of_sender_set_for_receiverY == 1 above. For
+                    # partitions, a partition can only have collapses, i.e.,
+                    # no fanouts or faninNBs.
+
                     # fanin or fannNB since receiverY receives inputs from multiple tasks
                     isFaninNB = False
                     # senderZ sends an input to receiverY
@@ -550,6 +584,14 @@ def generate_DAG_info():
                 leaf_tasks_of_partitions.remove(senderX)
 
             else:
+                try:
+                    msg = "[Error]: BFS_generate_DAG_info: partition " + senderX + " does not receive from 1 sender."
+                    assert len(sender_set_for_senderX) == 1 , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                        logging.shutdown()
+                        os._exit(0)
                 # create a new set from sender_set_for_senderX. For 
                 # each name in sender_set_for_senderX, qualify name by
                 # prexing it with "senderX-". Example: senderX is "PR1_1"
