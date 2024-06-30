@@ -1,3 +1,51 @@
+"""
+Consider the whiteboard example with a single connected component:
+
+          P1: 5 17 1
+                | 
+                |  
+                v
+P2L: 2 10 16 20 8 11 3 19 4 6 13       # P2L indicates P2 has a cycle of nodes
+                |
+                |
+                v
+        P3: 13 7 15 9 18
+
+We will add to more components:
+
+P4      P6 
+|       |
+v       v
+P5      P7
+
+There are 3 connected components: 
+CC1: P2 -> P2 -> P3, CC2: P4 -> P5  CC3: P6 -> P7
+
+The first partitions of these components are leaf nodes: P1, P4, and P6. A leaf node
+receives no inputs from any other partition. The last partitions of thse components are
+sink nodes: P3, P5, P7. A sink node does not send any outputs to other partitions.
+We add another connnected component
+
+P8
+
+which is a compnent with a single partition P8. P8 is a leaf node and a sink node.
+
+bfs() inputs a graph and generates a representation of the nodes and edges in the 
+DAG for this graph. It creates two maps Partition_senders and Partition_receivers
+and collects the set of leaf nodes in the DAG. Partition_senders maps a partition P to 
+the partitions that receive inputs from P. Partition_receivers maps a partition P to 
+the partitions that send output to P. These maps and the leaf nodes aer effectively the 
+nodes and edges in the DAG. 
+
+BFS_generate_DAG_info uses these maps and leaf nodes to generate a representation 
+of the DAG:
+- iterate through the Partition_senders. Each sender P is a node/task in the DAG.
+  Let R = Partition_senders[P]. R is the unique partition that 
+  receives P's inputs. This corresponds to an edge in the DAG P-->R.
+- If R sends its
+-  
+
+"""
 import logging
 import cloudpickle
 import os
