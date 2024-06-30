@@ -11,24 +11,25 @@ P2L: 2 10 16 20 8 11 3 19 4 6 13       # P2L indicates P2 has a cycle of nodes
                 v
         P3: 13 7 15 9 18
 
-We will add to more components:
+We will add two more components:
 
-P4      P6 
-|       |
-v       v
-P5      P7
+ P4      P6 
+ |       |
+ v       v
+ P5      P7
 
-There are 3 connected components: 
+Now there are 3 connected components: 
 CC1: P2 -> P2 -> P3, CC2: P4 -> P5  CC3: P6 -> P7
 
 The first partitions of these components are leaf nodes: P1, P4, and P6. A leaf node
 receives no inputs from any other partition. The last partitions of thse components are
 sink nodes: P3, P5, P7. A sink node does not send any outputs to other partitions.
+
 We add another connnected component
 
 P8
 
-which is a compnent with a single partition P8. P8 is a leaf node and a sink node.
+which is a comp0nent with a single partition P8. P8 is a leaf node and a sink node.
 
 bfs() inputs a graph and generates a representation of the nodes and edges in the 
 DAG for this graph. It creates two maps Partition_senders and Partition_receivers
@@ -38,14 +39,60 @@ the partitions that send output to P. These maps and the leaf nodes aer effectiv
 nodes and edges in the DAG. 
 
 BFS_generate_DAG_info uses these maps and leaf nodes to generate a representation 
-of the DAG:
-- iterate through the Partition_senders. Each sender P is a node/task in the DAG.
-  Let R = Partition_senders[P]. R is the unique partition that 
-  receives P's inputs. This corresponds to an edge in the DAG P-->R.
-- If R sends its
--  
+of the DAG.
+- iterate through the Partition_Senders. In the example, this adds P1, P2, P4, and P6 to the DAG. 
+- For each sender, we check whether its receiver is also a sender. If not, we add
+  the receiver to the DAG. For example, P2 has a receiver P3 which is not itself a 
+  sender as P3 is a sink. Thus when we add P2 to the DAG we also add P3 after P2.
+- Some of the senders are also leaf nodes, e.g., P1, P4, and P5. If after iterating
+  through the senders ther are leaf nodes that we have not visited, then these
+  leaf nodes ar partitions in a connected component that has only one partition such
+  as P8 in the example above. These sinlge partitions aer leaf nofes and sink 
+  nodes. We add these remaining leaf nodes to the DAG
 
+Note that for a DAG of partitions a partition P has a "collapse" to the net partition, if any. 
+A collapse from P to R means that P sends its output to only one receiver R, and R receives
+its input from only one sender P. So P has no fanins or fanouts, it has a collapse instad.
+A collapse is a a form of task clustering, where we cluster P when we build the 
+DAG (static clustering) instead of clustering at runtime.
+
+In the example above, an exector will be started for each of the leaf nodes P1, P4, P6,
+and P8. That is, there is an executor for each connected component of partitons in
+the DAG. An executor excecutes its tasks/partitions (each task is to compute the pagerank values for the
+graph nodes in the partition) sequentially (clustering one after the other). The executors 
+execute their connected components in parallel. (DAGs of groups have more parallel.)
+
+The code for generating DAGS of groups is very similar. For such a DAG, a sender
+can have multiple receivers. Thus we map a partition P to a list of its
+receivers (groups). The code below for a DAG of partitions also uses a list of receivers
+even though a sending partition always has only one receiving partition. We use 
+a list of receivers here just to keep the code the same. Below, we simply assert that
+a list of senders or receivers has only one element.
+
+The DAG_map for the example is shown below. Each partition is assigned a state. In '
+a state, a task is executed and then the specified fanins/fanouts/collapses are
+performed (as a "state transition")
+
+
+DAG_map:
+1
+task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+2
+task : PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:['PR3_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+3
+task: PR3_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR2_1L-PR3_1',), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+4
+task: PR4_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR5_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+5
+task: PR5_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR4_1-PR5_1',), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+6
+task: PR6_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR7_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+7
+task: PR7_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR6_1-PR7_1',), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+
+Each fanin/fanout/faninNB set is empty All state transtions are collapses.
 """
+
 import logging
 import cloudpickle
 import os
