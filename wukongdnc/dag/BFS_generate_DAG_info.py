@@ -386,11 +386,10 @@ def generate_DAG_info():
         # receiver that is a sink, i.e., receives but does not send, is the order of the 
         # receivers in the list.
         #Partition_sink_set = set()
-        Partition_sink_set = [] # set()
+        Partition_sink_set = [] # set()     # use a list to maintain insertion order
         logger.info("Partition DAG:")
         state = 1
 
-#brc: order
         logger.info("generate_DAG_info")
 
         #logging.shutdown()
@@ -435,35 +434,6 @@ def generate_DAG_info():
         # partition i has a collapse to partition i+1
         # Task senderX sends inputs to one or more other tasks
         for senderX in Partition_senders:
-#brc: order
-# issue: 
-# non-incremental: 4_1 is state 3 and 3_1 is state 5?
-#[2024-06-09 09:01:26,872][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR1_1
-#[2024-06-09 09:01:26,872][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR2_1L
-#[2024-06-09 09:01:26,872][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR4_1
-#[2024-06-09 09:01:26,887][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR6_1
-# So PR3_1 is not a sender thus it gets processed after PR4_1 and PR6_1 and PR_7_1 so 3_1's state is 6
-# Q Why do we give states to partitions in new CC before we finish first? 3_1 was not a sender so 
-# only added it as a receiver? then when we generate DAG we process all senders first? 7_1
-# 3_1 and 5_1 are just receivers. Why are they in that order? A: because we do senders, then
-# leaves then sinks (erceiver-only) and it was a set so we lost order.
-#[2024-06-09 09:01:26,934][DAG_executor_driver][MainProcess][MainThread]: DAG_executor_driver: DAG states:
-
-#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: PR1_1
-#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: 1
-#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: PR2_1L
-#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: 2
-#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: PR4_1
-#[2024-06-09 09:01:26,950][DAG_executor_driver][MainProcess][MainThread]: 3
-#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: PR6_1
-#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: 4
-#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: PR7_1
-#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: 5
-#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: PR3_1
-#[2024-06-09 09:01:26,966][DAG_executor_driver][MainProcess][MainThread]: 6
-#[2024-06-09 09:01:26,981][DAG_executor_driver][MainProcess][MainThread]: PR5_1
-#[2024-06-09 09:01:26,981][DAG_executor_driver][MainProcess][MainThread]: 7
-
             logger.info("senderX: " + senderX)
 
             # generate the fanins/fanouts/faninNBs/collapses for senderX
@@ -485,29 +455,29 @@ def generate_DAG_info():
                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
-#brc order: # Do asserts: 1 or 0 receiver; and elsewhere asserts on sender and receivers
-            # task receiverY may receive inputs from other tasks (all tasks receive
-            # inputs from other tasks except leaf tasks)
-            # Note: receiver_set_for_senderX must have one receiver in it? 
-            # Note: senderX must have a collapse. Assert this below.
+            # Note: receiver_set_for_senderX must have one receiver in it since
+            # bfs() found that senderX was a sender.
             for receiverY in receiver_set_for_senderX:
                 receiver_set_for_receiverY = Partition_senders.get(receiverY)
                 if receiver_set_for_receiverY is None:
                     # receiverY does not send any inputs so it is a sink
 #brc: order: 
-                # For the partitions in a component, we process thm in order, from the 
-                # first one, which is a leaf and thus does not receive any inputs,
-                # to the last one, which is a sink and does not send any outputs.
-                # Here we save the partition that senderX sends to, which we have just 
-                # determined is a sink. After we generate the state for senderX below,
-                # we will generate the state for receiverX, which will be the only
-                # partition in Partition_sink_set.
-                # Note: we use a list for Partition_sink_set for historical reasons.
-                # We used to put all the sinks in Partition_sink_set and generate states for 
-                # all of them at the end of the senderX loop. But this resulted in the 
-                # partitions being out of order. Now we generate the state for receiverY
-                # right after we generate the state for senderX. Partition_sink_set could
-                # be a String instead of a list since we do not collect sinks.
+                    # For the partitions in a component, we process thm in order, from the 
+                    # first one, which is a leaf and thus does not receive any inputs,
+                    # to the last one, which is a sink and does not send any outputs.
+                    # Here we save the partition that senderX sends to, which we have just 
+                    # determined is a sink. After we generate the state for senderX below,
+                    # we will generate the state for receiverX, which will be the only
+                    # partition in Partition_sink_set.
+                    # Note: we use a list for Partition_sink_set for historical reasons.
+                    # We used to put all the sinks in Partition_sink_set and generate states for 
+                    # all of them at the end of the senderX loop. But this resulted in the 
+                    # partitions being out of order, e.g., the staes would be in the order
+                    # 1, 2, 4, 6, 3, 5, 7 instead of 1, 2, 3, 4, 5, 6, 7. Now we generate the 
+                    # state for receiverY right after we generate the state for senderX, when 
+                    # receiverY is a sink. Partition_sink_set could, e.g., be a String
+                    # instead of a list since we do not collect sinks and senderX can have 
+                    # only one receiver.
                     Partition_sink_set.append(receiverY)
                     
                 else: # assert length is 1
@@ -601,17 +571,6 @@ def generate_DAG_info():
                         fanins.append(receiverY)
                         fanin_sizes.append(length_of_sender_set_for_receiverY)
 
-#brc: order
-# if we find a leaf task then we are starting a new component. increment the component number and get 
-# the next tuple. Actually, we know each component's size and when we do Partition_sink_set.append(receiverY)
-# we know receiverY should be the last partition in the component.So when we get the last partition of 
-# a component we are ready to start the next component, if there is one.
-# But: This may be the first/leaf component we see so: move the above code for the first
-# component to here. Assert we have seen all of the partitions in the previous component, if there was one.
-# Perhaps here we just check the Partition_sink_set, which can be asserted to have one
-# item, and process this partition sink as the last (receiver) node in the partition.
-
-
             # 3
             # Generate the inputs for senderX, i.e., the partitions that send their outputs to 
             # partition senderX. If senderX is a leaf partition, then it has no inputs - in that
@@ -677,7 +636,7 @@ def generate_DAG_info():
 
             # After we generate the state for senderX, if senderX sends to a 
             # partition receiverY and receiverY is a sink, i.e., it does not send 
-            # its output to any partition, we generate the state for receiverY.
+            # its output to any partition, we generate the state for receiverY.iverY here 
             if len(Partition_sink_set) > 0:
                 process_partition_sink(receiverY,senderX,state)
                 state += 1
@@ -750,7 +709,8 @@ def generate_DAG_info():
         for receiverY in Partition_sink_set: # Partition_receivers:
             #if not receiverY in Partition_DAG_states:
 #brc: order
-            # moved this into process_partition_sink above
+            # moved this code into process_partition_sink above so we can call it
+            # when we discover a sink above.
             """
             fanouts = []
     #brc: clustering
@@ -787,6 +747,7 @@ def generate_DAG_info():
                 False,  False, fanout_partition_group_sizes)
             Partition_DAG_states[receiverY] = state
             """
+            # generate state for sink nodes as we discover them
             process_partition_sink(receiverY,senderX,state)
             state += 1
 
@@ -1062,9 +1023,46 @@ def generate_DAG_info():
         print()
 
         # sink nodes, i.e., nodes that do not send any inputs
-        Group_sink_set = set()
+        Group_sink_set = [] # set()      # use a list to maintain insertion order
         logger.trace("Group DAG:")
         state = 1
+
+        logger.info("generate_DAG_info")
+
+        def process_group_sink(receiverY,senderX,state):
+                fanouts = []
+    #brc: clustering
+                fanout_partition_group_sizes = []
+                faninNBs = []
+                fanins = []
+                collapse = []
+                fanin_sizes = []
+                faninNB_sizes = []
+
+                sender_set_for_receiverY = Group_receivers[receiverY]
+                #task_inputs = tuple(sender_set_for_receiverY)
+
+                # create a new set from sender_set_for_senderX. For 
+                # each name in sender_set_for_senderX, qualify name by
+                # prexing it with "senderX-". Example: senderX is "PR1_1"
+                # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
+                # We use qualified names since the fanouts/faninNBs for a 
+                # task in a pagerank DAG may al have diffent values. This
+                # is unlike Dask DAGs in which all fanouts/faninNBs of a task
+                # receive the same value. We denote the different outputs
+                # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
+                sender_set_for_receiverY_with_qualified_names = set()
+                for senderX in sender_set_for_receiverY:
+                    qualified_name = str(senderX) + "-" + str(receiverY)
+                    sender_set_for_receiverY_with_qualified_names.add(qualified_name)
+                # sender_set_for_senderX provides input for senderX
+                task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
+
+                Group_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
+    #brc: clustering
+                    False,  False, fanout_partition_group_sizes)
+                Group_DAG_states[receiverY] = state
+
         for senderX in Group_senders:
             logger.trace("senderX: " + senderX)
             fanouts = []
@@ -1079,8 +1077,16 @@ def generate_DAG_info():
             for receiverY in receiver_set_for_senderX:
                 receiver_set_for_receiverY = Group_senders.get(receiverY)
                 if receiver_set_for_receiverY is None:
+#brc: order: 
+                    # For the partitions in a component, we process thm in order, from the 
+                    # first one, which is a leaf and thus does not receive any inputs,
+                    # to the last one, which is a sink and does not send any outputs.
+                    # Here we save the partition that senderX sends to, which we have just 
+                    # determined is a sink. After we generate the state for senderX below,
+                    # we will generate the state for receiverX, which will be the only
+                    # partition in Partition_sink_set.
                     # receiverY does not send any inputs so it is a sink
-                    Group_sink_set.add(receiverY)
+                    Group_sink_set.append(receiverY)
                 sender_set_for_receiverY = Group_receivers[receiverY]
                 length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
                 length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
@@ -1198,6 +1204,15 @@ def generate_DAG_info():
 
             state += 1
 
+            # After we generate the state for senderX, if senderX sends to a 
+            # group receiverY and receiverY is a sink, i.e., it does not send 
+            # its output to any group, we generate the state for receiverY here 
+            for receiverY in Group_sink_set: # Partition_receivers:
+                if len(Group_sink_set) > 0:
+                    process_group_sink(receiverY,senderX,state)
+                    state += 1
+                    Group_sink_set.clear()
+
         # This is for leaf tasks that are not senders. We processed
         # senders and removed senders that were leaf tasks from the
         # leaf_tasks_of_groups but there may be leaf tasks that are
@@ -1231,6 +1246,7 @@ def generate_DAG_info():
         # faninBs, fanouts or collapses, but they do have task inputs.
         for receiverY in Group_sink_set: # Partition_receivers:
             #if not receiverY in Partition_DAG_states:
+                """
                 fanouts = []
     #brc: clustering
                 fanout_partition_group_sizes = []
@@ -1263,6 +1279,8 @@ def generate_DAG_info():
     #brc: clustering
                     False,  False, fanout_partition_group_sizes)
                 Group_DAG_states[receiverY] = state
+                """
+                process_group_sink(receiverY,senderX,state)
                 state += 1
 
         if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
