@@ -836,19 +836,6 @@ groups_of_current_partition = [] # groups in current partition
 # previous partition. Each groups_of_current_partition is added
 # to this list.
 groups_of_partitions = []       # list of groups of partitions.
-# We trak the number of partitions in each connected component. For non-incremental 
-# DAG generation, when we build the DAG at the end of bfs(), we use the component
-# sizes to know the start and end partition for each component. The start partition 
-# is a leaf, which means it receives no inputs from a previous partition. The last
-# partition receives inputs but does not send any outputs to a next partition.
-# Evert partition but the first and the last partitions both receiveds inputs and
-# sends outputs.
-# Note: a partition P that ia not a sender must be the last paritition in its CC. This
-# includes a component with one partition - this partition does not send its outputs
-# to any other partition and does not receive any inputs from any other partition. So P
-# is a leaf that is the only partition in its CC.
-connected_component_sizes_and_first_partition_names = []
-connected_component_first_partition_name = None
 
 # map a node to its partition number, partition index, group number and group index.
 # A "global map"for nodes. May supercede nodeIndex_to_partitionIndex_map. 
@@ -6059,7 +6046,6 @@ def main():
 
 #0
     global num_nodes
-    number_of_partitions_when_current_connected_component_was_started = 0
     ##################### INPUT GRAPH ####################
     logger.trace("BFS: Following is the Breadth-First Search")
     input_graph()
@@ -6121,28 +6107,6 @@ def main():
             global number_of_partitions
             print("number_of_partitions:")
             print(number_of_partitions)
-            # We start with number_of_partitions_when_current_connected_component_was_started as 0.
-            # If the first connected component (CC) has 3 partitions, then number_of_partitions will be
-            # 3 and number_of_partitions - number_of_partitions_when_current_connected_component_was_started
-            # is 3 - 0 = 3. When we start the second CC, number_of_partitions_when_current_connected_component_was_started
-            # is 3. If the second CC has 2 partitions, then here number_of_partitions is 5 and 
-            # number_of_partitions_when_current_connected_component_was_started is 3 so the 2nd CC has 
-            # 5 - 3 = 2 partitions.
-            # The name of the first partition in the component is saved in bfs() as bfs() saves
-            # the first partition as a leaf node and the leaf node is always the first partition 
-            # in its connected component. This name is saved by bfs() in global variable
-            # connected_component_first_partition_name.
-            #if len(connected_component_sizes_and_first_partition_names) == 0:
-            #    size_and_name_tuple = [number_of_partitions,connected_component_first_partition_name]
-            #    connected_component_sizes_and_first_partition_names.append(size_and_name_tuple)
-            #    number_of_partitions_when_current_connected_component_was_started = number_of_partitions
-            #else:
-            size_and_name_tuple = [number_of_partitions - number_of_partitions_when_current_connected_component_was_started,
-                connected_component_first_partition_name]
-            connected_component_sizes_and_first_partition_names.append(size_and_name_tuple)
-            number_of_partitions_when_current_connected_component_was_started = number_of_partitions
-            print("connected_component_sizes_and_first_partition_names:")
-            print(connected_component_sizes_and_first_partition_names)
 
             # This should never happen. (If it can, we need to add the 
             # partition/group to incremental DAG if we are generating

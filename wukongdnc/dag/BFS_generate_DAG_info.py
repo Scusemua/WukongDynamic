@@ -107,8 +107,6 @@ from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 
-from . import BFS
-
 logger = logging.getLogger(__name__)
 
 """
@@ -394,39 +392,6 @@ def generate_DAG_info():
 
 #brc: order
         logger.info("generate_DAG_info")
-        logger.info("connected_component_sizes_and_first_partition_names:")
-        # Assert len(connected_component_sizes_and_first_partition_names) > 0
-        logger.info(BFS.connected_component_sizes_and_first_partition_names)
-        component_number = 1
-        component_size_and_name_tuple = BFS.connected_component_sizes_and_first_partition_names[component_number-1]
-        component_size = component_size_and_name_tuple[0]
-        component_name = component_size_and_name_tuple[1]
-        # Assert len(component_size > 0)
-        logger.info("first component size is " + str(component_size_and_name_tuple[0]))
-        logger.info("first component first partition name is " + str(component_size_and_name_tuple[1]))
-
-        """
-        while component_number <= len(BFS.connected_component_sizes_and_first_partition_names):
-            component_size_and_name_tuple = BFS.connected_component_sizes_and_first_partition_names[component_number-1]
-            component_size = component_size_and_name_tuple[0]
-            component_name = component_size_and_name_tuple[1]
-            logger.info("component_number is " + str(component_number))
-            logger.info("component size is " + str(component_size))
-            logger.info("component first partition name is " + str(component_name))
-            if component_size > 1:
-                #senders loop with process receiver
-                for senderX in Partition_senders:
-                ... do all the senders
-            else
-                process component_name as a single node component, which is the code
-                in the for name in leaf_tasks_of_partitions: loop. This will simply add
-                a single state for the parition for component_name, which has no inputs or outputs
-
-            Q: What about all the previous stuff? Didn't do it here becuase we thought we were 
-            processing parititions in order? Or with partitions, we have current, which is TBC,
-            previous whcih is not TBC and has a fanin/fanout to TBC, and previous previous
-            which is not tbc and has no fanins/fanouts,
-        """
 
         #logging.shutdown()
         #os._exit(0)
