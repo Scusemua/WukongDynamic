@@ -635,6 +635,7 @@ def generate_DAG_info():
 
             state += 1
 
+#brc: order: 
             # After we generate the state for senderX, if senderX sends to a 
             # partition receiverY and receiverY is a sink, i.e., it does not send 
             # its output to any partition, we generate the state for receiverY.iverY here 
@@ -748,6 +749,7 @@ def generate_DAG_info():
                 False,  False, fanout_partition_group_sizes)
             Partition_DAG_states[receiverY] = state
             """
+#brc: order: 
             # generate state for sink nodes as we discover them
             process_partition_sink(receiverY,state)
             state += 1
@@ -1205,6 +1207,7 @@ def generate_DAG_info():
                 leaf_tasks_of_groups.remove(senderX)
                 
             else:
+                # len(sender_set_for_senderX) is >= 0
                 # create a new set from sender_set_for_senderX. For 
                 # each name in sender_set_for_senderX, qualify name by
                 # prexing it with "senderX-". Example: senderX is "PR1_1"
@@ -1231,6 +1234,7 @@ def generate_DAG_info():
 
             state += 1
 
+#brc: order: 
             # After we generate the state for senderX, if senderX sends to a 
             # group receiverY and receiverY is a sink, i.e., it does not send 
             # its output to any group, we generate the state for receiverY here 
@@ -1307,6 +1311,7 @@ def generate_DAG_info():
                     False,  False, fanout_partition_group_sizes)
                 Group_DAG_states[receiverY] = state
                 """
+#brc: order: 
                 process_group_sink(receiverY,state)
                 state += 1
 
