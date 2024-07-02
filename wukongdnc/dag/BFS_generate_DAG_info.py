@@ -395,7 +395,7 @@ def generate_DAG_info():
         #logging.shutdown()
         #os._exit(0)
 
-        def process_partition_sink(receiverY,senderX,state):
+        def process_partition_sink(receiverY,state):
             fanouts = []
     #brc: clustering
             fanout_partition_group_sizes = []
@@ -494,6 +494,7 @@ def generate_DAG_info():
                 sender_set_for_receiverY = Partition_receivers[receiverY]
                 length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
                 length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
+                # Note: Already asserted length_of_receiver_set_for_senderX == 1 above
                 try:
                     msg = "[Error]: BFS_generate_DAG_info: partition " + receiverY + " does not receive from 1 sender (senderx)."
                     assert length_of_sender_set_for_receiverY == 1 , msg
@@ -638,7 +639,7 @@ def generate_DAG_info():
             # partition receiverY and receiverY is a sink, i.e., it does not send 
             # its output to any partition, we generate the state for receiverY.iverY here 
             if len(Partition_sink_set) > 0:
-                process_partition_sink(receiverY,senderX,state)
+                process_partition_sink(receiverY,state)
                 state += 1
                 Partition_sink_set.clear()
 
@@ -748,7 +749,7 @@ def generate_DAG_info():
             Partition_DAG_states[receiverY] = state
             """
             # generate state for sink nodes as we discover them
-            process_partition_sink(receiverY,senderX,state)
+            process_partition_sink(receiverY,state)
             state += 1
 
         # Note. We could decide which Function to use in DAG_executor when we are
@@ -1029,7 +1030,7 @@ def generate_DAG_info():
 
         logger.info("generate_DAG_info")
 
-        def process_group_sink(receiverY,senderX,state):
+        def process_group_sink(receiverY,state):
                 fanouts = []
     #brc: clustering
                 fanout_partition_group_sizes = []
@@ -1074,6 +1075,14 @@ def generate_DAG_info():
             fanin_sizes = []
             faninNB_sizes = []
             receiver_set_for_senderX = Group_senders[senderX]
+            try:
+                msg = "[Error]: BFS_generate_DAG_info: group " + senderX + " does not send to any receiver."
+                assert len(receiver_set_for_senderX) > 0 , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                    logging.shutdown()
+                    os._exit(0)
             for receiverY in receiver_set_for_senderX:
                 receiver_set_for_receiverY = Group_senders.get(receiverY)
                 if receiver_set_for_receiverY is None:
@@ -1087,9 +1096,27 @@ def generate_DAG_info():
                     # partition in Partition_sink_set.
                     # receiverY does not send any inputs so it is a sink
                     Group_sink_set.append(receiverY)
+                else:
+                    try:
+                        msg = "[Error]: BFS_generate_DAG_info: group " + receiverY + " does not send to any receiver."
+                        assert len(receiver_set_for_receiverY) > 0 , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                            logging.shutdown()
+                            os._exit(0)
                 sender_set_for_receiverY = Group_receivers[receiverY]
                 length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
                 length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
+                # Note: Already asserted length_of_receiver_set_for_senderX == 1 above
+                try:
+                    msg = "[Error]: BFS_generate_DAG_info: group " + receiverY + " does not receive from any sender."
+                    assert length_of_sender_set_for_receiverY > 0 , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                        logging.shutdown()
+                        os._exit(0)
                 if length_of_sender_set_for_receiverY == 1:
                     # collapse or fanout
                     if length_of_receiver_set_for_senderX == 1:
@@ -1209,7 +1236,7 @@ def generate_DAG_info():
             # its output to any group, we generate the state for receiverY here 
             for receiverY in Group_sink_set: # Partition_receivers:
                 if len(Group_sink_set) > 0:
-                    process_group_sink(receiverY,senderX,state)
+                    process_group_sink(receiverY,state)
                     state += 1
                     Group_sink_set.clear()
 
@@ -1280,7 +1307,7 @@ def generate_DAG_info():
                     False,  False, fanout_partition_group_sizes)
                 Group_DAG_states[receiverY] = state
                 """
-                process_group_sink(receiverY,senderX,state)
+                process_group_sink(receiverY,state)
                 state += 1
 
         if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
