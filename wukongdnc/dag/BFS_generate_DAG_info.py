@@ -211,8 +211,8 @@ def destructor():
         logger.trace("")
         logger.trace("generate_DAG_info_incremental_partitions: Group_receivers:")
         for receiver_name,sender_name_set in Group_receivers.items():
-            print("receiver:" + receiver_name)
-            print("sender_name_set:" + str(sender_name_set))
+            logger.trace("receiver:" + receiver_name)
+            logger.trace("sender_name_set:" + str(sender_name_set))
         logger.trace("")
 
     Partition_senders = {}
@@ -239,8 +239,8 @@ def destructor():
         logger.trace("generate_DAG_info_incremental_partitions: Group senders and receivers after deallocation:")
         logger.trace("generate_DAG_info_incremental_partitions: Group_senders:")
         for sender_name,receiver_name_set in Group_senders.items():
-            logger.info("sender:" + sender_name)
-            logger.info("receiver_name_set:" + str(receiver_name_set))
+            logger.trace("sender:" + sender_name)
+            logger.trace("receiver_name_set:" + str(receiver_name_set))
         logger.trace("")
         logger.trace("")
         logger.trace("generate_DAG_info_incremental_partitions: Group_receivers:")
@@ -1067,7 +1067,7 @@ def generate_DAG_info():
                 Group_DAG_states[receiverY] = state
 
         for senderX in Group_senders:
-            logger.trace("senderX: " + senderX)
+            logger.info("senderX: " + senderX)
             fanouts = []
     #brc: clustering
             fanout_partition_group_sizes = []
