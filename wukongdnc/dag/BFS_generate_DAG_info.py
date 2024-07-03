@@ -420,8 +420,8 @@ def generate_DAG_info():
             sender_set_for_receiverY_with_qualified_names = set()
             # for each task senderX that sends input to receiverY, the 
             # qualified name of the sender is senderX+"-"+senderX
-            for senderX in sender_set_for_receiverY:
-                qualified_name = str(senderX) + "-" + str(receiverY)
+            for sender_for_receiverY in sender_set_for_receiverY:
+                qualified_name = str(sender_for_receiverY) + "-" + str(receiverY)
                 sender_set_for_receiverY_with_qualified_names.add(qualified_name)
             # sender_set_for_senderX provides input for senderX
             task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
@@ -1055,8 +1055,8 @@ def generate_DAG_info():
                 # receive the same value. We denote the different outputs
                 # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
                 sender_set_for_receiverY_with_qualified_names = set()
-                for senderX in sender_set_for_receiverY:
-                    qualified_name = str(senderX) + "-" + str(receiverY)
+                for sender_for_receiverY in sender_set_for_receiverY:
+                    qualified_name = str(sender_for_receiverY) + "-" + str(receiverY)
                     sender_set_for_receiverY_with_qualified_names.add(qualified_name)
                 # sender_set_for_senderX provides input for senderX
                 task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
@@ -1076,6 +1076,7 @@ def generate_DAG_info():
             collapse = []
             fanin_sizes = []
             faninNB_sizes = []
+            # partitions senderX sends its outputs to
             receiver_set_for_senderX = Group_senders[senderX]
             try:
                 msg = "[Error]: BFS_generate_DAG_info: group " + senderX + " does not send to any receiver."
@@ -1086,6 +1087,7 @@ def generate_DAG_info():
                     logging.shutdown()
                     os._exit(0)
             for receiverY in receiver_set_for_senderX:
+                # partitions, if any, receiverY sends its outputs to
                 receiver_set_for_receiverY = Group_senders.get(receiverY)
                 if receiver_set_for_receiverY is None:
 #brc: order: 
@@ -1100,15 +1102,17 @@ def generate_DAG_info():
                     Group_sink_set.append(receiverY)
                 else:
                     try:
-                        msg = "[Error]: BFS_generate_DAG_info: group " + receiverY + " does not send to any receiver."
+                        msg = "[Error]: BFS_generate_DAG_info: group " + receiverY + " does not send to any receiver but receiver_set_for_receiverY is not None."
                         assert len(receiver_set_for_receiverY) > 0 , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
                         if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                             logging.shutdown()
                             os._exit(0)
+                # groups that send their outputs to receiverY
                 sender_set_for_receiverY = Group_receivers[receiverY]
                 length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
+                # partitions that senderX sends its outputs to 
                 length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
                 # Note: Already asserted length_of_receiver_set_for_senderX == 1 above
                 try:
@@ -1120,10 +1124,11 @@ def generate_DAG_info():
                         logging.shutdown()
                         os._exit(0)
                 if length_of_sender_set_for_receiverY == 1:
+                    # only senderX sends outputs to receiverY
                     # collapse or fanout
                     if length_of_receiver_set_for_senderX == 1:
                         # only one task sends input to receiverY and this sending 
-                        # task only sends to one task, so collapse receiverY, i.e.,
+                        # task (senderX) ) sends to one task, so collapse receiverY, i.e.,
                         # senderX becomes receiverY
                         logger.trace("sender " + senderX + " --> " + receiverY + " : Collapse")
                         if not receiverY in Group_all_collapse_task_names:
@@ -1238,11 +1243,11 @@ def generate_DAG_info():
             # After we generate the state for senderX, if senderX sends to a 
             # group receiverY and receiverY is a sink, i.e., it does not send 
             # its output to any group, we generate the state for receiverY here 
-            for receiverY in Group_sink_set: # Partition_receivers:
-                if len(Group_sink_set) > 0:
+            if len(Group_sink_set) > 0:
+                for receiverY in Group_sink_set: # Partition_receivers:
                     process_group_sink(receiverY,state)
                     state += 1
-                    Group_sink_set.clear()
+                Group_sink_set.clear()
 
         # This is for leaf tasks that are not senders. We processed
         # senders and removed senders that were leaf tasks from the
