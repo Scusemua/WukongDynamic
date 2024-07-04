@@ -694,21 +694,20 @@ def generate_DAG_info():
         # Above, when we finf that a sender is a leaf, we remove it from the set of senders.
         # The leaf partitions that are left are partitions that are leaf nofs and that are the 
         # only partition in their component.
-        # Issue: 
+#brc: order:
         # - When we loop through senders and we find a receiver that is not a sender then
-        # this erceiver is the last partition in its component, so process it right then.
-        # - For each component, keep a list of its number of partitions. We know that partition
-        # i is named "PRi_1". If we see that a component i has just one partition then 
-        # we know it is "PRi_1" and we can process PRi_1 like it is is a leaf noed that is 
-        # not a sender, i.e., like the code above.
+        # this receiver is the last partition in its component, so process it right then.
         # Since we will know when we get to the last Sender of a componentm, we can process
         # the last partition and we can set the tbc fields for this last partiton and its
         # previous partitioj to False: previous is not continued and has no tbc to continud,
         # and same for last.
 
-        print("Partition_sink_set:")
-        print(Partition_sink_set)
-        for receiverY in Partition_sink_set: # Partition_receivers:
+#brc: order: 
+        # We process sink nodes as we detect them instead of saving them in a list and 
+        # processing the list in this loop.
+        #print("Partition_sink_set:")
+        #print(Partition_sink_set)
+        #for receiverY in Partition_sink_set: # Partition_receivers:
             #if not receiverY in Partition_DAG_states:
 #brc: order
             # moved this code into process_partition_sink above so we can call it
@@ -749,10 +748,8 @@ def generate_DAG_info():
                 False,  False, fanout_partition_group_sizes)
             Partition_DAG_states[receiverY] = state
             """
-#brc: order: 
-            # generate state for sink nodes as we discover them
-            process_partition_sink(receiverY,state)
-            state += 1
+        #    process_partition_sink(receiverY,state)
+        #    state += 1
 
         # Note. We could decide which Function to use in DAG_executor when we are
         # about to excute the task. The pagerank function is the same 
@@ -1277,10 +1274,14 @@ def generate_DAG_info():
                 Group_DAG_states[name] = state
                 state += 1
 
+#brc: order: 
+        # We process sink nodes as we detect them instead of saving them in a list and 
+        # processing the list in this loop.
+        #
         # Finish by doing the receivers that are not senders (opposite of leaf tasks);
         # these are reeivers that send no inputs to other tasks. They have no fanins/
         # faninBs, fanouts or collapses, but they do have task inputs.
-        for receiverY in Group_sink_set: # Partition_receivers:
+        #for receiverY in Group_sink_set: # Partition_receivers:
             #if not receiverY in Partition_DAG_states:
                 """
                 fanouts = []
@@ -1317,8 +1318,8 @@ def generate_DAG_info():
                 Group_DAG_states[receiverY] = state
                 """
 #brc: order: 
-                process_group_sink(receiverY,state)
-                state += 1
+                #process_group_sink(receiverY,state)
+                #state += 1
 
         if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
             for key in Group_DAG_states:

@@ -1492,6 +1492,27 @@ def dfs_parent(visited, node):  #function for dfs
     # I think that is what we are doing since all this is the appends of shadow nodes
     # and saving the frontier_node in the parent in different partition/group
     #
+
+    """
+    outline:
+    for each parent:
+    end for
+    for parent_node_visited_tuple in already_visited_parents:
+        if partition_group_tuple != None:  # must be true
+            if parent_partition_number == current_partition_number:
+                # parent in same partition but parent might be in a different group
+                if parent_group_number == current_group_number:
+                    # parent in same group
+                
+                else:
+                    # parent in different group
+                    # generate shadow node and record sender/receiver
+            else:
+                # parent in different partition and different group
+                # generate shad node and record sender/receiver
+        end if
+    end for 
+    """
     # For each already visited parent:
     # - 
     for parent_node_visited_tuple in already_visited_parents:
@@ -2124,9 +2145,9 @@ def dfs_parent(visited, node):  #function for dfs
                                 shared_frontier_parent_group_patch_tuple = (task_name_of_parent_group,position_in_list_of_parent_frontier_tuples)
                                 shared_frontier_parent_groups_patch_tuple_list.append(shared_frontier_parent_group_patch_tuple)
 
-                        # Generate dependency dges in DAG. If parent in group i has an edge
+                        # Generate dependency edges in DAG. If parent in group i has an edge
                         # to child in group j, i!=j, then add edge i-->j to dag. Do this
-                        # by adding j to the receivers of i, and adding i to the receivers
+                        # by adding j to the receivers of i, and adding i to the senders
                         # of j. Si group i is the "sender" and j is the "receiver"
                         # Note: If we want to speedup construction of the DAG, then we might want to 
                         # specifically add the edge i-->j, e.g., by depositing i-->j into a bounded
@@ -2551,6 +2572,8 @@ def dfs_parent(visited, node):  #function for dfs
                 + " dfs_parent() on the parent and dfs_parent puts a tuple for parent in the map.")
             logging.shutdown()
             os._exit(0)
+
+    # end of loop: for parent_node_visited_tuple in already_visited_parents:
 
     if CHECK_UNVISITED_CHILDREN:
         # process children after parent traversal
