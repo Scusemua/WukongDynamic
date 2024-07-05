@@ -1210,6 +1210,10 @@ def dfs_parent(visited, node):  #function for dfs
     # for each parent node of this node, recursive call dfs_parent()
     # to visit that parent (and its ancestors) if that parent is 
     # currently unvisited.
+
+#brc: order:
+    sending_group_and_receiving_group_in_same_partition = []
+
     for parent_index in node.parents:
  
         parent_node = nodes[parent_index]
@@ -2174,8 +2178,12 @@ def dfs_parent(visited, node):  #function for dfs
                         BFS_generate_DAG_info.Group_receivers[receiving_group].add(sending_group)
                         # So now task receiving_group depends on sending_group
 
-                        # We may nee to patch the name of the receiving group, i.e., we may yet
-                        # find a loop and so need to change e.g., "PR2_2" to "PR2_2L", hhich means
+#brc: order:
+                        sending_group_receiving_group_tuple = (sending_group,receiving_group)
+                        sending_group_and_receiving_group_in_same_partition.append(sending_group_receiving_group_tuple)
+
+                        # We may need to patch the name of the receiving group, i.e., we may yet
+                        # find a loop and so need to change e.g., "PR2_2" to "PR2_2L", which means
                         # we would need to change the places we have already used the name "PR2_2"
                         # to "PR2_2L" by performing a "patch" using the "path tuples"
                         if not current_group_isLoop:
@@ -2574,6 +2582,42 @@ def dfs_parent(visited, node):  #function for dfs
             os._exit(0)
 
     # end of loop: for parent_node_visited_tuple in already_visited_parents:
+
+#bfs: order:
+    # For the case where the sending_group and receiving_group are in the asme partition,
+    # we generate the DAG edge after generating the edges for the case where the 
+    # sending_group and receiving_group are in different partitions. The latter edges were
+    # generated above as they were deteted. When the former edges were detected the
+    # sending and receivng group were saved in a tuple and here we generate them.
+    # 
+# TODO: don't generate the latter above,
+    for sending_group_receiving_group_tuple in sending_group_and_receiving_group_in_same_partition:
+        logger.info("sending_group_receiving_group_tuple:")
+        logger.info(sending_group_receiving_group_tuple)
+        # Generate dependency edges in DAG. If parent in group i has an edge
+        # to child in group j, i!=j, then add edge i-->j to dag. Do this
+        # by adding j to the receivers of i, and adding i to the senders
+        # of j. Si group i is the "sender" and j is the "receiver".
+
+        #sending_group = group_names[parent_index_in_groups_list] # group with parent node
+        #receiving_group = current_group_name
+        sending_group = sending_group_receiving_group_tuple[0]
+        receiving_group = sending_group_receiving_group_tuple[1]
+        #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
+        #receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
+        # get the set of receivers for sending_group
+        sender_set = BFS_generate_DAG_info.Group_senders.get(sending_group)
+        if sender_set is None:
+            BFS_generate_DAG_info.Group_senders[sending_group] = set()
+        # add receiving group as another group sending_group sends to 
+        BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
+        # these are the senders that send to receiver receiving_group
+        receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
+        if receiver_set is None:
+            BFS_generate_DAG_info.Group_receivers[receiving_group] = set()
+        # add sending_group as another sender that sends to receiving_group
+        BFS_generate_DAG_info.Group_receivers[receiving_group].add(sending_group)
+        # So now task receiving_group depends on sending_group
 
     if CHECK_UNVISITED_CHILDREN:
         # process children after parent traversal
