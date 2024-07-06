@@ -1090,7 +1090,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 def dfs_parent(visited, node):  #function for dfs 
     # e.g. dfs(3) where bfs is visiting 3 as a child of enqueued node
     # so 3 is not visited yet
-    logger.trace ("dfs_parent from node " + str(node.ID))
+    logger.info ("dfs_parent from node " + str(node.ID))
 
     # used below in the two place we add a node to a group
     global use_nodeIndex_to_grouppartition_maps
@@ -1490,7 +1490,7 @@ def dfs_parent(visited, node):  #function for dfs
 
     # Did we find already visited parents in the above dfs search loop?
     if len(already_visited_parents) > 0:
-        logger.trace("process already_visited_parents of " + str(node.ID))
+        logger.info("process already_visited_parents of " + str(node.ID))
     # can't add shadow nodes for node until all parents have been added via dfs_parent
     # Q: Can we do this as part of else and then finish the appends here?
     # I think that is what we are doing since all this is the appends of shadow nodes
@@ -1634,7 +1634,7 @@ def dfs_parent(visited, node):  #function for dfs
                 #
                 # The parent and node are in different groups if they have different group numbers.
 
-                logger.trace ("dfs_parent: parent in same partition: parent_partition_number: " 
+                logger.info ("dfs_parent: parent in same partition: parent_partition_number: " 
                     + str(parent_partition_number) 
                     + ", current_partition_number:" + str(current_partition_number)
                     + ", parent ID: " + str(parent_index))
@@ -1781,7 +1781,7 @@ def dfs_parent(visited, node):  #function for dfs
                     parent_group_number = partition_group_tuple[2]
                     if parent_group_number == current_group_number:
                     #if parent_group_number == -1 or parent_group_number == current_group_number:
-                        logger.trace ("dfs_parent: parent in same group: parent_group_number: " 
+                        logger.info ("dfs_parent: parent in same group: parent_group_number: " 
                             + str(parent_group_number)
                             + ", current_group_number: " + str(current_group_number)
                             + ", parent ID: " + str(parent_index)) 
@@ -1842,7 +1842,7 @@ def dfs_parent(visited, node):  #function for dfs
                     else:
                         # parent and node are in different groups so we add a shadow node to this
                         # group as a proxy for the parent node.
-                        logger.trace ("dfs_parent: parent in different group: parent_group_number: " 
+                        logger.info ("dfs_parent: parent in different group: parent_group_number: " 
                             + str(parent_group_number) 
                             + ", current_group_number: " + str(current_group_number)
                             + ", parent ID: " + str(parent_index))
@@ -2183,7 +2183,7 @@ def dfs_parent(visited, node):  #function for dfs
 #brc: order:
                         sending_group_receiving_group_tuple = (sending_group,receiving_group)
                         sending_group_and_receiving_group_in_same_partition.append(sending_group_receiving_group_tuple)
-
+                        logger.info("order: Add sending_group/receiving_group tuple " + str(sending_group_receiving_group_tuple))
                         # We may need to patch the name of the receiving group, i.e., we may yet
                         # find a loop and so need to change e.g., "PR2_2" to "PR2_2L", which means
                         # we would need to change the places we have already used the name "PR2_2"
@@ -2191,7 +2191,6 @@ def dfs_parent(visited, node):  #function for dfs
                         if not current_group_isLoop:
                             sender_receiver_group_patch_tuple = (parent_index_in_groups_list,receiving_group)
                             sender_receiver_group_patch_tuple_list.append(sender_receiver_group_patch_tuple)
-
                 else:
                     #assertOld:
                     logger.error("[Error]: dfs_parent: partition_group_tuple " 
@@ -2563,7 +2562,7 @@ def dfs_parent(visited, node):  #function for dfs
                     sender_set = BFS_generate_DAG_info.Group_senders.get(sending_group)
                     if sender_set is None:
                         BFS_generate_DAG_info.Group_senders[sending_group] = set()
-                    logger.info("Add 1 " + sending_group + " to Group_senders")
+                    logger.info("order: Add 1 " + sending_group + " to Group_senders with receiving group " + receiving_group)
                     BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
                     # receiver set is the groups that send to the receiver
                     receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
@@ -2595,7 +2594,7 @@ def dfs_parent(visited, node):  #function for dfs
     # 
 # TODO: don't generate the latter above,
     for sending_group_receiving_group_tuple in sending_group_and_receiving_group_in_same_partition:
-        logger.info("sending_group_receiving_group_tuple for add to Group_senders:")
+        logger.info("order: sending_group_receiving_group_tuple for add to Group_senders:")
         logger.info(sending_group_receiving_group_tuple)
         # Generate dependency edges in DAG. If parent in group i has an edge
         # to child in group j, i!=j, then add edge i-->j to dag. Do this
@@ -2613,7 +2612,12 @@ def dfs_parent(visited, node):  #function for dfs
         if sender_set is None:
             BFS_generate_DAG_info.Group_senders[sending_group] = set()
         # add receiving group as another group sending_group sends to 
-        logger.info("Add 2 " + sending_group + " to Group_senders")
+#ToDo: adding 2_3 twice, once before 3_! and once after - would need to make sure not
+#         contains sender/receiver pair before add sender/receiver pair.
+#      the loop through list of tuples is after each group (in a partion) not after all the 
+#         groups in a partition. Save in global list and do list after processing th last
+#         group in a partiton (i.e., at end of partition)
+        logger.info("order: Add 2 " + sending_group + " to Group_senders for " + receiving_group)
         BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
         # these are the senders that send to receiver receiving_group
         receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
