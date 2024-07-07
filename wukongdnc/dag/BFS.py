@@ -2562,8 +2562,10 @@ def dfs_parent(visited, node):  #function for dfs
                     sender_set = BFS_generate_DAG_info.Group_senders.get(sending_group)
                     if sender_set is None:
                         BFS_generate_DAG_info.Group_senders[sending_group] = set()
+
                     logger.info("order: Add 1 " + sending_group + " to Group_senders with receiving group " + receiving_group)
                     BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
+                       
                     # receiver set is the groups that send to the receiver
                     receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
                     if receiver_set is None:
@@ -2592,7 +2594,8 @@ def dfs_parent(visited, node):  #function for dfs
     # generated above as they were deteted. When the former edges were detected the
     # sending and receivng group were saved in a tuple and here we generate them.
     # 
-# TODO: don't generate the latter above,
+
+#brc: order:
     for sending_group_receiving_group_tuple in sending_group_and_receiving_group_in_same_partition:
         logger.info("order: sending_group_receiving_group_tuple for add to Group_senders:")
         logger.info(sending_group_receiving_group_tuple)
@@ -2610,15 +2613,28 @@ def dfs_parent(visited, node):  #function for dfs
         # get the set of receivers for sending_group
         sender_set = BFS_generate_DAG_info.Group_senders.get(sending_group)
         if sender_set is None:
+            # Note: This is a set() in order to deal with duplicates. It is possible to 
+            # have two or more tuples with the same sending_group and receiving_group.
+            # For example, in the white board example, there are two tuples for 
+            # (PR2_3,PR3_3) since there are edges from nodes 4 and 6 in sending_group
+            # PR2_3 to nodes 18 and 9, respectively, in group PR3_3.
             BFS_generate_DAG_info.Group_senders[sending_group] = set()
         # add receiving group as another group sending_group sends to 
-#ToDo: adding 2_3 twice, once before 3_! and once after - would need to make sure not
-#         contains sender/receiver pair before add sender/receiver pair.
-#      the loop through list of tuples is after each group (in a partion) not after all the 
+#ToDo:
+#      the loop through list of tuples is after each group (in a partition) not after all the 
 #         groups in a partition. Save in global list and do list after processing th last
 #         group in a partiton (i.e., at end of partition)
-        logger.info("order: Add 2 " + sending_group + " to Group_senders for " + receiving_group)
+#      Not that for non-inc there are no incomplete groups so false,false
+#      We have 2_3 -> 3_3 and 3_2 -> 3_3 where 3_3 is a sink, so if we otuput sinks
+#      after processing all of the groups in a partition then we will output sink 3_3
+#      twice, once at the end of partition 2 and once at the end of partition 3. So 
+#      we output sinks at the end, i.e., after outputting senders and the remaining leaves
+#      we output all sinks. Since we aleays use false,false i.e., we do ot mantain previous
+#      and previous previous we do not need to mainting strict order of states.
+
+        logger.info("order: Add 2 " + sending_group + " to Group_senders with receiving group " + receiving_group)
         BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
+
         # these are the senders that send to receiver receiving_group
         receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
         if receiver_set is None:

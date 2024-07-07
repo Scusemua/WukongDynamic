@@ -1023,7 +1023,8 @@ def generate_DAG_info():
         print()
 
         # sink nodes, i.e., nodes that do not send any inputs
-        Group_sink_set = [] # set()      # use a list to maintain insertion order
+        # use a set() to deal with duplicates
+        Group_sink_set = set()      
         logger.trace("Group DAG:")
         state = 1
 
@@ -1096,7 +1097,7 @@ def generate_DAG_info():
                     # we will generate the state for receiverX, which will be the only
                     # partition in Partition_sink_set.
                     # receiverY does not send any inputs so it is a sink
-                    Group_sink_set.append(receiverY)
+                    Group_sink_set.add(receiverY)
                 else:
                     try:
                         msg = "[Error]: BFS_generate_DAG_info: group " + receiverY + " does not send to any receiver but receiver_set_for_receiverY is not None."
@@ -1237,6 +1238,7 @@ def generate_DAG_info():
             state += 1
 
 #brc: order: 
+            """
             # After we generate the state for senderX, if senderX sends to a 
             # group receiverY and receiverY is a sink, i.e., it does not send 
             # its output to any group, we generate the state for receiverY here 
@@ -1245,6 +1247,7 @@ def generate_DAG_info():
                     process_group_sink(receiverY,state)
                     state += 1
                 Group_sink_set.clear()
+            """
 
         # This is for leaf tasks that are not senders. We processed
         # senders and removed senders that were leaf tasks from the
@@ -1281,45 +1284,45 @@ def generate_DAG_info():
         # Finish by doing the receivers that are not senders (opposite of leaf tasks);
         # these are reeivers that send no inputs to other tasks. They have no fanins/
         # faninBs, fanouts or collapses, but they do have task inputs.
-        #for receiverY in Group_sink_set: # Partition_receivers:
+        for receiverY in Group_sink_set: # Partition_receivers:
             #if not receiverY in Partition_DAG_states:
-                """
-                fanouts = []
-    #brc: clustering
-                fanout_partition_group_sizes = []
-                faninNBs = []
-                fanins = []
-                collapse = []
-                fanin_sizes = []
-                faninNB_sizes = []
+            """
+            fanouts = []
+#brc: clustering
+            fanout_partition_group_sizes = []
+            faninNBs = []
+            fanins = []
+            collapse = []
+            fanin_sizes = []
+            faninNB_sizes = []
 
-                sender_set_for_receiverY = Group_receivers[receiverY]
-                #task_inputs = tuple(sender_set_for_receiverY)
+            sender_set_for_receiverY = Group_receivers[receiverY]
+            #task_inputs = tuple(sender_set_for_receiverY)
 
-                # create a new set from sender_set_for_senderX. For 
-                # each name in sender_set_for_senderX, qualify name by
-                # prexing it with "senderX-". Example: senderX is "PR1_1"
-                # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
-                # We use qualified names since the fanouts/faninNBs for a 
-                # task in a pagerank DAG may al have diffent values. This
-                # is unlike Dask DAGs in which all fanouts/faninNBs of a task
-                # receive the same value. We denote the different outputs
-                # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
-                sender_set_for_receiverY_with_qualified_names = set()
-                for senderX in sender_set_for_receiverY:
-                    qualified_name = str(senderX) + "-" + str(receiverY)
-                    sender_set_for_receiverY_with_qualified_names.add(qualified_name)
-                # sender_set_for_senderX provides input for senderX
-                task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
+            # create a new set from sender_set_for_senderX. For 
+            # each name in sender_set_for_senderX, qualify name by
+            # prexing it with "senderX-". Example: senderX is "PR1_1"
+            # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
+            # We use qualified names since the fanouts/faninNBs for a 
+            # task in a pagerank DAG may al have diffent values. This
+            # is unlike Dask DAGs in which all fanouts/faninNBs of a task
+            # receive the same value. We denote the different outputs
+            # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
+            sender_set_for_receiverY_with_qualified_names = set()
+            for senderX in sender_set_for_receiverY:
+                qualified_name = str(senderX) + "-" + str(receiverY)
+                sender_set_for_receiverY_with_qualified_names.add(qualified_name)
+            # sender_set_for_senderX provides input for senderX
+            task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
 
-                Group_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
-    #brc: clustering
-                    False,  False, fanout_partition_group_sizes)
-                Group_DAG_states[receiverY] = state
-                """
+            Group_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
+#brc: clustering
+                False,  False, fanout_partition_group_sizes)
+            Group_DAG_states[receiverY] = state
+            """
 #brc: order: 
-                #process_group_sink(receiverY,state)
-                #state += 1
+            process_group_sink(receiverY,state)
+            state += 1
 
         if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
             for key in Group_DAG_states:
