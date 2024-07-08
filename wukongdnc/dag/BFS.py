@@ -2553,6 +2553,65 @@ def dfs_parent(visited, node):  #function for dfs
 # brc: ******* Group
                 else:
                     # generate dependency in DAG
+                    """ Here is sample output for the Group_senders and Group_receivers. This is for 
+                    the extended white board example, which adds a fanins from PR3_2 to PR3_3 along
+                    with components PR4_1-> PR5_1 and PR6_1->PR7_1.
+                        Group_senders:
+                        sender:PR1_1
+                        receiver_name_set:{'PR2_3', 'PR2_1', 'PR2_2L'}
+                        sender:PR2_1
+                        receiver_name_set:{'PR2_2L'}
+                        sender:PR2_2L
+                        receiver_name_set:{'PR3_2', 'PR3_1'}
+                        sender:PR3_1
+                        receiver_name_set:{'PR3_2'}
+                        sender:PR2_3
+                        receiver_name_set:{'PR3_3'}
+                        sender:PR3_2
+                        receiver_name_set:{'PR3_3'}
+                        sender:PR4_1
+                        receiver_name_set:{'PR5_1'}
+                        sender:PR6_1
+                        receiver_name_set:{'PR7_1'}
+
+                        Group_receivers:
+                        receiver:PR2_1
+                        sender_name_set:{'PR1_1'}
+                        receiver:PR2_2L
+                        sender_name_set:{'PR2_1', 'PR1_1'}
+                        receiver:PR2_3
+                        sender_name_set:{'PR1_1'}
+                        receiver:PR3_1
+                        sender_name_set:{'PR2_2L'}
+                        receiver:PR3_2
+                        sender_name_set:{'PR2_2L', 'PR3_1'}
+                        receiver:PR3_3
+                        sender_name_set:{'PR2_3', 'PR3_2'}
+                        receiver:PR5_1
+                        sender_name_set:{'PR4_1'}
+                        receiver:PR7_1
+                        sender_name_set:{'PR6_1'}
+
+                        Leaf nodes of groups:
+                        PR4_1
+                        PR6_1
+                        PR1_1
+
+                    Obtained as shown in Listing 1 at the end of this file.
+
+
+                    senderX loops through the senders in order:
+
+                        senderX: PR1_1
+                        senderX: PR2_1
+                        senderX: PR2_2L
+                        senderX: PR3_1
+                        senderX: PR2_3
+                        senderX: PR3_2
+                        senderX: PR4_1
+                        senderX: PR6_1
+
+                    """
                     #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
                     # index in groups list is the actual index, sarting with index 0
                     sending_group = group_names[parent_index_in_groups_list]
@@ -6716,4 +6775,159 @@ def PageRank_Function_Main(nodes,total_num_nodes):
 # and nodes[] has a length of 21.
 # The pagernk computation is the range:
 # for index in range(1,num_nodes) so from Node 1 to Node 20, where num_nodes is 21.
+"""
+
+"""
+Listing 1: trace of bfs.dfs_parent():
+
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: using groups
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: input_graph: set BFS_generate_DAG_info.num_nodes_in_graph to 24
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 1
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 17
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 5
+Note: PR1_1 has no parents.
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: add PR1_1 to groups_of_current_partition: ['PR1_1']
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: bfs: output groups of last partition: PR1_1
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 3 num_shadow_nodes_added_to_partitions: 0 num_nodes: 24 to_be_continued: True
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 16
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 10
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 2
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: process already_visited_parents of 16
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add 1 PR1_1 to Group_senders with receiving group PR2_1
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: add PR2_1 to groups_of_current_partition: ['PR2_1']
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 19
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 3
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 11
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 8
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 20
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: process already_visited_parents of 20
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 2, current_partition_number:2, parent ID: 19
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 19
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add sending_group/receiving_group tuple ('PR2_1', 'PR2_2L')
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 2, current_partition_number:2, parent ID: 19
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent: parent in same group: parent_group_number: 2, current_group_number: 2, parent ID: 19
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: ('PR2_1', 'PR2_2L')
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add 2 PR2_1 to Group_senders with receiving group PR2_2L
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: process already_visited_parents of 19
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add 1 PR1_1 to Group_senders with receiving group PR2_2L
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: add PR2_2L to groups_of_current_partition: ['PR2_1', 'PR2_2L']
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 12
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 14
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 6
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 4
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: process already_visited_parents of 12
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add 1 PR1_1 to Group_senders with receiving group PR2_3
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: add PR2_3 to groups_of_current_partition: ['PR2_1', 'PR2_2L', 'PR2_3']
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: bfs: output groups of last partition: PR2_1L
+[2024-07-07 09:32:42,353][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 15 num_shadow_nodes_added_to_partitions: 3 num_nodes: 24 to_be_continued: True
+[2024-07-07 09:32:42,353][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 4
+[2024-07-07 09:32:42,353][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 2
+[2024-07-07 09:32:42,354][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 1
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: for PR1_1 index_in_groups_list_of_previous_group: 0
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 13
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 13
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 1 PR2_2L to Group_senders with receiving group PR3_1
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: add PR3_1 to groups_of_current_partition: ['PR3_1']
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 15
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 7
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 7
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 13
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 13
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add sending_group/receiving_group tuple ('PR3_1', 'PR3_2')
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ('PR3_1', 'PR3_2')
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 2 PR3_1 to Group_senders with receiving group PR3_2
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 15
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 1 PR2_2L to Group_senders with receiving group PR3_2
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: add PR3_2 to groups_of_current_partition: ['PR3_1', 'PR3_2']
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 18
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 9
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 9
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 1 PR2_3 to Group_senders with receiving group PR3_3
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 15
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 2, current_group_number: 3, parent ID: 15
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add sending_group/receiving_group tuple ('PR3_2', 'PR3_3')
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ('PR3_2', 'PR3_3')
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 2 PR3_2 to Group_senders with receiving group PR3_3
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 18
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 1 PR2_3 to Group_senders with receiving group PR3_3
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: add PR3_3 to groups_of_current_partition: ['PR3_1', 'PR3_2', 'PR3_3']
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: bfs: output groups of last partition: PR3_1
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 20 num_shadow_nodes_added_to_partitions: 7 num_nodes: 24 to_be_continued: True
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 7
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 5
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 2
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: for PR2_1 index_in_groups_list_of_previous_group: 1
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 7
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 5
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 2
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: for PR2_2L index_in_groups_list_of_previous_group: 2
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 7
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 5
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 2
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: for PR2_3 index_in_groups_list_of_previous_group: 3
+
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: called bfs()
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: partition_names:
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ['PR1_1', 'PR2_1L', 'PR3_1']
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: number_of_partitions:
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: 3
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 21
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: add PR4_1 to groups_of_current_partition: ['PR4_1']
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: bfs: output groups of last partition: PR4_1
+[2024-07-07 09:32:42,370][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 21 num_shadow_nodes_added_to_partitions: 7 num_nodes: 24 to_be_continued: True
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 8
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 8
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 5
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: for PR3_1 index_in_groups_list_of_previous_group: 4
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 8
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 8
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 5
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: for PR3_2 index_in_groups_list_of_previous_group: 5
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 8
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 8
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 5
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: BFS: for PR3_3 index_in_groups_list_of_previous_group: 6
+[2024-07-07 09:32:42,373][BFS][MainProcess][MainThread]: dfs_parent from node 22
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: process already_visited_parents of 22
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: order: Add 1 PR4_1 to Group_senders with receiving group PR5_1
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: add PR5_1 to groups_of_current_partition: ['PR5_1']
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: bfs: output groups of last partition: PR5_1
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 22 num_shadow_nodes_added_to_partitions: 8 num_nodes: 24 to_be_continued: True
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 9
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 9
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 8
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: for PR4_1 index_in_groups_list_of_previous_group: 7
+
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: called bfs()
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: partition_names:
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ['PR1_1', 'PR2_1L', 'PR3_1', 'PR4_1', 'PR5_1']
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: number_of_partitions:
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: 5
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: dfs_parent from node 23
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: add PR6_1 to groups_of_current_partition: ['PR6_1']
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: bfs: output groups of last partition: PR6_1
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 23 num_shadow_nodes_added_to_partitions: 8 num_nodes: 24 to_be_continued: True
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 10
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 10
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 9
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: for PR5_1 index_in_groups_list_of_previous_group: 8
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: dfs_parent from node 24
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: process already_visited_parents of 24
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: order: Add 1 PR6_1 to Group_senders with receiving group PR7_1
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: add PR7_1 to groups_of_current_partition: ['PR7_1']
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: bfs: output groups of last partition: PR7_1
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 24 num_shadow_nodes_added_to_partitions: 9 num_nodes: 24 to_be_continued: False
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: current_partition_number: 7
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: len(groups_of_partitions): 7
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 11
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 11
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: for PR7_1 index_in_groups_list_of_current_group: 10
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 11
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 11
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 10
+[2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: for PR6_1 index_in_groups_list_of_previous_group: 9
+
 """
