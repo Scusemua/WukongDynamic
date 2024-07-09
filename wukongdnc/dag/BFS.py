@@ -2183,7 +2183,7 @@ def dfs_parent(visited, node):  #function for dfs
 #brc: order:
                         sending_group_receiving_group_tuple = (sending_group,receiving_group)
                         sending_group_and_receiving_group_in_same_partition.append(sending_group_receiving_group_tuple)
-                        logger.info("order: Add sending_group/receiving_group tuple " + str(sending_group_receiving_group_tuple))
+                        logger.trace("Add sending_group/receiving_group tuple " + str(sending_group_receiving_group_tuple))
                         # We may need to patch the name of the receiving group, i.e., we may yet
                         # find a loop and so need to change e.g., "PR2_2" to "PR2_2L", which means
                         # we would need to change the places we have already used the name "PR2_2"
@@ -6785,56 +6785,86 @@ Listing 1: trace of bfs.dfs_parent():
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 1
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 17
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 5
-Note: PR1_1 has no parents.
+Note: PR1_1, the first leaf node, identified as the first partition/group generated on the frst call to bfs()
+has no parents.
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: add PR1_1 to groups_of_current_partition: ['PR1_1']
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: bfs: output groups of last partition: PR1_1
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 3 num_shadow_nodes_added_to_partitions: 0 num_nodes: 24 to_be_continued: True
+Node 5 in PR1_1 has a child 16 so bfs_parent(16) (which recursively calls bfs_parent(10) ...)
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 16
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 10
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 2
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: process already_visited_parents of 16
+Note: all the nodes 5, 17, and 1 in PR1_1 have children nodes (in partition 2) and are 
+already visited parents of the nodes in partition 2. When we find that already visited parent 5 in group 
+PR1_1 is the parent of 16 in PR2_1 it means that we have found an edge in the DAG from group PR1_1 to group PR2_1
+where the latter contains 16.
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add 1 PR1_1 to Group_senders with receiving group PR2_1
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: add PR2_1 to groups_of_current_partition: ['PR2_1']
+Node 17 in PR1_1 has a child 19 so bfs_parent(19)
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 19
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 3
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 11
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 8
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 20
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: process already_visited_parents of 20
+Note that there is a cycle 19 39 11 8 20 19 .. of nodes in partition 2. These will be the nodes of 
+group PR2_2 and since PR2_2 has a cycle it is called PR2_2L for 'L' as in "loop".
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 2, current_partition_number:2, parent ID: 19
+Node 19's parent 17 is in a different partition (partition 1) and thus a different group (PR1_1). Tbus we have
+found an edge in the DAG from group PR1_1 to PR2_2L.
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 19
-[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add sending_group/receiving_group tuple ('PR2_1', 'PR2_2L')
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 2, current_partition_number:2, parent ID: 19
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent: parent in same group: parent_group_number: 2, current_group_number: 2, parent ID: 19
+We are generating the groups in partition 2. We find parent nodes in partition 1, e.g., 5 in group 1_1is the parent of 16 in group 2_1, 
+and we can also find a parent node that is in a different group of partition 2, e.g., a parent of 20 is parent node
+2 in group 2_1 of partition 2. Whe nwe find an edge in the DAG we are building from a parent group to a child group
+we save the edge in maps Group_sender and Group_receiver. For example, we add key PR1_1 and value PR2_1 to 
+Partition_senders to denote the edge PR1_1 -> PR2_1 where PR1_1 is the sender and PR2_1 is the receiver.  This
+denotes that Pr2_1 ia a group that receives outputs from PR1_1. (We aer mapping a sending group to a list of 
+Groups that receive outputs fron the sender.) We also add this edge to Partition_recivers, where PR2_1 is the 
+key and PR1_1 is the value. This denoted that PR1_1 is a group the sends its output to PR2_1. In general, there 
+may be many such groups that send outputs to a receiving group. In BFS_generate_DAG_info.py, after the edges have been 
+identified, we deterine whether each edge is a fanout/fanin/faninNB/collapse.
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: ('PR2_1', 'PR2_2L')
-[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add 2 PR2_1 to Group_senders with receiving group PR2_2L
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add (type 2) PR2_1 to Group_senders with receiving group PR2_2L
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: process already_visited_parents of 19
-[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add 1 PR1_1 to Group_senders with receiving group PR2_2L
-[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: add PR2_2L to groups_of_current_partition: ['PR2_1', 'PR2_2L']
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add (type 1) PR1_1 to Group_senders with receiving group PR2_2L
+[2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: add group PR2_2L to groups_of_current_partition: ['PR2_1', 'PR2_2L']
+Node 12 is a child of node 1 in PR1_1 so we will call dfs_parent(12) to start the third group PR2_3 of partition 2.
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 12
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 14
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 6
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: dfs_parent from node 4
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: process already_visited_parents of 12
+Another DAG edge PR1_1 --> PR2_3
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: order: Add 1 PR1_1 to Group_senders with receiving group PR2_3
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: add PR2_3 to groups_of_current_partition: ['PR2_1', 'PR2_2L', 'PR2_3']
+The groups of partition PR2_1L (L for the partition has a cycle) are PR2_1, PR2_2L and PR2_3
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: bfs: output groups of last partition: PR2_1L
 [2024-07-07 09:32:42,353][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 15 num_shadow_nodes_added_to_partitions: 3 num_nodes: 24 to_be_continued: True
+We maintain a list of groups, where the list starts at 1 not 0. The last group of the current just-found groups of partition PR2_1L
+is 4, the index of the first group in these groups is 2, and the index of the last group PR1_1 of the previous 
+partition also called PR1_1, is 1, which is the first group found in the DAG (on first call to bfs())
 [2024-07-07 09:32:42,353][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 4
 [2024-07-07 09:32:42,353][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 2
 [2024-07-07 09:32:42,354][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 1
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: for PR1_1 index_in_groups_list_of_previous_group: 0
+Now we build partition PR3_1.
+Node 8 in partition PR2_2L has a child 13 so we call bfs(13). Node 13 has no parents so PR3_1 is a single node group.
+We founf a DAG edge from group PR2_2L to group PR3_1.
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 13
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 13
-[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 1 PR2_2L to Group_senders with receiving group PR3_1
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add (type 1) PR2_2L to Group_senders with receiving group PR3_1
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: add PR3_1 to groups_of_current_partition: ['PR3_1']
+Node 11 in partition PR2_2L has a child 15 so we call bfs(15). 
+
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 15
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 7
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 7
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 13
-[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 13
-[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add sending_group/receiving_group tuple ('PR3_1', 'PR3_2')
+[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 13 
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ('PR3_1', 'PR3_2')
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 2 PR3_1 to Group_senders with receiving group PR3_2
@@ -6847,7 +6877,6 @@ Note: PR1_1 has no parents.
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 1 PR2_3 to Group_senders with receiving group PR3_3
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 15
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 2, current_group_number: 3, parent ID: 15
-[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add sending_group/receiving_group tuple ('PR3_2', 'PR3_3')
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ('PR3_2', 'PR3_3')
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 2 PR3_2 to Group_senders with receiving group PR3_3
