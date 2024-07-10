@@ -6863,8 +6863,23 @@ Node 11 in partition PR2_2L has a child 15 so we call bfs(15).
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 15
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 7
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 7
+We are building the groups in partition 3 from the childen of the nodes in the groups of partition 2. 
+That is, the nodes in grops of partition 3 can have a parent that is in a group in partition 2. These
+nodes in a group G of partition 3 can also have a parent in group P of partition 3, P != G. For example,
+node X in group PR3_2 has a parent node Y in group PR3_1. This gives us an edge PR3_1 -> PR3_2 in the DAG.
+It also makes PR3_1 a sender and PR3_2 a receiver.
+Note: Groups PR2_1, PR2_2L and PR2_3 all contain nodes that have children in the groups of partition 3. This
+will lead to DAG edges between the groups of partition 2 and the groups of partition 3. Also, the groups in 
+partition 2 will be added to Group_senders. Note that in the midst of finding these DAG edges we will 
+also find the edge from PR3_1 to PR3_2 and add PR3_1 to Group_senders. This means the order in which groups
+aer added to Group_senders will be PR2_1, PR2_2L, PR3_1 then PR2_3. This is also the order in which the 
+corresponding tasks and their edges will be addeed to the DAG - that is, PR3_1 will be 
+added ot the DAG before PR2_3, which is not the order we thing of (groups of partition 1, then groups
+of partition 2, then groups of partition 3)  This order dos not affect how the DAG is executed so we do not
+try to maintain "group order" when we build a representation of the DAG.
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 13
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 13 
+
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ('PR3_1', 'PR3_2')
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 2 PR3_1 to Group_senders with receiving group PR3_2
