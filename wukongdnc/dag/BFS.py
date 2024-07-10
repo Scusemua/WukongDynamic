@@ -6872,33 +6872,63 @@ Note: Groups PR2_1, PR2_2L and PR2_3 all contain nodes that have children in the
 will lead to DAG edges between the groups of partition 2 and the groups of partition 3. Also, the groups in 
 partition 2 will be added to Group_senders. Note that in the midst of finding these DAG edges we will 
 also find the edge from PR3_1 to PR3_2 and add PR3_1 to Group_senders. This means the order in which groups
-aer added to Group_senders will be PR2_1, PR2_2L, PR3_1 then PR2_3. This is also the order in which the 
-corresponding tasks and their edges will be addeed to the DAG - that is, PR3_1 will be 
-added ot the DAG before PR2_3, which is not the order we thing of (groups of partition 1, then groups
-of partition 2, then groups of partition 3)  This order dos not affect how the DAG is executed so we do not
+aer added to Group_senders will be PR2_1, PR2_2L, PR3_1 then PR2_3. 
+Group_senders:
+sender:PR1_1
+receiver_name_set:{'PR2_3', 'PR2_1', 'PR2_2L'}
+sender:PR2_1
+receiver_name_set:{'PR2_2L'}
+sender:PR2_2L
+receiver_name_set:{'PR3_2', 'PR3_1'}
+sender:PR3_1
+receiver_name_set:{'PR3_2'}
+sender:PR2_3
+receiver_name_set:{'PR3_3'}
+sender:PR3_2
+receiver_name_set:{'PR3_3'}
+sender:PR4_1
+receiver_name_set:{'PR5_1'}
+sender:PR6_1
+receiver_name_set:{'PR7_1'}
+This is also the order in which the corresponding tasks and their edges will be addeed to the DAG - that is, 
+PR3_1 will be added ot the DAG before PR2_3, which is not the order we thing of (groups of partition 1, then 
+groupsof partition 2, then groups of partition 3)  This order dos not affect how the DAG is executed so we do not
 try to maintain "group order" when we build a representation of the DAG.
+Note: PR3_3 is not a sender, it is only a receiver. The code for building the DAG loops thru Group_senders,
+which means we have to do something special so that tasks like PR3_3 are included in the DAG. In this case, 
+PR3_2 is a sender, since it sends its outputs to PR3_3. When we process PR3_2, we will see t has a receiver PR3_3
+that is not a sender, which tells us to add a DAG edge for PR2_3 --> PR3_3 so that PR3_3 will be in the DAG.
+
+
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 13
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 13 
-
-[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
-[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ('PR3_1', 'PR3_2')
+Add PR3_1 to senders as PR3_1 sends to PR3_2
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 2 PR3_1 to Group_senders with receiving group PR3_2
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 15
+Add PR2_2L to senders as PR2_2L sends to PR3_2
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 1 PR2_2L to Group_senders with receiving group PR3_2
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: add PR3_2 to groups_of_current_partition: ['PR3_1', 'PR3_2']
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 18
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent from node 9
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 9
+Add PR2_3 to senders as PR2_3 sends to PR3_3
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 1 PR2_3 to Group_senders with receiving group PR3_3
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 15
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 2, current_group_number: 3, parent ID: 15
-[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
-[2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ('PR3_2', 'PR3_3')
+Add PR3_2 to senders as PR3_2 sends to PR3_3 (where PR3_2 and PR3_3 are in the same partition)
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 2 PR3_2 to Group_senders with receiving group PR3_3
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: process already_visited_parents of 18
+Found a second cse where PR2_3 sends to PR3_3. This is because there are two graph nodes in PR2_3
+that send to nodes in PR3_3. Noet that Group_sender[PR2_3] is a set, which takes care of this duplication,
+i.e., we add PR3_3 twice to the set but only one PR3_3 will be in the set.
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: order: Add 1 PR2_3 to Group_senders with receiving group PR3_3
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: add PR3_3 to groups_of_current_partition: ['PR3_1', 'PR3_2', 'PR3_3']
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: bfs: output groups of last partition: PR3_1
+We have a list of groups for each partition, and a list of groups. So 
+index_in_groups_list_of_last_group_in_current_partition: indicates the position in the global groups list
+of the last_group_in_current_partition, where the positions start at 1. The global groups list is 
+PR1_1, PR2_1, PR2_2L, PR2_3, PR3_1, PR3_2, PR3_3. The last group in the current (3rd) partition is PR3_3
+and its position in the global groups list is 7. The first group in current partition in PR3_1 which is at postion 5, etc.
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 20 num_shadow_nodes_added_to_partitions: 7 num_nodes: 24 to_be_continued: True
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_last_group_in_current_partition: 7
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_current_partition: 5
@@ -6913,6 +6943,12 @@ try to maintain "group order" when we build a representation of the DAG.
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 2
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: BFS: for PR2_3 index_in_groups_list_of_previous_group: 3
 
+The groups PR1_1, PR2_1, PR2_2L, PR2_3, PR3_1, PR3_2, PR3_3 are all the groups in the first connected component (CC).
+bfs() will end and we will see that some graph nodes have not been visited and so we will call bfs() again to 
+process the next CC. It has 2 nodes, one in group 4 and one in group 5. Group 4 is the only group in partition 
+4 and likewise for group 5. Group 4 is a leaf node (like group PR1_1) There is a DAG edge PR4_1 --> PR5_1
+si PR4_1 is a sender and PR5_1 is a receiver. Note that when we execuret the DAG, the DAG_executor_driver
+will start excutors for leaf nodes PR1_1, PR4_1, and PR6_1 (see below.)
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: called bfs()
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: partition_names:
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ['PR1_1', 'PR2_1L', 'PR3_1']
@@ -6945,6 +6981,7 @@ try to maintain "group order" when we build a representation of the DAG.
 [2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 8
 [2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: for PR4_1 index_in_groups_list_of_previous_group: 7
 
+The 3rd CC is another 2 node CC with groups PR6_1 and PR7_1. The result are the same as for PR4_1 and PR5_!
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: called bfs()
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: partition_names:
 [2024-07-07 09:32:42,355][BFS][MainProcess][MainThread]: ['PR1_1', 'PR2_1L', 'PR3_1', 'PR4_1', 'PR5_1']
@@ -6974,4 +7011,52 @@ try to maintain "group order" when we build a representation of the DAG.
 [2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: index_in_groups_list_of_first_group_of_previous_partition: 10
 [2024-07-07 09:32:42,389][BFS][MainProcess][MainThread]: BFS: for PR6_1 index_in_groups_list_of_previous_group: 9
 
+The result is 3 CCs, one CC with PR1_1, PR2_1, PR2_2L, PR2_3, PR3_1, PR3_2, PR3_3, one with PR4_1 and PR5_!
+and one with PR6_1 and PR7_1. 
+The Group_senders and Group_receivers are
+
+Group_senders:
+sender:PR1_1
+receiver_name_set:{'PR2_3', 'PR2_1', 'PR2_2L'}
+sender:PR2_1
+receiver_name_set:{'PR2_2L'}
+sender:PR2_2L
+receiver_name_set:{'PR3_2', 'PR3_1'}
+sender:PR3_1
+receiver_name_set:{'PR3_2'}
+sender:PR2_3
+receiver_name_set:{'PR3_3'}
+sender:PR3_2
+receiver_name_set:{'PR3_3'}
+sender:PR4_1
+receiver_name_set:{'PR5_1'}
+sender:PR6_1
+receiver_name_set:{'PR7_1'}
+
+Group_receivers:
+receiver:PR2_1
+sender_name_set:{'PR1_1'}
+receiver:PR2_2L
+sender_name_set:{'PR2_1', 'PR1_1'}
+receiver:PR2_3
+sender_name_set:{'PR1_1'}
+receiver:PR3_1
+sender_name_set:{'PR2_2L'}
+receiver:PR3_2
+sender_name_set:{'PR2_2L', 'PR3_1'}
+receiver:PR3_3
+sender_name_set:{'PR2_3', 'PR3_2'}
+receiver:PR5_1
+sender_name_set:{'PR4_1'}
+receiver:PR7_1
+sender_name_set:{'PR6_1'}
+
+Leaf nodes of groups:
+PR4_1
+PR6_1
+PR1_1
+
+BFS_generate_DAG_info.py will use Group_senders and Group_receievers to generate the DAG representation
+where the groups of nodes correspond to a task and for each DAG edge we determine whether it is a
+fanoutfaninsfaninNBscollapse.
 """
