@@ -2522,6 +2522,60 @@ def dfs_parent(visited, node):  #function for dfs
                 # from P. 
 # brc: ******* Partition
                 if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+
+                    """ Here is sample output for the Group_senders and Group_receivers. This is for 
+                    the extended white board example, which adds a fanins from PR3_2 to PR3_3 along
+                    with components PR4_1-> PR5_1 and PR6_1->PR7_1.
+                    
+                    Partition_senders:
+                    sender:PR1_1
+                    receiver_name_set:{'PR2_1L'}
+                    sender:PR2_1L
+                    receiver_name_set:{'PR3_1'}
+                    sender:PR4_1
+                    receiver_name_set:{'PR5_1'}
+                    sender:PR6_1
+                    receiver_name_set:{'PR7_1'}
+
+
+                    Partition_receivers:
+                    receiver:PR2_1L
+                    sender_name_set:{'PR1_1'}
+                    receiver:PR3_1
+                    sender_name_set:{'PR2_1L'}
+                    receiver:PR5_1
+                    sender_name_set:{'PR4_1'}
+                    receiver:PR7_1
+                    sender_name_set:{'PR6_1'}
+
+
+                    Leaf nodes of partitions:
+                    PR6_1
+                    PR4_1
+                    PR1_1
+
+                    Obtained as shown in Listing 1 at the end of this file.
+
+
+                    senderX loops through the senders in order:
+
+                        senderX: PR1_1
+                        senderX: PR2_2L
+                        senderX: PR4_1
+                        senderX: PR6_1
+
+                    Note that PR3_1, PR5_1, and PR6_1 are not senders. This is becuase they aer the last
+                    partitions in their respective connectd componets so they do not send their outputs
+                    to any other partitions. We cover these by detecting that they are receivers but not 
+                    senders. For example, When we process PR2_2L, we will see that it has a receiver PR3_1
+                    and that PR3_1 is not a sender. Thus, after we process PR2_1L we process PR3_1. Note
+                    that partitions PR1_1, PR4_1, and PR6_1 are the first partitions in their respective
+                    components. Thus, they are leaf nodes. These leaf nodes are senders but not receivers.
+                    Note also that a partition that is the only partition in its connected component is 
+                    neither a sender nor a receiver, but it is still a leaf node. We identify leaf nodes
+                    that are not senders and process them at the end. (There are no such partitions in the 
+                    whiteboard example.)
+                    """
                     sending_partition = partition_names[parent_partition_number-1]
                     #receiving_partition = "PR"+str(current_partition_number)+"_1"
                     receiving_partition = current_partition_name
@@ -2597,7 +2651,7 @@ def dfs_parent(visited, node):  #function for dfs
                         PR6_1
                         PR1_1
 
-                    Obtained as shown in Listing 1 at the end of this file.
+                    Obtained as shown in Listing 2 at the end of this file.
 
 
                     senderX loops through the senders in order:
@@ -6778,7 +6832,187 @@ def PageRank_Function_Main(nodes,total_num_nodes):
 """
 
 """
-Listing 1: trace of bfs.dfs_parent():
+Listing 1: trace of bfs.dfs_parents() for partitions:
+
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: BFS: using partitions.
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: input_graph: set BFS_generate_DAG_info.num_nodes_in_graph to 24
+The first call to bfs() is bfs(1) which starts a recrusive dfs_parent() search through the ancestos of node 1.
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: dfs_parent from node 1
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: dfs_parent from node 17
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: dfs_parent from node 5
+PR1_1 is a leaf node (as is every partition that is the first partition identified on a call to bfs())
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: BFS: add PR1_1 to groups_of_current_partition: ['PR1_1']
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 3 num_shadow_nodes_added_to_partitions: 0 num_nodes: 24 to_be_continued: True
+For each child node of a node in PR1_1, do a bfs_parent() search to idetify the nodes in partition 2. Each node
+in PR1_1 has a child node and these children and their ancestors comprise partition 2.
+The ancestors of node X in parititin 1 are 16, 10, and 2. During the search of these nodes we will try to search 
+node X of partition 1 but X has already been visited, so we know X is a node in partition 1. (The nodes in a
+partition i only have chldren in partition i+1.) We add X to the list of already_visited_parents.
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: dfs_parent from node 16
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: dfs_parent from node 10
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: dfs_parent from node 2
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: process already_visited_parents of 16
+Node 16 and its ancestors are the first group of partition 2. We are not generating groups but we show this
+to illustrate how the groups of a partition are identified.
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: BFS: add PR2_1 to groups_of_current_partition: ['PR2_1']
+Do a dfs_parent search starting at the child of node X in partition 1. (We are iterating through the nodes
+in partition 1 and doing dfs_parent() on their children.)
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: dfs_parent from node 19
+[2024-07-11 07:53:25,486][BFS][MainProcess][MainThread]: dfs_parent from node 3
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent from node 11
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent from node 8
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent from node 20
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: process already_visited_parents of 20
+During the recursive parent search we find an aleady visited node that is in the same partition 2. This 
+mmeans we have detected a loop in the partition: 19 3 11 8 20 19 ... Note again we are showing how groups 
+are identifed but we are just generating partitions for the DAG. See Listing 2 for a group trace. 
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 2, current_partition_number:2, parent ID: 19
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 19
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 2, current_partition_number:2, parent ID: 19
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent: parent in same group: parent_group_number: 2, current_group_number: 2, parent ID: 19
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
+If we finf a cycle/loop in a partition we add an 'L' to the name, as in PR2_2L
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: ('PR2_1', 'PR2_2L')
+IF we were collecting groups, we would have just found an edge in the DAG from PR2_1 --> PR2_2L. PR2_1 is saved in the 
+Group_senders and PR2_2L is saved in the Group_receivers. These are used later to build a DAG representation wi the 
+identified edges.
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: order: Add 2 PR2_1 to Group_senders with receiving group PR2_2L
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: process already_visited_parents of 19
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: BFS: add PR2_2L to groups_of_current_partition: ['PR2_1', 'PR2_2L']
+Start a dfs_parent(0 search for the child Y of node X)
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent from node 12
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent from node 14
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent from node 6
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: dfs_parent from node 4
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: process already_visited_parents of 12
+This us the third and final group of partition 2. Each of the three nodes in partition 1 has one child so we
+end up with three groups in partition 2. Partition 2 contains all of the nodes in its three groups.
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: BFS: add PR2_3 to groups_of_current_partition: ['PR2_1', 'PR2_2L', 'PR2_3']
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 15 num_shadow_nodes_added_to_partitions: 3 num_nodes: 24 to_be_continued: True
+[2024-07-11 07:53:25,501][BFS][MainProcess][MainThread]: bfs: output partitions[0], which is partition 1
+Now we search the chldren of the nodes in partition 2 to generate the nodes in partition 3. We use the 
+same process as we just described. We will identify three groups of partition 3 and the nodes in these
+groups are the nodes of partition 3.
+[2024-07-11 07:53:25,517][BFS][MainProcess][MainThread]: dfs_parent from node 13
+[2024-07-11 07:53:25,517][BFS][MainProcess][MainThread]: process already_visited_parents of 13
+[2024-07-11 07:53:25,517][BFS][MainProcess][MainThread]: BFS: add PR3_1 to groups_of_current_partition: ['PR3_1']
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: dfs_parent from node 15
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: dfs_parent from node 7
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: process already_visited_parents of 7
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 13
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 13
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: ('PR3_1', 'PR3_2')
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: order: Add 2 PR3_1 to Group_senders with receiving group PR3_2
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: process already_visited_parents of 15
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: BFS: add PR3_2 to groups_of_current_partition: ['PR3_1', 'PR3_2']
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: dfs_parent from node 18
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: dfs_parent from node 9
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: process already_visited_parents of 9
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 15
+[2024-07-11 07:53:25,532][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 2, current_group_number: 3, parent ID: 15
+[2024-07-11 07:53:25,548][BFS][MainProcess][MainThread]: ('PR3_2', 'PR3_3')
+[2024-07-11 07:53:25,548][BFS][MainProcess][MainThread]: order: Add 2 PR3_2 to Group_senders with receiving group PR3_3
+[2024-07-11 07:53:25,548][BFS][MainProcess][MainThread]: process already_visited_parents of 18
+[2024-07-11 07:53:25,564][BFS][MainProcess][MainThread]: BFS: add PR3_3 to groups_of_current_partition: ['PR3_1', 'PR3_2', 'PR3_3']
+[2024-07-11 07:53:25,564][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 20 num_shadow_nodes_added_to_partitions: 7 num_nodes: 24 to_be_continued: True
+[2024-07-11 07:53:25,564][BFS][MainProcess][MainThread]: bfs: output partitions[1], which is partition 2
+Partition 3 is a "sink", i.e., it receieves inputs from partition 2 but it does not send its outputs to 
+any partitions. Partition 3 is the last partition in connected component 1. bfs() will return having 
+found 3 partitions.
+
+called bfs()
+partition_names:
+['PR1_1', 'PR2_1L', 'PR3_1']
+number_of_partitions:
+3
+
+Since there are still unvisited nodes in the input graph, we call bfs() again to collct the partitions in 
+connected component 2. The first partition collected by bfs() is the second leaf node in the DAG.
+
+[2024-07-11 07:53:25,579][BFS][MainProcess][MainThread]: dfs_parent from node 21
+[2024-07-11 07:53:25,579][BFS][MainProcess][MainThread]: BFS: add PR4_1 to groups_of_current_partition: ['PR4_1']
+[2024-07-11 07:53:25,579][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 21 num_shadow_nodes_added_to_partitions: 7 num_nodes: 24 to_be_continued: True
+[2024-07-11 07:53:25,595][BFS][MainProcess][MainThread]: bfs: output partitions[2], which is partition 3
+[2024-07-11 07:53:25,595][BFS][MainProcess][MainThread]: dfs_parent from node 22
+[2024-07-11 07:53:25,595][BFS][MainProcess][MainThread]: process already_visited_parents of 22
+[2024-07-11 07:53:25,595][BFS][MainProcess][MainThread]: BFS: add PR5_1 to groups_of_current_partition: ['PR5_1']
+[2024-07-11 07:53:25,595][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 22 num_shadow_nodes_added_to_partitions: 8 num_nodes: 24 to_be_continued: True
+[2024-07-11 07:53:25,611][BFS][MainProcess][MainThread]: bfs: output partitions[3], which is partition 4
+Each of partition 4 and 5 is a single node partition. Partition 4 is a leaf and partition 5 is a sink (since 
+5 is a receiver but not a sender) Connected component 2 has 2 partitions. We have so far colelcted 5 partitions
+in 2 connected components.
+
+called bfs()
+partition_names:
+['PR1_1', 'PR2_1L', 'PR3_1', 'PR4_1', 'PR5_1']
+number_of_partitions:
+5
+
+Call bfs() for a third time to collected the two partitions 6 and 7 of the third connected component.
+[2024-07-11 07:53:25,626][BFS][MainProcess][MainThread]: dfs_parent from node 23
+[2024-07-11 07:53:25,626][BFS][MainProcess][MainThread]: BFS: add PR6_1 to groups_of_current_partition: ['PR6_1']
+[2024-07-11 07:53:25,626][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 23 num_shadow_nodes_added_to_partitions: 8 num_nodes: 24 to_be_continued: True
+[2024-07-11 07:53:25,642][BFS][MainProcess][MainThread]: bfs: output partitions[4], which is partition 5
+[2024-07-11 07:53:25,642][BFS][MainProcess][MainThread]: dfs_parent from node 24
+[2024-07-11 07:53:25,642][BFS][MainProcess][MainThread]: process already_visited_parents of 24
+[2024-07-11 07:53:25,657][BFS][MainProcess][MainThread]: BFS: add PR7_1 to groups_of_current_partition: ['PR7_1']
+[2024-07-11 07:53:25,657][BFS][MainProcess][MainThread]: bfs: num_graph_nodes_in_partitions: 24 num_shadow_nodes_added_to_partitions: 9 num_nodes: 24 to_be_continued: False
+[2024-07-11 07:53:25,657][BFS][MainProcess][MainThread]: bfs: output last partition: PR7_1
+[2024-07-11 07:53:25,657][BFS][MainProcess][MainThread]: bfs: output partitions[5], which is partition 6
+called bfs()
+partition_names:
+['PR1_1', 'PR2_1L', 'PR3_1', 'PR4_1', 'PR5_1', 'PR6_1', 'PR7_1']
+
+The sending partitions are:
+[2024-07-11 07:53:27,771][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR1_1
+[2024-07-11 07:53:27,771][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR2_1L
+[2024-07-11 07:53:27,786][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR4_1
+[2024-07-11 07:53:27,786][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR6_1
+Note that PR3_1, PR5_1, and PR7_1 are sinks, i.e., receiver only. They mark the last
+partition of their respctive components.
+
+There are 7 partitions in the generated DAG. Partition i has a single fanout to partition i+1 and partition 
+i+1 receives inputs only from partition i. Thus we can statically custer partition i and i+1. We do this 
+by giving partition has a "collapse" (nstead of a fanin/fanout) to partition i+1. Every partition has a
+collapse to th next partition, except for the partitions that are sinks. When the DAG is executed, one
+executor will execute all of the partitions in a given connected component. The DAG_executor_driver will
+start an executor for each leaf task, where there is one leaf task per connected component, and the 
+partitions/tasks for a connected component will be executed serially while the partitions/tasks in
+different components will be executed in parallel. 
+
+Note that there is more parallelism in a DAG of groups than there is in a DAG of partitions. The groups
+(in the partitions) of a connected component may be executed in parallel.
+
+The ADG that will be generated is shown below. Note that task PRi_1 has a collapse to PR(i+1)_1 
+and no fanins/fanouts. The input for each task is shown. For example, the input for PR2_1L is 
+'PR1_1-PR2_1' which denotes that PR2_2L's input is the part of PR1_1's output labeled "PR2_1L".
+For partitions, all of partition i's output is for partition i+1. For groups, a group may send
+its outputs to many different groups and the outputs for each group may be different. In that case
+we need to identify a group's outputs with the receiving groups. So a group PR2_1 may have inputs
+PR1_1-PR2_1 and a groip PR2_2L may have inputs PR1_1-PR2_2L, etc. (Note that in a Dask graph, a task 
+outputs the same values on all its fanouts, fanins.)
+
+[2024-07-11 07:53:27,833][DAG_executor_driver][MainProcess][MainThread]: DAG_executor_driver: DAG_map:
+[2024-07-11 07:53:27,833][DAG_executor_driver][MainProcess][MainThread]: 1
+[2024-07-11 07:53:27,849][DAG_executor_driver][MainProcess][MainThread]:  task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+[2024-07-11 07:53:27,849][DAG_executor_driver][MainProcess][MainThread]: 2
+[2024-07-11 07:53:27,849][DAG_executor_driver][MainProcess][MainThread]:  task: PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:['PR3_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+[2024-07-11 07:53:27,864][DAG_executor_driver][MainProcess][MainThread]: 3
+[2024-07-11 07:53:27,911][DAG_executor_driver][MainProcess][MainThread]:  task: PR3_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR2_1L-PR3_1',), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+[2024-07-11 07:53:27,911][DAG_executor_driver][MainProcess][MainThread]: 4
+[2024-07-11 07:53:27,911][DAG_executor_driver][MainProcess][MainThread]:  task: PR4_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR5_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+[2024-07-11 07:53:27,911][DAG_executor_driver][MainProcess][MainThread]: 5
+[2024-07-11 07:53:27,927][DAG_executor_driver][MainProcess][MainThread]:  task: PR5_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR4_1-PR5_1',), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+[2024-07-11 07:53:27,927][DAG_executor_driver][MainProcess][MainThread]: 6
+[2024-07-11 07:53:27,927][DAG_executor_driver][MainProcess][MainThread]:  task: PR6_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR7_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+[2024-07-11 07:53:27,927][DAG_executor_driver][MainProcess][MainThread]: 7
+[2024-07-11 07:53:27,942][DAG_executor_driver][MainProcess][MainThread]:  task: PR7_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR6_1-PR7_1',), fanout_partition_group_sizes:[], ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+
+"""
+
+"""
+Listing 2: trace of bfs.dfs_parent() for groups:
 
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: BFS: using groups
 [2024-07-07 09:32:42,338][BFS][MainProcess][MainThread]: input_graph: set BFS_generate_DAG_info.num_nodes_in_graph to 24
