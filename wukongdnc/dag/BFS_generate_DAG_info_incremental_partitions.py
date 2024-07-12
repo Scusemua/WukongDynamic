@@ -711,8 +711,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 # current_partition_name generated as: "PR" + str(current_partition_number) + "_1".
 # The base DAG is the DAG with complete partition 1 and incomplete partition 2. This is 
 # the first DAG to be executed assuming the DAG has more than one partition.
-# num_incremental_DAGs_generated_since_base_DAG is the number of DAGs generated since
-# the base DAG; we publish every ith incremental ADG generated, where i can be set. 
+# num_incremental_DAGs_generated_since_base_DAG is the number incremental DAGs generated since
+# the base DAG; we publish every ith incremental DAG generated, where i can be set by user. 
 
 
     global Partition_all_fanout_task_names
@@ -784,6 +784,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # partition. For partitions, only collapse will be non-empty. That is,
     # after each task, we only have a collapsed task, no fanouts/fanins.
     # A collapse task is a fanout where there are no other fanouts/fanins.
+    # This is static task clustering.
     fanouts = []
     faninNBs = []
     fanins = []
@@ -804,8 +805,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # Note: a partition that starts a new connected component (which is 
     # the first partition collected on a call to BFS(), of which there 
     # may be many calls if the graph is not connected) is a leaf
-    # node and thus has no senders. This is true about partition 1 and
-    # this is assserted by the caller (BFS()) of this method.
+    # node and thus has no senders (value is None). This is true about 
+    # partition 1 and this is assserted by the caller (BFS()) of this method.
 
     if DAG_executor_constants.DEALLOCATE_BFS_SENDERS_AND_RECEIVERS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
         # Between calls to generate_DAG_info_incremental_partitions we add names to
@@ -825,7 +826,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     """
     Outline: 
     Each call to generate_DAG_info_incremental_partitions adds one partition to the
-    DAG_info. The added partition is incomplete unless it is the last partition 
+    DAG_info. The added (current) is incomplete unless it is the last partition 
     that will be added to the DAG. The previous partition is now marked as complete.
     The previous partition's next partition is this current partition, which is 
     either complete or incomplete. If the current partition is incomplete then 
@@ -843,10 +844,10 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     the only partition in its connected component, i.e., its component has size 1,
     then it can also be marked as complete since it has no children and thus we have
     all the info we need about partition 1. To identify the last partition
-    in a connected component (besides the partitio that is the last partition
+    in a connected component (besides the partition that is the last partition
     to be connected in the DAG) we would have to look at all the nodes in a 
-    partition and determibe whethr they had any child nodes that were not in
-    the same partition (i.e., these child nodes will be i the next partition).
+    partition and determine whether they had any child nodes that were not in
+    the same partition (i.e., these child nodes will be in the next partition).
     This would have to be done for each partition and it's not clear whether
     all that work would be worth it just to mark the last partition of a 
     connected component completed a little earlier than it otherwise would.
@@ -854,16 +855,17 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     end with a partition that is the last partition in its connected compoent.
     If the interval n between incremental DAGs (i.e., add n partitions before
     publishng the new DAG) then it may be rare to have such a partition.
-    2. (senders is None): This is a leaf node, which could be partition 2 or any 
-    partition after that. This measn that the current partition is the first partition
+    2. (senders is None): This is a leaf node, which is true for partition 1 and
+    could be true for any partition after that. (Consider several one node connected
+    components.) This mena that the current partition is the first partition
     of a new connected component. We will add this leaf partition to a list of leaf
-    partitions so that when we return we can mke sure this leaf partition is 
+    partitions so that when we return we can make sure this leaf partition is 
     executed. (No other partition has a fanin/fanout/collapse to this partition so no
     other partition can cause this leaf node to be executed. We will start its execution
     ourselves.) The previous and previous previous partitons are marked as described above.
-    Note the the previous partition can be marked complete as usual. Also, we now knowthat the 
+    Note the the previous partition can be marked complete as usual. Also, we now know that the 
     previous partition, which was marked as having an incomplete next partition, can now
-    be marked as not having an incimplete next partition - this is because the previous
+    be marked as not having an incomplete next partition - this is because the previous
     partition was the last partition of its connected component and thus has no 
     fanins/fanouts/collapses at all - this allows us to mark it as not having an incomplete
     next partition.
@@ -1147,27 +1149,28 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         #        + " partition has a senders with length 0.")
 
         # This is not the first partition but it is a leaf partition, which means
-        # it was the first partition generated by some call to BFS(), i.e., 
+        # it was the first partition generated by some call to bfs(), i.e., 
         # it is the start of a new connected component. This also means there
         # is no collapse from the previous partition to this partition, i.e.,
-        # the previous partition has no collapse task.
+        # the previous partition has no collapse task, it is a sink.
 
         # Since this is a leaf node (it has no predecessor) we will need to add 
         # this partition to the work queue or start a new lambda for it
         # like the DAG_executor_driver does. (Note that since this partition has
         # no predecessor, no worker or lambda can enable this task via a fanout, collapse,
         # or fanin, thus we must make sure this leaf task gets executed.)
-        # This is done by the caller (BFS()) of this method. BFS() 
+        # This is done by the caller (bfs()) of this method. bfs() 
         # deposits a new DAG_info and the deposit() processes the leaf tasks. 
         # (See deposit()) 
        
         # Mark this partition as a leaf task. If any more of these leaf task 
-        # partitions are found they will accumulate in these lists. BFS()
+        # partitions are found they will accumulate in these lists. bfs()
         # uses these lists to identify leaf tasks - when BFS generates an 
         # incremental DAG_info, it adds work to the work queue or starts a
         # lambda for each leaf task that is not the first partition. The
         # first partition is always a leaf task and it is handled by the 
-        # DAG_executor_driver.
+        # DAG_executor_driver. (For non-incremental ADG generation, all leaf
+        # tasks are executed at the beginning.)
 
         # Same as for leaf task partition 1 above
         Partition_DAG_leaf_tasks.append(current_partition_name)
@@ -1188,7 +1191,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         state_info_of_previous_partition.ToBeContinued = False
         # previous partiton i-1 is the last partition of its connected component as 
         # this current partition i is the first partition of its connected component,
-        # The last partition of a connected component does not do any fanouts/fanins/etc.
+        # The last partition of a connected component does not do any collapse so it 
+        # has no collapse to an incomplete partition. (Partitions only do collapses, not fanins/fanouts)
         state_info_of_previous_partition.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = False
 
         # we also track the partition previous to the previous partition.
@@ -1202,17 +1206,22 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             previous_previous_state = previous_state - 1
             state_info_of_previous_previous_partition = Partition_DAG_map[previous_previous_state]
             state_info_of_previous_previous_partition.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = False
-        # For example, we processed partition 1 and it was incomplete and we assumed it had
+        # For example, for the whiteboard example, we processed partition 1 and it was incomplete and we assumed it had
         # to be continued collapses/fanins/faninNBs/fanouts. We processed 2 and considered
-        # 2 incomplete but 1 became complete. We assumed 2 had to be continued collapses/fanins/faninNBs/fanouts
-        # so that 1's fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued was still True.
-        # We process 3 here, which we assume is the first partition of its (new) connected
-        # component. Now 3 is considered incomplete, 2 becomes complete and 2's 
-        # fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued can be set to False since
-        # 2 was the last partition of its connected component. Aslo 1's
-        # fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinuedfanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued can be set to False since
-        # we now know that 2 has no to be continued collapses/fanins/faninNBs/fanouts.
-        # 1 was already considered to be complete.
+        # 2 incomplete but 1 became complete but 1 has a collapse to 2 so 1' fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued 
+        # is still True. The same happens for partition 3, which is set to incomplete while partition
+        # 2 is set to complete and partition 1's fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
+        # is set to False as 2 is complete.
+        # Partition 3 is the last partition in its connected component so the first call to bfs() 
+        # complete and since some of the input graph's nodes aer unvisited bfs() is called again.
+        # We process partition 4 here, which is the first partition of its (new) connected
+        # component containing partitions 4 and 5. Now 4 is considered incomplete. The previously processed
+        # partiton was partition 3, which was the last partition if the first connected componwnt
+        # (containing partitions 1, 2, and 3). The previous partition 3 becomes complete and the
+        # 3's fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is set to False.
+        # Also, the previous previous partitions 2's fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued 
+        # can be set to False since partition 3 was set to complete (i.e., partiton 2 has no 
+        # fanins/fanouts/collapses to an incomplete partition.)
 
         logger.info("generate_DAG_info_incremental_partitions: new connected component for current partition "
             + str(current_partition_number) + ", the previous_state_info for previous state " 
@@ -1259,11 +1268,11 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 #brc: use of DAG_info:
         #DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
-        # We publish the DAG if the graph is complete (not to be continued).
-        # This is true whether the current partition is 1 or 2, or a later
-        # partition. If the current partition is 1 and the graph is complete,
+        # We publish the DAG if the graph is complete (not to be continued, i.e., all).
+        # partitions are in the DAG. This is true whether the current partition is 1 or 2, 
+        # or a later partition. If the current partition is 1 and the graph is complete,
         # then we will save the DAG and start the DAG_executor_driver, which 
-        # will read and execute the DAG. If the current partition is 2, we save 
+        # will read and execute the one partition DAG. If the current partition is 2, we save 
         # the DAG whether it is complete or not and start the DAG_excutor_driver,
         # which will read and execute the DAG. (If partition 1 is not compplete
         # we do not save the DAG; DAG execution will start with a DAG that
@@ -1271,8 +1280,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # greater than 2, we publish the DAG on an interval that is set in 
         # DAG_executor_constants. We also use num_incremental_DAGs_generated_since_base_DAG
         # to determine whether to publish such a DAG. The base DAG is the one
-        # with partitions 1 and 2. After we save this base DAG, we increment 
-        # num_incremental_DAGs_generated_since_base_DAG every time we generate
+        # with complete partition 1 and incomplete partition 2. After we save this base 
+        # DAG, we increment num_incremental_DAGs_generated_since_base_DAG every time we generate
         # a DAG. So when the current partition is 3 we increment 
         # num_incremental_DAGs_generated_since_base_DAG and it becomes 1. If
         # the interval is 2, we do not publish this new DAG with partitions 
@@ -1280,8 +1289,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # since num_incremental_DAGs_generated_since_base_DAG will have the value
         # 2 and 2%2 == 0. Note however that the increment of 
         # num_incremental_DAGs_generated_since_base_DAG doesn't occur 
-        # until *after* this call to generate_DAG_info_incremental_partitions(),
-        # that is bfs() calls this method generate_DAG_info_incremental_partitions()
+        # until *after* this call to generate_full/partitil_DAG_info_incremental_partitions(),
+        # that is, bfs() calls this method generate_full/partial_DAG_info_incremental_partitions()
         # and after that it will increment num_incremental_DAGs_generated_since_base_DAG
         # if current_partition is > 2. So we generate the new incremental DAG
         # and then if we find current_partition is > 2 we increment
@@ -1290,7 +1299,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # this also checks whether the DAG is complete or whether the 
         # current partition is 2. (We always publish the DAG if it complete
         # (i.e., regardless of the interval calculation) and we save the 
-        # DAG and start the DAG_excutor_driver if partition is 2 (nd the 
+        # DAG and start the DAG_excutor_driver if partition is 2 (and the 
         # DAG is complete or incomplete))
         #
         # This condition reflects the fact that we will have incremented
