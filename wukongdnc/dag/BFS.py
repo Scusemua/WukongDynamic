@@ -6974,24 +6974,28 @@ partition of their respctive components.
 
 There are 7 partitions in the generated DAG. Partition i has a single fanout to partition i+1 and partition 
 i+1 receives inputs only from partition i. Thus we can statically custer partition i and i+1. We do this 
-by giving partition has a "collapse" (nstead of a fanin/fanout) to partition i+1. Every partition has a
-collapse to th next partition, except for the partitions that are sinks. When the DAG is executed, one
-executor will execute all of the partitions in a given connected component. The DAG_executor_driver will
-start an executor for each leaf task, where there is one leaf task per connected component, and the 
-partitions/tasks for a connected component will be executed serially while the partitions/tasks in
-different components will be executed in parallel. 
+by giving partition i a "collapse" (instead of a fanin/fanout) to partition i+1. Every partition has a
+collapse to the next partition, except for the partitions that are sinks. When the DAG is executed, one
+executor will execute all of the partitions in a given connected component (since they all are collapsed). 
+The DAG_executor_driver will start an executor for each leaf task, where there is one leaf task per connected 
+component, and the partitions (tasks) for a connected component will be executed serially while the 
+partitions/tasks in different components will be executed in parallel. The task TP for a partition P is to 
+compute the pagerank values for the nodes in the partition. The exceutor for task TP receives any parent 
+node values sent by the excutors that excuted the parent partitions and then outputs the pagerank
+values to the executors that will execute the tasks for any other partitions that contain children of the 
+nodes in P.
 
 Note that there is more parallelism in a DAG of groups than there is in a DAG of partitions. The groups
 (in the partitions) of a connected component may be executed in parallel.
 
-The ADG that will be generated is shown below. Note that task PRi_1 has a collapse to PR(i+1)_1 
+The DAG that will be generated is shown below. Note that task PRi_1 has a collapse to PR(i+1)_1 
 and no fanins/fanouts. The input for each task is shown. For example, the input for PR2_1L is 
-'PR1_1-PR2_1' which denotes that PR2_2L's input is the part of PR1_1's output labeled "PR2_1L".
+'PR1_1-PR2_1' which denotes that PR2_2L's input is that part of PR1_1's output labeled "PR2_1L".
 For partitions, all of partition i's output is for partition i+1. For groups, a group may send
 its outputs to many different groups and the outputs for each group may be different. In that case
-we need to identify a group's outputs with the receiving groups. So a group PR2_1 may have inputs
-PR1_1-PR2_1 and a groip PR2_2L may have inputs PR1_1-PR2_2L, etc. (Note that in a Dask graph, a task 
-outputs the same values on all its fanouts, fanins.)
+we need to identify the part of the sending group's output that are sent to the receiving groups. 
+So a group PR2_1 may have inputs PR1_1-PR2_1 and a group PR2_2L may have inputs PR1_1-PR2_2L, etc. 
+(Note that in a Dask graph, a task outputs the same values on all of its fanouts/fanins.)
 
 [2024-07-11 07:53:27,833][DAG_executor_driver][MainProcess][MainThread]: DAG_executor_driver: DAG_map:
 [2024-07-11 07:53:27,833][DAG_executor_driver][MainProcess][MainThread]: 1

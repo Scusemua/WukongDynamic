@@ -44,8 +44,68 @@ of the DAG.
 - For each sender, we check whether its receiver is also a sender. If not, we add
   the receiver to the DAG. For example, P2 has a receiver P3 which is not itself a 
   sender as P3 is a sink. Thus when we add P2 to the DAG we also add P3 after P2.
+
+  Here is a trace for the whiteboard example when generating partitions. All of the edges
+  are collapses.
+
+        [2024-07-12 08:20:30,908][BFS_generate_DAG_info][MainProcess][MainThread]: Partition DAG:
+        [2024-07-12 08:20:30,924][BFS_generate_DAG_info][MainProcess][MainThread]: generate_DAG_info
+        Note that PR3_1, PR5_1, and PR7_1 are not senders, they are sinks, i.e., they receive but do not 
+        send outputs since they are the last partitions in their respective connected components
+        (CC1 = PR1_1, PR2_1L, PR3_1, CCC2 = PR4_1, PR5_1, CC3 = PR6_1, PR7_1)
+        [2024-07-12 08:20:30,924][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR1_1
+        Sender PR1_1 has a collapse to PR2_1L, where PR2_1L is also a sender. We process sender PR2_1 next
+        [2024-07-12 08:20:30,940][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR1_1 --> PR2_1L : Collapse
+        [2024-07-12 08:20:30,940][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR2_1L
+        When we process sender PR2_1L, we see that it has a receiver PR3_1 that is not itself a sender.
+        Thus we process sink PR3_1 next. For PR3_1 we know it is the last partition of its CC so it has
+        no collapse.
+        [2024-07-12 08:20:30,940][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR2_1L --> PR3_1 : Collapse
+        PR4_1 is a leaf node.
+        [2024-07-12 08:20:30,955][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR4_1
+        PR5_1 is a sink.
+        [2024-07-12 08:20:30,955][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR4_1 --> PR5_1 : Collapse
+        PR6_1 is a leaf node and PR7_1 is a sink
+        [2024-07-12 08:20:30,955][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR6_1
+        [2024-07-12 08:20:30,971][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR6_1 --> PR7_1 : Collapse
+
+  Here is a trace for the whiteboard example when generating partitions. the labeling of each 
+  edge as a fanin/fanout/faninNB/collapse is shown. Again, we iterate thru the roup_senders
+  and also check whether the single receiver for a sender is a sink (i.e., only receives inputs
+  since it is th last partition in its connected component.)
+
+        [2024-07-12 08:34:23,337][BFS_generate_DAG_info][MainProcess][MainThread]: generate_DAG_info
+        PR1_1 has fanouts to PR2_1 and PR2_3. PR1_1 hasa faninB to R2_2L since PR2_2L also 
+        receives inputs from PR2_1 and PR1_1 has fanouts in addition the the faninNB so 
+        PR1_1 cannot do a fanin (as a fanin has a become task). (FaninNB means fanin with No Become)
+        [2024-07-12 08:34:23,347][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR1_1
+        [2024-07-12 08:34:23,353][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR1_1 --> PR2_2L : FaninNB
+        [2024-07-12 08:34:23,355][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR1_1 --> PR2_3 : Fanout
+        [2024-07-12 08:34:23,363][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR1_1 --> PR2_1 : Fanout
+        [2024-07-12 08:34:23,373][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR2_1
+        Sender PR2_1 has a faninNB to PR2_2L not a fanin since PR1_1 requires a fninNB to PR2_2L
+        [2024-07-12 08:34:23,378][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR2_1 --> PR2_2L : FaninNB
+        [2024-07-12 08:34:23,386][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR2_2L
+        PR2_2L has a fanout to PR3_1. PR2_2L has a faninB to PR3_2 since PR3_2 also 
+        receives inputs from PR3_1 and PR2_2L has a fanout in addition to it faninNB so 
+        PR2_2L cannot do a fanin (as a fanin has a become task).        
+        [2024-07-12 08:34:23,388][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR2_2L --> PR3_2 : FaninNB
+        [2024-07-12 08:34:23,398][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR2_2L --> PR3_1 : Fanout
+        [2024-07-12 08:34:23,398][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR3_1
+        [2024-07-12 08:34:23,398][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR3_1 --> PR3_2 : FaninNB
+        PR2_3 and PR3_2 each only have a fanin to PR3_3 so this is a fanin instead of a faninNB.
+        [2024-07-12 08:34:23,406][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR2_3
+        [2024-07-12 08:34:23,408][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR2_3 --> PR3_3 : Fanin
+        [2024-07-12 08:34:23,418][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR3_2
+        [2024-07-12 08:34:23,418][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR3_2 --> PR3_3 : Fanin
+        PR4_1 and PR6_1 each have a collapse to PR5_1 and PR7_1 respectively.
+        [2024-07-12 08:34:23,426][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR4_1
+        [2024-07-12 08:34:23,433][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR4_1 --> PR5_1 : Collapse
+        [2024-07-12 08:34:23,433][BFS_generate_DAG_info][MainProcess][MainThread]: senderX: PR6_1
+        [2024-07-12 08:34:23,443][BFS_generate_DAG_info][MainProcess][MainThread]: sender PR6_1 --> PR7_1 : Collapse
+
 - Some of the senders are also leaf nodes, e.g., P1, P4, and P5. If after iterating
-  through the senders ther are leaf nodes that we have not visited, then these
+  through the senders there are leaf nodes that we have not visited, then these
   leaf nodes ar partitions in a connected component that has only one partition such
   as P8 in the example above. These sinlge partitions aer leaf nofes and sink 
   nodes. We add these remaining leaf nodes to the DAG
@@ -494,6 +554,7 @@ def generate_DAG_info():
                 sender_set_for_receiverY = Partition_receivers[receiverY]
                 length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
                 length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
+
                 # Note: Already asserted length_of_receiver_set_for_senderX == 1 above
                 try:
                     msg = "[Error]: BFS_generate_DAG_info: partition " + receiverY + " does not receive from 1 sender (senderx)."
@@ -509,14 +570,14 @@ def generate_DAG_info():
                         # only one task sends input to receiverY and this sending 
                         # task only sends to one task, so collapse receiverY, i.e.,
                         # senderX becomes receiverY
-                        logger.trace("sender " + senderX + " --> " + receiverY + " : Collapse")
+                        logger.info("sender " + senderX + " --> " + receiverY + " : Collapse")
                         if not receiverY in Partition_all_collapse_task_names:
                             Partition_all_collapse_task_names.append(receiverY)
                         else:
                             pass # error only one task can collapse a given task
                         collapse.append(receiverY)
                     else:
-                        # Note: This code should be unrachable. We asserted 
+                        # Note: This code should be unreachable. We asserted 
                         # length_of_receiver_set_for_senderX == 1 above. For
                         # partitions, a partition can only have collapses, i.e.,
                         # no fanouts or faninNBs.
@@ -536,7 +597,7 @@ def generate_DAG_info():
                             num_nodes = partitions_num_shadow_nodes_map[receiverY]
                             fanout_partition_group_sizes.append(num_nodes)
                 else:
-                    # Note: This code should be unrachable. We asserted 
+                    # Note: This code should be unreachable. We asserted 
                     # length_of_sender_set_for_receiverY == 1 above. For
                     # partitions, a partition can only have collapses, i.e.,
                     # no fanouts or faninNBs.
@@ -1128,7 +1189,7 @@ def generate_DAG_info():
                         # only one task sends input to receiverY and this sending 
                         # task (senderX) ) sends to one task, so collapse receiverY, i.e.,
                         # senderX becomes receiverY
-                        logger.trace("sender " + senderX + " --> " + receiverY + " : Collapse")
+                        logger.info("sender " + senderX + " --> " + receiverY + " : Collapse")
                         if not receiverY in Group_all_collapse_task_names:
                             Group_all_collapse_task_names.append(receiverY)
                         else:
@@ -1165,7 +1226,7 @@ def generate_DAG_info():
                             isFaninNB = True
                             break
                     if isFaninNB:
-                        logger.trace("sender " + senderX + " --> " + receiverY + " : FaninNB")
+                        logger.info("sender " + senderX + " --> " + receiverY + " : FaninNB")
                         if not receiverY in Group_all_faninNB_task_names:
                             Group_all_faninNB_task_names.append(receiverY)
                             Group_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
@@ -1176,7 +1237,7 @@ def generate_DAG_info():
                     else:
                         # senderX sends an input only to receiverY, same for any other
                         # tasks that sends inputs to receiverY so receiverY is a fanin task.
-                        logger.trace("sender " + senderX + " --> " + receiverY + " : Fanin")
+                        logger.info("sender " + senderX + " --> " + receiverY + " : Fanin")
                         if not receiverY in Group_all_fanin_task_names:
                             Group_all_fanin_task_names.append(receiverY)
                             Group_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
