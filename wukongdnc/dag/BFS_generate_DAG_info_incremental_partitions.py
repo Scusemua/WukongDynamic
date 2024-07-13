@@ -216,7 +216,11 @@ Partition_DAG_version_number = 0
 # Saving current_partition_name as previous_partition_name after processing the 
 # current partition. We cannot just subtract one, e.g. PR3_1 becomes PR2_1, since
 # the name of partition 2 might actually be PR2_1L, so we need to 
-# save the actual name "PR2_1L" and retrive it when we process PR3_1
+# save the actual name "PR2_1L" and retrive it when we process PR3_1.
+# Used to generate the input (label) for the current partition (i.e., the input
+# of the current partition is the outut of the previous partition. Note that 
+# a partition i outputs only to partition i+1 (unless partition i is a sink, i.e.,
+# the last partition in a connected component.)
 Partition_DAG_previous_partition_name = "PR1_1"
 # number of tasks in the DAG
 Partition_DAG_number_of_tasks = 0
@@ -712,7 +716,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 # The base DAG is the DAG with complete partition 1 and incomplete partition 2. This is 
 # the first DAG to be executed assuming the DAG has more than one partition.
 # num_incremental_DAGs_generated_since_base_DAG is the number incremental DAGs generated since
-# the base DAG; we publish every ith incremental DAG generated, where i can be set by user. 
+# the base DAG; we publish every ith incremental DAG generated, where i can be set by user.
+# 
+# Note: references "num_incremental_DAGs_generated_since_base_DAG+1" 
 
 
     global Partition_all_fanout_task_names
@@ -1132,7 +1138,11 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # for current_partition_name. That is, we only create a 
         # senders when we get the first sender.
         #
-        # Note: We know this is not partition 1 based on if-condition
+        # Note: We know this is not partition 1 based on the above if-condition.
+        # Note: Partition 2 can also be a leaf node, e.g., if partition 1 is a
+        # leaf node of a single partition connected component then partition 2
+        # will also be a leaf node (which is the first (and possibly only) partition
+        # of the second connected component).
 
         try:
             msg = "[Error]: generate_DAG_info_incremental_partitions:" \
@@ -1232,7 +1242,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
             faninNB_sizes, task_inputs,
             to_be_continued,
-            # We do not know whether this first group will have fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
+            # We do not know whether this first partition will have fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
             # that are incomplete until we process the 2nd partition, except if to_be_continued
             # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
             # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
@@ -1289,23 +1299,24 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # since num_incremental_DAGs_generated_since_base_DAG will have the value
         # 2 and 2%2 == 0. Note however that the increment of 
         # num_incremental_DAGs_generated_since_base_DAG doesn't occur 
-        # until *after* this call to generate_full/partitil_DAG_info_incremental_partitions(),
-        # that is, bfs() calls this method generate_full/partial_DAG_info_incremental_partitions()
-        # and after that it will increment num_incremental_DAGs_generated_since_base_DAG
-        # if current_partition is > 2. So we generate the new incremental DAG
-        # and then if we find current_partition is > 2 we increment
-        # num_incremental_DAGs_generated_since_base_DAG and use it to check
-        # whether we need to publish the new DAG. Note that the condition for 
-        # this also checks whether the DAG is complete or whether the 
-        # current partition is 2. (We always publish the DAG if it complete
-        # (i.e., regardless of the interval calculation) and we save the 
+        # until *after* the bfs() call to generate_full/partitil_DAG_info_incremental_partitions(),
+        # (which is the method we are in here).
+        # That is, bfs() calls method generate_full/partial_DAG_info_incremental_partitions()
+        # and after that bfs() increments num_incremental_DAGs_generated_since_base_DAG,
+        # (if the current_partition is > 2). So bfs() generates the new incremental DAG using 
+        # this method we aer in and then if bfs() finds current_partition > 2 it increments
+        # num_incremental_DAGs_generated_since_base_DAG and uses it to check
+        # whether it needs to publish the new DAG. Note that the condition for 
+        # publishing, in addition to checking the publication interval, also checks whether 
+        # the DAG is complete or whether the current partition is 2. (We always publish the 
+        # DAG if it is complete (i.e., regardless of the interval calculation) and we save the 
         # DAG and start the DAG_excutor_driver if partition is 2 (and the 
         # DAG is complete or incomplete))
         #
-        # This condition reflects the fact that we will have incremented
-        # num_incremental_DAGs_generated_since_base_DAG by the time we check
-        # if current_partition_number>2, i.e, we use 
-        # (num_incremental_DAGs_generated_since_base_DAG+1) here.
+        # Since bfs() will increment num_incremental_DAGs_generated_since_base_DAG 
+        # and use the new value (num_incremental_DAGs_generated_since_base_DAG+1) 
+        # to check whether to publish the DAG (returned by this method),
+        #  in this method we use (num_incremental_DAGs_generated_since_base_DAG+1).
 
         if current_partition_number <= 2:
             #The current_partition_number is 2 - if it were 1 we would have 
@@ -1370,8 +1381,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         #
         # if the new DAG is not complete, we will be generating
         # more DAGS and we need to guard against sharing.
-        # Note: see the comment below for this same block of code.It has 
+        # Note: see the comment below for this same block of code. It has 
         # additional explanation.
+        # Note: see the comment above about the use of num_incremental_DAGs_generated_since_base_DAG+1
 
 #brc: use of DAG_info:
         # We only need to make the copies if we will be publishing/executing 
@@ -1613,10 +1625,10 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         #    logger.error("[Error]: generate_DAG_info_incremental_partitions: using partitions and a"
         #        + " partition has more than one sending partition.")
                 
-        # sender is first and only element in set since a partition i is followed by (sends to) partition i+1
+        # sender is first and only element in set senders since a partition i is followed by (sends to) partition i+1
         # We checked above if senders is None so it is not None here. (Senders is none only for leaf tasks.)
-        # Note: We only use this in the assert the follows. We know that the sender is the previous partitio.
-        sender = next(iter(senders)) 
+        # Note: We only use this in the assert that follows. We know that the sender is the previous partition.
+        sender = next(iter(senders)) # first element of senders
 
         try:
             msg = "[Error]: generate_DAG_info_incremental_partitions using partitions and" \
@@ -1707,11 +1719,18 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             faninNB_sizes, task_inputs,
             # to_be_continued parameter can be true or false
             to_be_continued,
-            # We do not know whether this first group will have fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
-            # that are incomplete until we process the 2nd partition, except if to_be_continued
+            # We do not know whether this current partition will have fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
+            # that are incomplete until we process the next partition, except if to_be_continued
             # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
             # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
-            # to True but we may change this value when we process partition 2.
+            # to True but we may change this value when we process the next partition. Note that 
+            # if the current partition turns out to be the last partition in its connected component,
+            # then when we process the next partition, which is the first partition in the next connected
+            # component, we know that this current partition is complete and has no fanins/fanouts/collapses
+            # to an incomplete partition as it is the last partition in its connected component. The 
+            # first partition of the next connected component can be complete (if there are moer partitions in
+            # this component but this current partion, which is the last partition of its component by definition
+            # has no fanins/fanouts/collapses to the first partition of te next component.))
             to_be_continued)
         Partition_DAG_states[current_partition_name] = current_state
         # See the example above
@@ -1749,8 +1768,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # then we will save the DAG and start the DAG_executor_driver, which 
         # will read and execute the DAG. If the current partition is 2, we save 
         # the DAG whether it is complete or not and start the DAG_excutor_driver,
-        # which will read and execute the DAG. (If partition 1 is not compplete
-        # we do not save the DAG; DAG execution will start with a DAG that
+        # which will read and execute the DAG. (If partition 1 is not complete
+        # we do not save the DAG; DAG execution will start later with a DAG that
         # has a complete partition 1 and an (in)complete partition 2.) For partitions
         # greater than 2, we publish the DAG on an interval that is set in 
         # DAG_executor_constants. We also use num_incremental_DAGs_generated_since_base_DAG
@@ -1783,6 +1802,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # (num_incremental_DAGs_generated_since_base_DAG+1) here.
 
 #brc: issue: Something to do with full/partial DAG? and/or the sender/receiver thing?
+# !!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!
+# Q: Does partial DAG have all the info we need in it?
 
         if current_partition_number <= 2:
             #The current_partition_number is 2 - if it were 1 we would have 
@@ -1812,7 +1834,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             #   the base DAG (with partitions 1 and 2). So after generating this DAG with
             #   partitions 1, 2, and 3, bfs will increment num_incremental_DAGs_generated_since_base_DAG
             #   to 1, and use the new value 1 to determine whether to publish
-            #   this new DAG. Thus we use (num_incremental_DAGs_generated_since_base_DAG+1)
+            #   this new DAG. Thus, here we use (num_incremental_DAGs_generated_since_base_DAG+1)
             #   which will be 1 to determine whether to generate a full or partial 
             #   DAG for this DAG with partitions 1, 2, and 3. If the interval for 
             #   publishing DAGs is 2, then 1%2 does not equal 0, so we generate a 
@@ -1821,6 +1843,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             #   thus we will generate a full DAG (since 2%2 == 0). Note that 
             #   if the DAG with partitions 1-3 is complete (i.e., not to be continued)
             #   then it will be published since this condition also checks not to_be_continued).
+            # 
+            # Note: we also did generate_full_DAG_for_partitions when current_partition_number is 2
             if (not to_be_continued) \
                  or (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
                 DAG_info = generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)

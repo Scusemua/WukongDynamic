@@ -3978,6 +3978,11 @@ def bfs(visited, node):
 #brc: use of DAG_info: 
                             DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued,
                                 num_incremental_DAGs_generated_since_base_DAG)
+                            # Note: references "num_incremental_DAGs_generated_since_base_DAG+1" in order
+                            # to determine whether to generate a partial or full DAG. 
+                            # since num_incremental_DAGs_generated_since_base_DAG is incremented below and used
+                            # to determine whether to publish the generated DAG. 
+
                         else:
 #brc: incremental groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
@@ -4004,6 +4009,10 @@ def bfs(visited, node):
                                 groups_of_current_partition,groups_of_partitions,
                                 to_be_continued,
                                 num_incremental_DAGs_generated_since_base_DAG)
+                            # Note: references "num_incremental_DAGs_generated_since_base_DAG+1" in order
+                            # to determine whether to generate a partial or full DAG. 
+                            # since num_incremental_DAGs_generated_since_base_DAG is incremented below and used
+                            # to determine whether to publish the generated DAG. 
 
                             # we are done with groups_of_current_partition so clear it so it is empty at start
                             # of next partition. No: see next comment
