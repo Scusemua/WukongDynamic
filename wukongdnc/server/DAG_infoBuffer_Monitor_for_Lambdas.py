@@ -187,8 +187,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # will be no more deposits.
         DAG_info_is_complete = kwargs['DAG_info_is_complete']
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
-        # Note: cummulative_leaf_tasks gets cleared after we start the new leaf tasks
-        # for debugging - all leaf tasks started so far
+        # Note: cummulative_leaf_tasks gets cleared after we start the new leaf tasks.
+        # For debugging - all leaf tasks started so far
         self.cummulative_leaf_tasks += new_leaf_tasks
 
         try:

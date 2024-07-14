@@ -164,14 +164,14 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         self.print_DAG_info(self.current_version_DAG_info)
 
 #brc leaf tasks
-        logger.trace("DAG_infoBuffer_Monitor: new leaf task states deposited: ")
+        logger.info("DAG_infoBuffer_Monitor: new leaf task states deposited: ")
         for work_tuple in new_leaf_tasks:
             leaf_task_state = work_tuple[0]
-            logger.trace(str(leaf_task_state))
-        logger.trace("DAG_infoBuffer_Monitor: cumulative leaf task states deposited: ")
+            logger.info(str(leaf_task_state))
+        logger.info("DAG_infoBuffer_Monitor: cumulative leaf task states deposited: ")
         for work_tuple in self.current_version_new_leaf_tasks:
             leaf_task_state = work_tuple[0]
-            logger.trace(str(leaf_task_state))
+            logger.info(str(leaf_task_state))
 
         restart = False
 #brc: same version
@@ -294,7 +294,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # Note that all the waiting workers need to get a copy of
             # self.current_version_new_leaf_tasks. So we cannot clear it until all the 
             # waiting workers have made their copy, i.e., until self.num_waiting_workers 
-            # is 0. There may be no waiting workers, i.e., there is only one worer and it 
+            # is 0. There may be no waiting workers, i.e., there is only one worker and it 
             # is executing here, so it will do this reset.
             if self.num_waiting_workers == 0:
                 self.current_version_new_leaf_tasks.clear()
@@ -316,10 +316,10 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             #self.print_DAG_info(self.current_version_DAG_info)
 
 #brc leaf tasks
-            logger.trace("DAG_infoBuffer_Monitor: withdraw: new leaf task states to be returned: ")
+            logger.info("DAG_infoBuffer_Monitor: withdraw: new leaf task states to be returned: ")
             for work_tuple in new_leaf_task_states:
                 leaf_task_state = work_tuple[0]
-                logger.trace(str(leaf_task_state))
+                logger.info(str(leaf_task_state))
 #brc same version
             # wake up the other (if any) waiting writers - we may be using 
             # only one writer so there may not be any other waiting writers
@@ -386,17 +386,17 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # Disabled to avoid concurent access (see comment above)
             #self.print_DAG_info(self.current_version_DAG_info)
 #brc leaf tasks
-            logger.trace("DAG_infoBuffer_Monitor: withdraw: new leaf task states to return: ")
+            logger.info("DAG_infoBuffer_Monitor: withdraw: new leaf task states to return: ")
             for work_tuple in new_leaf_task_states:
                 leaf_task_state = work_tuple[0]
-                logger.trace(str(leaf_task_state))
+                logger.info(str(leaf_task_state))
 
 #brc: same version
             self._next_version.signal_c_and_exit_monitor()
 #brc leaf tasks
             DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
             #return DAG_info, new_leaf_task_states, restart
-            logger.trace("DAG_infoBuffer_Monitor: return.")
+            logger.info("DAG_infoBuffer_Monitor: return.")
             return DAG_info_and_new_leaf_task_states_tuple, restart
         
 
