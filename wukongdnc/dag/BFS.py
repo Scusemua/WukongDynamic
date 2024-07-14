@@ -4379,7 +4379,7 @@ def bfs(visited, node):
                                             # We need the states of these leaf tasks so we can 
                                             # create the work that is added to the work_queue.
 #brc: use of DAG_info: if publish then get DAG_states and DAG_map (when using partitions)
-                                            logger.trace("BFS: new leaf tasks (some may be for partition/group 2):" + str(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental))
+                                            logger.info("BFS: new leaf tasks (some may be for partition/group 2):" + str(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental))
                                             DAG_states_incremental = DAG_info.get_DAG_states()
                                             # This is DAG_states of DAG_info
                                             logger.trace("BFS: DAG_states_incremental of new DAG_info: " + str(DAG_states_incremental))
@@ -4423,7 +4423,7 @@ def bfs(visited, node):
                     
                                                     dict_of_results_incremental =  {}
                                                     dict_of_results_incremental[task_name] = task_inputs
-                                                    logger.trace("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
+                                                    logger.info("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
                                                     work_tuple = (state_incremental,dict_of_results_incremental)
     #brc: leaf tasks
                                                     #work_queue.put(work_tuple)
@@ -4433,7 +4433,7 @@ def bfs(visited, node):
                                                 # documents that we are using the same code for lambdas and workers
 
                                             BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental.clear()
-                                            #logger.trace("BFS: leaf tasks after clear: " + str(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental))
+                                            logger.info("BFS: leaf tasks after clear: " + str(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental))
                                     else:
                                         if len(BFS_generate_DAG_info.leaf_tasks_of_groups_incremental) > 0:
                                             # New leaf task partitions have been generated. Since no task

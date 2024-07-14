@@ -210,6 +210,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
                 + str(self.requested_version_number_in_this_round))
             self._next_version.signal_c_and_exit_monitor()
         else:
+            logger.info("DAG_infoBuffer_Monitor: deposit() exit monitor as waiting != num_workers.")
             super().exit_monitor()
         return 0, restart
 

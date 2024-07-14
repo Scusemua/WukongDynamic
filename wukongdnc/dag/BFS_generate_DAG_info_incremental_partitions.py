@@ -1801,11 +1801,6 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # if current_partition_number>2, i.e, we use 
         # (num_incremental_DAGs_generated_since_base_DAG+1) here.
 
-#brc: issue: Something to do with full/partial DAG? and/or the sender/receiver thing?
-# !!!!!!!!!!!!!!!!!!!!!!!
-# !!!!!!!!!!!!!!!!!!!!!!!
-# Q: Does partial DAG have all the info we need in it?
-
         if current_partition_number <= 2:
             #The current_partition_number is 2 - if it were 1 we would have 
             # taken the first main branch above.

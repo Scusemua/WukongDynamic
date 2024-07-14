@@ -2483,6 +2483,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # when we got the new DAG_info and there should be no more
                     # partitions in the continue queue since there can be only 
                     # one partition that is to-be-continued.
+#brc: issue: inc part 1804: Something to do with full/partial DAG? and/or the sender/receiver thing?
+# !!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!
+# put 4 in queue then put 6 so there are two in queue?
                     try:
                         msg = "[Error]: work loop: process_continue_queue but" \
                             + " using partitions so this second to be continued" \

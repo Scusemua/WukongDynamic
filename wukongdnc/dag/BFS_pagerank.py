@@ -24,7 +24,7 @@ if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
     logger.addHandler(ch)
 """
 
-debug_pagerank = True
+debug_pagerank = False
 
 """
 
