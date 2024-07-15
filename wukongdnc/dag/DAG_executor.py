@@ -2685,7 +2685,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                     continue_tuple = (DAG_executor_state.state,False)
                                                     #continue_queue.put(DAG_executor_state.state)
                                                     continue_queue.put(continue_tuple)
-                                                    logger.trace("DAG_executor_work_loop: work from work loop is unexecutable_leaf_task,"
+                                                    logger.info("DAG_executor_work_loop: work from work loop is unexecutable_leaf_task,"
                                                         + " put work in continue_queue:"
                                                         + " state is " + str(DAG_executor_state.state))
                                                 else:
@@ -2762,7 +2762,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                     # for processes: when we got work from work_queue.
                                                     # for threads: when we generated the output (that became
                                                     #   this input.)
-                                                    logger.trace("DAG_executor_work_loop: put unexecutable_leaf_task work in continue_queue:"
+                                                    logger.info("DAG_executor_work_loop: put unexecutable_leaf_task work in continue_queue:"
                                                         + " state is " + str(DAG_executor_state.state))
                                                 else:
                                                     pass # lambdas TBD: call Continue object w/output
@@ -2868,10 +2868,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     new_DAG_info = DAG_info_and_new_leaf_task_states_tuple[0]
                                     new_leaf_task_states = DAG_info_and_new_leaf_task_states_tuple[1]
 #brc: leaf tasks
-                                    logger.trace("DAG_executor_work_loop: cumulative leaf task states withdrawn and added to work_queue: ")
+                                    logger.info("DAG_executor_work_loop: cumulative leaf task states withdrawn and added to work_queue: ")
                                     for work_tuple in new_leaf_task_states:
                                         leaf_task_state = work_tuple[0]
-                                        logger.trace(str(leaf_task_state))
+                                        logger.info(str(leaf_task_state))
                                         work_queue.put(work_tuple)
 
                                     # worker got a new DAG_info and will keep going.
@@ -2975,6 +2975,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         #DAG_executor_state.state = continue_queue.get()
                                         # This is stateinfo of continued task
 
+                                        logger.info("continue_queue items before getting first one:")
+                                        logger.info(list(continue_queue.queue))
+
                                         continue_tuple = continue_queue.get()
                                         DAG_executor_state.state = continue_tuple[0]
                                         continued_due_to_TBC = continue_tuple[1]
@@ -3004,8 +3007,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             process_continue_queue = False
                                         else:
                                             # process tasks/states in continue_queue
-                                            logger.trace("DAG_executor_work_loop: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXwork_loop: continue_queue.qsize()>0 set process_continue_queue = True.")
+                                            logger.info("DAG_executor_work_loop: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXwork_loop: continue_queue.qsize()>0 set process_continue_queue = True.")
                                             process_continue_queue = True
+                                            logger.info("continue_queue.qsize: " + str(continue_queue.qsize()))
+                                            logger.info("continue_queue items:")
+                                            logger.info(list(continue_queue.queue))
+                                            #for tuple in continue_queue:
+                                            #    logger.info(tuple)
 
                                     else:
                                         logger.info("DAG_executor_work_loop: after withdraw continue queue is empty.")
