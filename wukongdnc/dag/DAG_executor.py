@@ -2483,10 +2483,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # when we got the new DAG_info and there should be no more
                     # partitions in the continue queue since there can be only 
                     # one partition that is to-be-continued.
-#brc: issue: inc part 1804: Something to do with full/partial DAG? and/or the sender/receiver thing?
-# !!!!!!!!!!!!!!!!!!!!!!!
-# !!!!!!!!!!!!!!!!!!!!!!!
-# put 4 in queue then put 6 so there are two in queue?
+#brc: issue: put 4 in queue twice due to failure to clear leaf tasks
+#Q: but can we put two single node CCs in cont. queue?
                     try:
                         msg = "[Error]: work loop: process_continue_queue but" \
                             + " using partitions so this second to be continued" \
@@ -2641,11 +2639,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                 state_info.task_name in DAG_info.get_DAG_leaf_tasks() and state_info.ToBeContinued
                                             )
                                             if is_unexecutable_leaf_task:
-                                                # Cannot execute this leaf task until we get a new DAG. Note: the
-                                                # DAG generator added this leaf task to the work queue after it
-                                                # made the new DAG containing this completed leeaf task available
-                                                # so we will be able to execute this leaf task after we get the new 
-                                                # DAG. Note: each leaf task is the start of a new connected component
+                                                # Cannot execute this leaf task until we get a new DAG.Note: each leaf 
+                                                # task is the start of a new connected component
                                                 # in the graph (you cannot reach one CC from another CC.) and the 
                                                 # partitions of the connected components can be executed in parallel.
                                                 #
@@ -2669,7 +2664,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                 # partition. (Again, this is for workers, real lambdas
                                                 # that execute a task and find the tsk has to be continued
                                                 # fanins/fanouts will stop after saving the task's output 
-                                                # via a DAF_infoBuffer_Monitor_for_Lambdas.withdraw)() on the tcp_server.
+                                                # via a DAF_infoBuffer_Monitor_for_Lambdas.withdraw() on the tcp_server.
                                                 # A lambdas will be (re)started to process the continued tasks's
                                                 # fanins/fanouts (using the saved task output) when a new
                                                 # incremental DAG_info is deposited by bfs() via
@@ -2745,11 +2740,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             )
                                             # See the corresponding comment above for worker processes
                                             if is_unexecutable_leaf_task:
-                                                # Cannot execute this leaf task until we get a new DAG. Note: the
-                                                # DAG generator added this leaf task to the work queue after it
-                                                # made the new DAG containing this completed leeaf task available
-                                                # so we will be able to execute this leaf task after we get the new 
-                                                # DAG. Note: each leaf task is the start of a new connected component
+                                                # Cannot execute this leaf task until we get a new DAG. Note: 
+                                                # each leaf task is the start of a new connected component
                                                 # in the graph (you cannot reach one CC from another CC.) and the 
                                                 # partitions of the connected components can be executed in parallel
                                                 if DAG_executor_constants.USING_WORKERS:
@@ -2864,7 +2856,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     #new_DAG_info, new_leaf_task_states = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
                                     logger.info("calling withdrawX: requested_current_version_number: " \
                                         + str(requested_current_version_number))
-                                    DAG_info_and_new_leaf_task_states_tuple = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
+                                    DAG_info_and_new_leaf_task_states_tuple = 
+                                        DAG_infobuffer_monitor.withdraw(requested_current_version_number)
                                     new_DAG_info = DAG_info_and_new_leaf_task_states_tuple[0]
                                     new_leaf_task_states = DAG_info_and_new_leaf_task_states_tuple[1]
 #brc: leaf tasks
@@ -2969,7 +2962,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     if continue_queue.qsize() > 0:
                                         # if this worker has incomplete tasks in its continue
                                         # queue (like a leaf task from above, or the last partition
-                                        # in an incremental DAG, which is always incomplete) then 
+                                        # added to an incremental DAG, which is always incomplete) then 
                                         # start by executing those tasks.
 #brc: lambda inc: cq.get
                                         #DAG_executor_state.state = continue_queue.get()
@@ -3364,7 +3357,16 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #       + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get")
 #brc: lambda inc:
                 else:
-                    logger.trace("[Error]: DAG_executor_work_loop:"
+                    try:
+                        msg = "[Error]: DAG_executor_work_loop: else after elif cluster_queue.qsize() > 0 executed" \
+                            + " but this else should be unreachable."
+                        assert not (not DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING and cluster_queue.qsize() > 0), msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                            logging.shutdown()
+                            os._exit(0)
+                    #logger.trace("[Error]: DAG_executor_work_loop: else after elif cluster_queue.qsize() > 0 executed"
                         + " cluster_queue and continue_queue are both empty"
                         + " for a lambda but this lambda now has nothing to do"
                         + " and should have terminated at the end of the last iteration"
@@ -4058,7 +4060,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # This task now becomes a continued task. We are not using workers, i.e., we are using 
                 # lamdas, so we do not put T in the continue queue. Instead we try to get a new 
                 # incremental DAG. If T is in the new DAG then T's fanouts/fanins/collpase are complete
-                # and we can process the,. Otherwise, this lambda will save T and its output to a 
+                # and we can process them. Otherwise, this lambda will save T and its output to a 
                 # tcp_server object and terminate.
                 
 #brc: lambda inc:

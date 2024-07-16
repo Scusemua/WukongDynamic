@@ -4357,6 +4357,7 @@ def bfs(visited, node):
                                     new_leaf_task_work_tuples = []           
 #brc: incremental groups
                                     if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                        # using partitions
                                         if len(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental) > 0:
                                             # New leaf task partitions have been generated. Since no task
                                             # will fanout/fanin these leaf tasks, we must ensure they 
@@ -4376,7 +4377,7 @@ def bfs(visited, node):
                                             # on this last call to generate DAG_info or on a previous call. This
                                             # is the first call to DAG_infobuffer_monitor.deposit(DAG_info) since
                                             # these leaf tasks were added.)
-                                            # We need the states of these leaf tasks so we can 
+                                            # We need the states of these leaf tasks so we can eventually (upon withdraw())
                                             # create the work that is added to the work_queue.
 #brc: use of DAG_info: if publish then get DAG_states and DAG_map (when using partitions)
                                             logger.info("BFS: new leaf tasks (some may be for partition/group 2):" + str(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental))
@@ -4435,11 +4436,12 @@ def bfs(visited, node):
                                             BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental.clear()
                                             logger.info("BFS: leaf tasks after clear: " + str(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental))
                                     else:
+                                        # using groups
                                         if len(BFS_generate_DAG_info.leaf_tasks_of_groups_incremental) > 0:
                                             # New leaf task partitions have been generated. Since no task
                                             # will fanout/fanin these leaf tasks, we must ensure they 
                                             # get started; if we are using workers, deposit these leaf tasks
-                                            # in the work queue. If we are using lambdas, start lambdas 
+                                            # in the work queue (upn withdraw()). If we are using lambdas, start lambdas 
                                             # to execute these leaf tasks/partitions. For non-incremental
                                             # DAG generation, the DAG_executor_driver starts all leaf tasks
                                             # at the beginning of DAG excution. 
@@ -4451,38 +4453,59 @@ def bfs(visited, node):
                                             # We need the states of these leaf tasks so we can 
                                             # create the work that is added to the work_queue.
    
-    # (Same comment applies in mirrored code above.)                                            
-    #brc: put them in work_queue after deposit? 
-    # so we know that whoever gets the lead tasks as work has a DAG that contains the tasks?
-    # No? since some workers may get this leaf work and then will not need to call withdraw()
-    # to get a DAG?
-    # So if a worker gets a leaf task and it's state is not in its DAG or it is but leaf task
-    # state is not complete then we got the leaf task before we got a new
-    # DAG that has theleaf task in it. so the worker should put leaf task in its continue_queue 
-    # and do leaf task after it gets a new DAG which will have leaf task(s) in it. So worker does not 
-    # execute the leaf task so when it gets the -1 ... it will call withdraw,
-    # as expected. Ugh.
-    #
-    # issue is: put -1 in work_queue but then get 4 from work_queue so do 4 and inc num_tasks_executed
-    # so this condition becomes false
-    #    if num_tasks_executed == num_tasks_to_execute: 
-    # thus we do not call work_qeuue.get, instead we try to process -1 as a state.
-    #
-    # an this get out of sync? So we look at 4, it's in the DAG as complete.
-    # so we can execute it. But then can we get a -1? -1 means 
+                                            # Note: It does not work to put the leaf tasks in the work
+                                            # queue either (a) here, before the deposit, or (b) have 
+                                            # deposit() or withdaw)() put the leaf tasks in the work 
+                                            # queue since a worker can then get a leaf task as wortk but 
+                                            # find that th leaf task is not in its current DAG; this
+                                            # is possible since the leaf task will be in the next DAG 
+                                            # the worker gets, which it gets by calling withdraw. The current
+                                            # desgn is to have withdraw return a new DAG (with the leaf tasks
+                                            # in it) and a list of lead tasks. The worker that gets the non-empty
+                                            # list of leaf tasks puts each leaf task in the work queue if the 
+                                            # leaf task is not to be continued (the leaf is in the DAG but it may
+                                            # be to be continued) and in the continue queue if it is to be continied.
+                                            # In the latter case, the leaf task wil not be to be continued in the 
+                                            # next DAG returned by withdraw(). For that ADG the leaf task will be 
+                                            # executed by the worker as a continied task.
+                                            #
+                                            # These are historical comments tha arose when we did not have the 
+                                            # worker getting the non-empty leaf task list put the workers in the 
+                                            # work queue or continue queue, e.g., we put the leaf tasks in the 
+                                            # work queue before calling deposit()
+                                            
+                                            # (Same comment applies in mirrored code above.) 
+                                            # start Historical comments:                                           
+                                            # brc: put them in work_queue after deposit? 
+                                            # so we know that whoever gets the leaf tasks as work has a DAG that contains the tasks?
+                                            # No? since some workers may get this leaf work and then will not need to call withdraw()
+                                            # to get a DAG?
+                                            # So if a worker gets a leaf task and it's state is not in its DAG or it is but leaf task
+                                            # state is not complete then we got the leaf task before we got a new
+                                            # DAG that has theleaf task in it. so the worker should put leaf task in its continue_queue 
+                                            # and do leaf task after it gets a new DAG which will have leaf task(s) in it. So worker does not 
+                                            # execute the leaf task so when it gets the -1 ... it will call withdraw,
+                                            # as expected. Ugh.
+                                            #
+                                            # issue is: put -1 in work_queue but then get 4 from work_queue so do 4 and inc num_tasks_executed
+                                            # so this condition becomes false
+                                            #    if num_tasks_executed == num_tasks_to_execute: 
+                                            # thus we do not call work_qeuue.get, instead we try to process -1 as a state.
+                                            #
+                                            # an this get out of sync? So we look at 4, it's in the DAG as complete.
+                                            # so we can execute it. But then can we get a -1? -1 means 
 
-    # another Issue: first worker to see num_tasks_executed == num_tasks_to_execute
-    # will put -1 in work_queue. Some worker (maybe the same worker) will get
-    # this -1 and call withdraw, maybe after putting a second -1 in the 
-    # work_queue (if there are multiple workers). The first worker can call
-    # withdraw and get a DAG and set the new num_tasks_to_execute so that 
-    # the second worker will not see num_tasks_executed == num_tasks_to_execute 
-    # and so will not get the -1 tha the first worker put there?
-    #
-
-    #
-    # So if they get the 4, they can, add it to their continue queue and
-    # call get_work again?
+                                            # another Issue: first worker to see num_tasks_executed == num_tasks_to_execute
+                                            # will put -1 in work_queue. Some worker (maybe the same worker) will get
+                                            # this -1 and call withdraw, maybe after putting a second -1 in the 
+                                            # work_queue (if there are multiple workers). The first worker can call
+                                            # withdraw and get a DAG and set the new num_tasks_to_execute so that 
+                                            # the second worker will not see num_tasks_executed == num_tasks_to_execute 
+                                            # and so will not get the -1 tha the first worker put there?
+                                            #
+                                            # So if they get the 4, they can add it to their continue queue and
+                                            # call get_work again?
+                                            # end Historical commnts
 
 #brc: use of DAG_info: if publish then get DAG_states and DAG_map (when using groups)
                                             logger.trace("BFS: new leaf tasks (some may be for partition/group 2): " + str(BFS_generate_DAG_info.leaf_tasks_of_groups_incremental))
