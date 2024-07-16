@@ -297,6 +297,11 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # waiting workers have made their copy, i.e., until self.num_waiting_workers 
             # is 0. There may be no waiting workers, i.e., there is only one worker and it 
             # is executing here, so it will do this reset.
+#issue: Again, this signalling worker and the awakened worker(s) will all get leaf tasks.
+# Why do they all need th leaf tasks? leaf task need to be dealt with by one worker,
+# preseumably the firdt worker to return?
+# Q: When is a leaf task unexecutable? How is it not in the DAG? It is in DAG as incomplete
+# where sing of previous CC is complete and previous to sink has no tbc fanins/fanouts.
             if self.num_waiting_workers == 0:
                 self.current_version_new_leaf_tasks.clear()
 
@@ -354,6 +359,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # self.current_version_new_leaf_tasks. So we cannot clear it until all the 
             # waiting workers have made their copy, i.e., until self.num_waiting_workers 
             # is 0. 
+#brc: issue: 2 waiting workers; deposit wakes both up; first worke does not do clear so returns
+# 4; scond worker does clear ad returns 4, so double return 4.
             if self.num_waiting_workers == 0:
                 self.current_version_new_leaf_tasks.clear()
             # cascaded wakeup, i.e., if there are more than one worker waiting,
