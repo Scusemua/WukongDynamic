@@ -6736,7 +6736,7 @@ def main():
                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
-    else:
+    else: # incremental DAG generation
 #11
 #brc: graph on the fly
         # Note: If we deallocate the bfs() data structures, they will be empty

@@ -27,9 +27,12 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         self.current_version_number_DAG_info = 1
 #brc leaf tasks
         # The initial DAG has the initial leaf task(s) in it. As later we find
-        # more leaf tasks (tht start new connected components), we supply them 
-        # with the DAG so the leaf tasks can be aded to the work_queue and
-        # and executed by workers (when we are using workers).
+        # more leaf tasks (that start new connected components), we supply them 
+        # with the DAG so the leaf tasks can be added to the work_queue and
+        # and executed by workers (when we are using workers). If a leaf task
+        # is the last partition (or a group of the last partition) it is continued.
+        # If we are generating partitions, there can be only one continued partition,
+        # which is the last partition in the current incremental DAG.
         self.current_version_new_leaf_tasks = []
         self._next_version=super().get_condition_variable(condition_name="_next_version")
 #brc: same version
@@ -55,8 +58,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
 #brc leaf tasks
         # The initial DAG has the initial leaf task(s) in it. As later we find
         # more leaf tasks (tht start new connected components), we supply them 
-        # with the DAG so the leaf tasks can be aded to the work_queue and
-        # and executed by workers (when we aer using workers).
+        # with the DAG so the leaf tasks can be added to the work_queue and
+        # eventually executed by workers (when we are using workers) or lambdas.
         #self.current_version_new_leaf_tasks = []
 
         # logger.trace(kwargs)
@@ -208,6 +211,11 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             logger.info("DAG_infoBuffer_Monitor: deposit() signal waiting writers:"
                 + " self.requested_version_number_in_this_round: " 
                 + str(self.requested_version_number_in_this_round))
+            # Note: deposit() cannot self.current_version_new_leaf_tasks.clear() since
+            # this list must be returned to one (and only one) worker. The first signaled
+            # worker makes a copy of the this list and then does the clear. The copy
+            # is returned as part of a returned tuple (which has new incremental dAG
+            # and this copy of the list of leaf tasks.)
             self._next_version.signal_c_and_exit_monitor()
         else:
             logger.info("DAG_infoBuffer_Monitor: deposit() exit monitor as waiting != num_workers.")
@@ -292,18 +300,24 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             DAG_info = self.current_version_DAG_info
 #brc leaf tasks
             new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
-            # Note that all the waiting workers need to get a copy of
-            # self.current_version_new_leaf_tasks. So we cannot clear it until all the 
-            # waiting workers have made their copy, i.e., until self.num_waiting_workers 
-            # is 0. There may be no waiting workers, i.e., there is only one worker and it 
-            # is executing here, so it will do this reset.
-#issue: Again, this signalling worker and the awakened worker(s) will all get leaf tasks.
-# Why do they all need th leaf tasks? leaf task need to be dealt with by one worker,
-# preseumably the firdt worker to return?
-# Q: When is a leaf task unexecutable? How is it not in the DAG? It is in DAG as incomplete
-# where sing of previous CC is complete and previous to sink has no tbc fanins/fanouts.
-            if self.num_waiting_workers == 0:
-                self.current_version_new_leaf_tasks.clear()
+
+            # Note that there may be one or more waiting workers but only one
+            # worker should return the list of new leaf tasks. This worker
+            # will put the leaf tasks in the work queue. If mutiplw workers 
+            # returned this list they would all put the leaf tasks in the work queue.
+            # This would lead to a leaf task being executed multple times or a
+            # leaf task (if it is a continued task) being added to the continue
+            # queue multiple times. (For partitions, we only allow one continued
+            # task in the continue queue since only the last partition in an 
+            # incremental DAG can be continued and in the new incremental DAg this 
+            # parition cannot be continued (though a singe new partition can be continued)
+            # self.current_version_new_leaf_tasks.
+            #
+            # A copy was made above befoer this clear so we retain a copy for the first
+            # awakedned worker. This copy is returned with the new incremental DAG 
+            # in a tuple. the other workers will get a copy of the now empty 
+            # list current_version_new_leaf_tasks and return it.
+            self.current_version_new_leaf_tasks.clear()
 
             logger.trace("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
                 + str(DAG_info.get_DAG_version_number()))
@@ -333,7 +347,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # Note: this is a cascaded wakeup - the first worker wakes up the 
             # second, wakes up the third etc, and a new deposit cannot be made 
             # until all waiting workers have been signaled and left the monitor.
-            # Note: self.requested_version_number_in_this_round was reset above
+            # Note: self.requested_version_number_in_this_round was reset above and
+            # self.current_version_new_leaf_tasks was cleared by the first worker.
             self._next_version.signal_c_and_exit_monitor()
             #super().exit_monitor()
 #brc leaf tasks
@@ -355,14 +370,24 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             DAG_info = self.current_version_DAG_info
 #brc leaf tasks
             new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
-            # Note that all the waiting workers need to get a copy of
-            # self.current_version_new_leaf_tasks. So we cannot clear it until all the 
-            # waiting workers have made their copy, i.e., until self.num_waiting_workers 
-            # is 0. 
-#brc: issue: 2 waiting workers; deposit wakes both up; first worke does not do clear so returns
-# 4; scond worker does clear ad returns 4, so double return 4.
-            if self.num_waiting_workers == 0:
-                self.current_version_new_leaf_tasks.clear()
+            # Note that there may be one or more waiting workers but only one
+            # worker should return the list of new leaf tasks. This worker
+            # will put the leaf tasks in the work queue. If mutiplw workers 
+            # returned this list they would all put the leaf tasks in the work queue.
+            # This would lead to a leaf task being executed multple times or a
+            # leaf task (if it is a continued task) being added to the continue
+            # queue multiple times. (For partitions, we only allow one continued
+            # task in the continue queue since only the last partition in an 
+            # incremental DAG can be continued and in the new incremental DAg this 
+            # parition cannot be continued (though a singe new partition can be continued)
+            # self.current_version_new_leaf_tasks.
+            #
+            # A copy was made above befoer this clear so we retain a copy for the first
+            # awakedned worker. This copy is returned with the new incremental DAG 
+            # in a tuple. the other workers will get a copy of the now empty 
+            # list current_version_new_leaf_tasks and return it.
+
+            self.current_version_new_leaf_tasks.clear()
             # cascaded wakeup, i.e., if there are more than one worker waiting,
             # the deposit() will wakeup the first worker with its
             # signal_c_and_exit_monitor(). The first waitng worker will wakeup
@@ -406,8 +431,6 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             #return DAG_info, new_leaf_task_states, restart
             logger.info("DAG_infoBuffer_Monitor: return.")
             return DAG_info_and_new_leaf_task_states_tuple, restart
-        
-
 
 class Dummy_DAG_info:
     def __init__(self,value,version_number):
