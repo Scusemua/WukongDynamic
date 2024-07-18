@@ -5,6 +5,7 @@ if not is_leaf_task:
     # lambdas invoked with inputs. We do not add leaf task inputs to the data
     # dictionary, we use them directly when we execute the leaf task.
 
+    # payload is the lambda (dictionary) payload
     dict_of_results = payload['input']
     for key, value in dict_of_results.items():
         data_dict[key] = value
@@ -18,13 +19,13 @@ else:
 # "TASKS_USE_RESULT_DICTIONARY_PARAMETER" is true when we
 # are running pagerank tasks. 
 # Also option "SAME_OUTPUT_FOR_ALL_FANOUT_FANIN" is true when 
-# we are splitting a task;s output into separate outputs for
+# we are splitting a task's output into separate outputs for
 # each fanin/fanout.
           
 # ****************
 # Note: My task_input values are qualifed names, e.g,, "PR1_1-PR2_1"
 # since I generate them not Dask. Dask will use normal task names 
-# whch for this example is "PR2_1". You need to change the names in the 
+# which for this example is "PR2_1". You need to change the names in the 
 # task_inputs tuple to be qualifed names by adding the current task
 # name as a prefix.
 # ****************
@@ -43,7 +44,7 @@ logger.info("is_leaf_task: " + str(is_leaf_task))
 logger.info("task_inputs: " + str(task_inputs))
 
 # Note: For DAG generation, for each state we execute a task and 
-# for each task T we have to say what T;' task_inputs are - these are the 
+# for each task T we have to say what T's task_inputs are - these are the 
 # names of tasks that give inputs to T. When we have per-fanout output
 # instead of having the same output for all fanouts, we specify the 
 # task_inputs as "sending task - receiving task". So a sending task
@@ -73,8 +74,8 @@ if not is_leaf_task:
 else:
     args = task_inputs
     if TASKS_USE_RESULT_DICTIONARY_PARAMETER:
-        # Passing am emoty inut tuple to the PageRank task,
-        # This results in a rresult_dictionary
+        # Passing am emoty input tuple to the PageRank task,
+        # This results in a result_dictionary
         # of "DAG_executor_driver_0" --> (), where
         # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver
         # provided an empty input tuple for the leaf task. In the 
@@ -111,7 +112,7 @@ Normally, we put it in the data_dict as
     data_dict["PR1_1"] = output
 but we then send this output to PR1_1's fanout tasks. For Dask tasks,
 we fanout all non-become tasks with the same output. For pagerank we
-fanout tasks with their individual outputs. Currently, for each fanouts
+fanout tasks with their individual outputs. Currently, for each fanout
 we send a dictionary of results to the fanout task (as part of the Lambda's
 payload)
     dict_of_results =  {}
@@ -122,7 +123,7 @@ The fanout task will get all of PR1_1's output.
 But we want to split PR1_1's output instead. If variable name holds the 
 name "PR2_1" of the task being fanned out by PR1_1:
     dict_of_results[str(calling_task_name+"-"+name)] = output[name]
-Here the output of PR1_1 is a dictionary tha maps the name of a fanout
+Here the output of PR1_1 is a dictionary that maps the name of a fanout
 task to its part of PA1_1's output
 The dict_of_results will map "PR1-1-PR2_1" to the value in dictionary
 output whose key is "PR2_1".
@@ -133,7 +134,7 @@ if SAME_OUTPUT_FOR_ALL_FANOUT_FANIN:
     # do not split the output - each fanout/fanin gets all of the output
     data_dict[state_info.task_name] = output
 else:
-#   Example: task PR1_1 producs an output for fanouts PR2_1
+#   Example: task PR1_1 produces an output for fanouts PR2_1
 #   and PR2_3 and faninNB PR2_2. Output is a dictionary mapping fanout task name
 #   to list
 #       output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}

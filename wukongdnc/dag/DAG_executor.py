@@ -210,12 +210,15 @@ def execute_task(task, args):
     output = task(*args)
     return output
 
-#brc: ToDo: total_num_nodes is hardcoded
 #brc: groups partitions
 #def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDictionary):
 def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDictionary,
 #brc: groups partitions
     groups_partitions):
+    # an option is to read all the groups/partitions into groups_partitions at the start
+    # and pass this ist along. The pagerank driver can grab the group/partition it needs
+    # from the list:
+    #    partition_or_group = groups_partitions[task_file_name]
     #commented out for MM
     thread_name = threading.current_thread().name
     logger.trace(thread_name + ": execute_task_with_result_dictionary: input of execute_task is: " 
@@ -1149,8 +1152,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
     # or groups and pass them the the real lambdas it starts as part of the 
     # payload. This list group_partitions will be passed to process_fanouts
     # and added to the payloags of the real lambdas started for fanouts.
-    # tcp_server can also read group_partitions and make
-    
+    # tcp_server can also read group_partitions and make it available
+    # to the faninNBs, which also start real lambdas.
 
     thread_name = threading.current_thread().name
 
@@ -1759,9 +1762,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #brc: groups partitions
     # For real lambdas, to avoid reading the partitions/groups from an s3
     # bucket or whatever, the DAG_executor_driver can input the partitions
-    # or groups and pass them the the real lambdas it starts as part of the 
+    # or groups and pass them to the real lambdas it starts as part of the 
     # payload. This list group_partitions will be passed to process_fanouts
-    # and added to the payloags of the real lambdas started for fanouts.
+    # and added to the payloads of the real lambdas started for fanouts.
     # tcp_server can also read group_partitions and make.
     # IF we are not using real lambdas this list is empty.
     DAG_map = DAG_info.get_DAG_map()
@@ -3923,7 +3926,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # Results are the pagerank values that are computed, one
                     # per node in the partition/group.
                     #
-                    # At the end of execution, we wil lcheck whether an output/result
+                    # At the end of execution, we will check whether an output/result
                     # was set for each task (partition/group) and print the outputs/results.
                     #
                     # CHECK_PAGERANK_OUTPUT will only be true if:
@@ -5570,7 +5573,7 @@ def DAG_executor_lambda(payload):
     # bucket or whatever, the DAG_executor_driver can input the partitions
     # or groups and pass them the the real lambdas it starts as part of the 
     # payload. This list group_partitions will be passed to process_fanouts
-    # and added to the payloags of the real lambdas started for fanouts.
+    # and added to the payloads of the real lambdas started for fanouts.
     # tcp_server can also read group_partitions and make it available
     # to the faninNBs, which also start real lambdas.
     groups_partitions = []
