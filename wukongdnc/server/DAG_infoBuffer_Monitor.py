@@ -207,7 +207,23 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # No new workers can enter deposit or withdraw and use 
             # requested_version_number_in_this_round until all the waiting worder have 
             # renentered and exitid the monitor. Multiple workers may do this reset.
+            #
+            # Again, the first worker (in a round of worker reuests) set this to thie
+            # version number this worker is requesting. We then assert that the other
+            # workers in this round are requesting the same version number. When all 
+            # the workers have requested then the round is over and we reset this
+            # back to -1. We also do this reset in withdraw() in the case that a
+            # deposit has already occurred and this is the last worker to call withdraw 
+            # in the current round. (Note: awakened workers in withdraw() do not do this 
+            # reset as it was done here by deposit or by the last worker to call withdraw 
+            # this round (and this last worker does not block/wait), which is the then-part
+            # of the main if-statement in withdraw.)
+            # Note: all the signaled waiting workers will reenter and exit the monitor before 
+            # any new workers can enter withdraw, or a signalled worker can exit and reenter 
+            # the monitor on their next call to withdraw, or deposit can be renetered on 
+            # another call to deposit(). So signalled workers have priority.
             self.requested_version_number_in_this_round = -1
+
             logger.info("DAG_infoBuffer_Monitor: deposit() signal waiting writers:"
                 + " self.requested_version_number_in_this_round: " 
                 + str(self.requested_version_number_in_this_round))
@@ -218,7 +234,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # and this copy of the list of leaf tasks.)
             self._next_version.signal_c_and_exit_monitor()
         else:
-            logger.info("DAG_infoBuffer_Monitor: deposit() exit monitor as waiting != num_workers.")
+            logger.info("DAG_infoBuffer_Monitor: deposit() exit monitor as waiting workers != num_workers.")
             super().exit_monitor()
         return 0, restart
 
@@ -247,6 +263,9 @@ class DAG_infoBuffer_Monitor(MonitorSU):
                     + " self.requested_version_number_in_this_round: " \
                     + str(self.requested_version_number_in_this_round)
                 assert self.requested_version_number_in_this_round == requested_current_version_number , msg
+                # This is True for the worker that finds self.requested_version_number_in_this_round == -1 since 
+                # we assign self.requested_version_number_in_this_round = requested_current_version_number but
+                # it may not be True for following workers if they pass a different requested_current_version_number
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -260,19 +279,23 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # for this round) or the DAG is complete. Note: if the DAG is complete then 
             # requested_current_version_number <= self.current_version_number_DAG_info is true
             # since we must have deposited a new DAG for the DAG to become complete - workers
-            # will not request a new version of the DAG if their current version is complete.
+            # will never request a new version of the DAG if their current version is complete.
             # There is no need to block a worker if the DAG is complete since this is the 
             # last DAG to be generated so all workers will get this last DAG on this 
-            # current and last round.
+            # current and last round (and as we just said, the workers will not request
+            # a new DAG if their current DAG is complete.)
             # Note: all workers should request the same version number; they may receive a 
             # newer version than they requested.
-        #if requested_current_version_number <= self.current_version_number_DAG_info:
         if (requested_current_version_number <= self.current_version_number_DAG_info \
             and self.num_waiting_workers == DAG_executor_constants.NUM_WORKERS - 1):
+            # All the workers have called withdraw and the new incremental DAG has been
+            # deposited - so this last worker does not wait; instead it signals the waiting workers.
             # Note: if there is only one worker then DAG_executor_constants.NUM_WORKERS is 1
             # so DAG_executor_constants.NUM_WORKERS - 1 is 0 which equals self.num_waiting_workers
-            # so this worker will not wait.
-            # See the note in deposit() about making this condition "if (...) or self.current_version_DAG_info_is_complete"
+            # so this worker (which is the only worker) will not wait.
+            #
+            # See the note in deposit() about making this condition "if (...) or self.current_version_DAG_info_is_complete",
+            # which may have some issues.
             try:
                 msg = "[Error]: DAG_infoBuffer_Monitor: withdraw:" \
                     + " DAG is complete but request version number is not <= current version number." \
@@ -290,11 +313,22 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # before the next round, if any, starts.
             # Note: No worker can reenter the monitor for the next round until all
             # the waiting workers in this round have left the monitor. So we can 
-            # reset this now even though there may be multiple workers waiting. that is
+            # reset this now even though there may be multiple workers waiting. That is
             # we do not rqurie that last waiting worker to wakeup to do this reset.
             # No new workers can enter deposit or withdraw and use 
-            # requested_version_number_in_this_round until all the waiting worder have 
-            # renentered and exitid the monitor. Multiple workers may do this reset.
+            # requested_version_number_in_this_round until all the waiting workers have 
+            # renentered and exited the monitor. Multiple workers may do this reset.
+            #
+            # Again, the first worker (in a round of worker reuests) set this to thie
+            # version number this worker is requesting. We then assert that the other
+            # workers in this round are requesting the same version number. When all 
+            # the workers have requested then the round is over and we reset this
+            # back to -1. We also do this reset in deposit() in the case that all the 
+            # workers are waiting when the deposit occurs. Here, a deposit has already
+            # occurred and this is the last worker to call withdraw in the current round.
+            # (Note: awakened workers below do not do this reset as it was done by 
+            # deosit or by the last worker to call withdraw this round (and this last
+            # worker does not block/wait))
             self.requested_version_number_in_this_round = -1
 
             DAG_info = self.current_version_DAG_info
@@ -315,8 +349,11 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             #
             # A copy was made above befoer this clear so we retain a copy for the first
             # awakedned worker. This copy is returned with the new incremental DAG 
-            # in a tuple. the other workers will get a copy of the now empty 
-            # list current_version_new_leaf_tasks and return it.
+            # in a tuple. The other workers (which are the workers that were waiting when 
+            # the last worker entered withdraw()) will get a copy of the now empty 
+            # list current_version_new_leaf_tasks and return this empty copy. Only one 
+            # worker should get a non-empty list of lead tasks and add them to the 
+            # work queue. 
             self.current_version_new_leaf_tasks.clear()
 
             logger.trace("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
@@ -355,7 +392,10 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
             #return DAG_info, new_leaf_task_states, restart
             return DAG_info_and_new_leaf_task_states_tuple, restart
-        else:
+        
+        else: # some workers have not yet called withdraw() in this round or all workers
+              # have called but a new incremental ADG has not been deposited,
+              # so this worker waits (for more workers and/or a deposit())
 #brc: same version
             self.num_waiting_workers += 1
             logger.info("DAG_infoBuffer_Monitor: withdraw waiting for version " + str(requested_current_version_number)
