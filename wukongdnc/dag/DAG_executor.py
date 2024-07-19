@@ -1274,21 +1274,21 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     # where keys are fanout/faninNB names and the valus are
                     # the outputs for that fanout/faninNB.
                     # Note: For DAG generation, for each state we execute a task and 
-                    # for each task T we have t say what T;s task_inputs are - these are the 
+                    # for each task T we have to say what T's task_inputs are - these are the 
                     # names of tasks that give inputs to T. When we have per-fanout output
                     # instead of having the same output for all fanouts, we specify the 
                     # task_inputs as "sending task - receiving task". So a sending task
                     # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
-                    # as the task_inputs, instad of just using "S", which is the Dask way.
+                    # as the task_inputs, instead of just using "S", which is the Dask way.
                     
                     #if name.endswith('L'):  
                     #    dict_of_results[qualfied_name] = output[name[:-1]]
                     #    qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
                     #else:
-                    qualfied_name = str(calling_task_name) + "-" + str(name)
+                    qualified_name = str(calling_task_name) + "-" + str(name)
                     # Q: Can we pull output[name] value from data_dict since
                     # we put output in data_dict?
-                    dict_of_results[qualfied_name] = output[name]
+                    dict_of_results[qualified_name] = output[name]
 
                     #dict_of_results[qualfied_name] = output[name]
                 logger.trace(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
@@ -1302,7 +1302,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 # piggyback the fanouts on the call to process faninNBs. If there are 
                 # no faninNBs we will send this list to the work_queue directly. Note:
                 # we could check at the end of this method whether there are any
-                # faninNBs and if, not, call work_queue.put.
+                # faninNBs and. if not, call work_queue.put.
 
                 list_of_work_queue_or_payload_fanout_values.append(work_tuple)
             else: 
@@ -1341,8 +1341,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     #    dict_of_results[qualfied_name] = output[name[:-1]]
                     #    qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
                     #else:
-                    qualfied_name = str(calling_task_name) + "-" + str(name)
-                    dict_of_results[qualfied_name] = output[name]
+                    qualified_name = str(calling_task_name) + "-" + str(name)
+                    dict_of_results[qualified_name] = output[name]
 
                     #dict_of_results[qualfied_name] = output[name]
                 logger.info(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
@@ -1394,8 +1394,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         #    dict_of_results[qualfied_name] = output[name[:-1]]
                             
                         #else:
-                        qualfied_name = str(calling_task_name) + "-" + str(name)
-                        dict_of_results[qualfied_name] = output[name]
+                        qualified_name = str(calling_task_name) + "-" + str(name)
+                        dict_of_results[qualified_name] = output[name]
 
                         #dict_of_results[qualfied_name] = output[name]
                     logger.trace(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
@@ -1466,8 +1466,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         #    dict_of_results[qualfied_name] = output[name[:-1]]
                         #    qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
                         #else:
-                        qualfied_name = str(calling_task_name) + "-" + str(name)
-                        dict_of_results[qualfied_name] = output[name]
+                        qualified_name = str(calling_task_name) + "-" + str(name)
+                        dict_of_results[qualified_name] = output[name]
 
                         #dict_of_results[qualfied_name] = output[name]
                     logger.trace(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
@@ -3919,10 +3919,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             output, result_tuple_list = execute_task_with_result_dictionary_shared(task,state_info.task_name,num_nodes_in_graph,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
 
                     # save outputs or result so we can check them after execution.
-                    # Outputs are the values sent to other partitions/groups,
-                    # not the pagerank values for each node. The outputs
+                    # Outputs are just those (parent) pagerank values sent to (the children in 
+                    # ) other partitions/groups, not all the pagerank values for each node. The outputs
                     # can be empty since a partition/group can have no 
-                    # fanouts/fanins/faninNBs/collapses.
+                    # fanouts/fanins/faninNBs/collapses, i.e., no children in other partitions/groups.
                     # Results are the pagerank values that are computed, one
                     # per node in the partition/group.
                     #
@@ -3934,7 +3934,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # and we are using workers or simulatng lambdas with threads.
                     # In these cases, we can save the results locally in a shared
                     # map, i.e., shared/accessed by worker threads or the threads 
-                    # simulating lambdas. When using processes or rel lambdas we woould
+                    # simulating lambdas. When using processes or real lambdas we would
                     # have to sav the results/outputs remotely. 
                     # We might want to do that, i.e., create a map synchronzation
                     # object stored on the tcp_server and send the outputs/results to it.
@@ -3961,25 +3961,31 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         return output
                 """
                 """
-                output is a dictionary mapping task name to list of tuples.
+                Describing what we currently had for Dask DAGs and what we need for PageRank:
+                Currently, output is a dictionary mapping task name to list of tuples.
                 output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
                 This is the PR1_1 output. We put it in the data_dict as
                     data_dict["PR1_1"] = output
                 but we then send this output to process_fanouts. The become
                 task is PR2_1 and the non-become task is PR_2_3. In general,
-                we fanout all non-become tasks with this same output. We should
-                actually fanout tasks with their indivisual output from the 
+                we fanout all non-become tasks with this same output, i.e., the Dask way.
+                For Pagerank, we can fanout tasks with their individual output from the 
                 dictionary. Currently, for each name in set fanouts:
                     dict_of_results =  {}
+                    # map calling_task_name to its entire output
                     dict_of_results[calling_task_name] = output
+                    # fanout to name by adding work to the work queue, which is 
+                    # the state of the fanned out task and the results of calling task
                     work_tuple = (DAG_states[name],dict_of_results)
                     work_queue.put(work_tuple)
                 which assigns dict_of_results[calling_task_name] = output.
                 But we want to assign instead:
+                    # gran part of output intended for task name, e.g., "PR2_1" and 
+                    # label it "PR1_1-PR2_1"
                     dict_of_results[str(calling_task_name+"-"+name)] = output[name]
                 when we have per-fanout outputs instead of all fanouts get the 
                 same output. 
-                Also, we currently have:
+                Also, we currently (for non-pageran DAGs) have:
                     sender_set_for_senderX = Group_receivers.get(senderX)
                     if sender_set_for_senderX is None:
                         # senderX is a leaf task since it is not a receiver
@@ -3993,7 +3999,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 So the task_input for fanout PR2_3 is ("PR1_1) since PR1_1 sends
                 its output to PR2_3. And we put the output in the data_dict
                 as data_dict["PR1_1"] = output so we'll be grabbing the 
-                entire output as the input of PR2_1.
+                entire output of PR1_1 as the input of PR2_1.
                 Note: process_fanouts put a work tuple for PR2_1 in the work 
                 queue and set the DAG_executor_state.state to the become
                 task state, so the non-leaf executor, will next do the 
@@ -4003,7 +4009,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 sends it output to PR2_3. Using the data_dict["PR1_1"] value
                 the input for PR2_3 is the entire output of PR1_1.
 
-                So: the output of a PageRank task is a dictionary that maps
+                So: the output of a PageRank task should be a dictionary that maps
                 each of its fanout/faninNB/collapse/fanin tasks to a list if
                 input tuples. We need to divide the output into one output
                 per fanout/faninNB/collapse/fanin task. These outputs are
@@ -4014,29 +4020,50 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # data_dict may be local (A1) to process/lambda or global (A2) to threads
                 logger.trace(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
 
-                
                 if DAG_executor_constants.SAME_OUTPUT_FOR_ALL_FANOUT_FANIN:
                     data_dict[state_info.task_name] = output
                 else:
                 #   Example: task PR1_1 producs an output for fanouts PR2_1
                 #   and PR2_3 and faninNB PR2_2.
-                #       output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
+                #       PR1_1 output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
                     for (k,v) in output.items():
                         # example: state_info.task_name = "PR1_1" and 
-                        # k is "PR2_3" so data_dict_key is "PR1_1-PR2_3"
+                        # k is "PR2_3" so data_dict_key is "PR1_1-PR2_3".
+                        # (The value v would be the output of PR1_1 intended for PR2_3)
+                        # Grabbing the output of PR1_1 inteneded for k (e.g. PR2_3)
                         data_dict_key = str(state_info.task_name+"-"+k)
-                        # list of input tuples. Example: list of single tuple:
-                        # [(3, 0.012042187499999999)], hich says that the pagerank
+                        # re: list of input tuples. 
+                        # Example: list of input tuples for PR2_3, that is a single tuple:
+                        # [(3, 0.012042187499999999)]. This is the list of input 
+                        # values that PR2_3 will receive from the partition/groups that 
+                        # have parent nodes of PR2_3. The executor of PR2_3 will receive these
+                        # values and then perform the pagerank calculations for the nodes in PR2_3.
+                        # This example list ays that the pagerank
                         # value of the shadow_node in position 3 of PR2_3's 
-                        # partition is 0.012042187499999999. This is the pagerank
+                        # partition is 0.012042187499999999. Recall that a shadow node in position i
+                        # is a proxy for the parent node of the node in position i+1.
+                        # In this example, the shadow node in position 3 is the pagerank
                         # value of a parent node of the node in position 4 of 
-                        # PR2_3's partition. We set the shadow nodes's value before
-                        # we start the pagerank calculation. There is a trick used
-                        # to make sure the hadow node's pageran value is not changed 
+                        # PR2_3's partition. That s, to compute the pagerank value of the node in
+                        # position 4 of PR2_3, we need the pagerank value of node 4's parent (we
+                        # assume 4 has a sinlge parent). The excutor for PR2_3 will receive
+                        # this value P and set shadow node 3's pagerank value to P. We also ensure node
+                        # 3 is set as the parent of node 4 (in node 4's parent list). 
+                        # There is a trick used to make sure the hadow node's pageran value is not changed 
                         # by the pagerank calculation. (We compute the shadow node's 
-                        # new paerank but we hardcode the shadow node's (dummy) parent
-                        # pagerank vaue so that the new shadow node pagerank is he same 
-                        # as the old value.)
+                        # new pagerank but we hardcode the shadow node's (dummy) parent
+                        # pagerank value so that the new shadow node pagerank will be the same 
+                        # as the old value, i.e., computing pagerank dfor all the nodes, including 
+                        # the nodes, non-shadow nodes and shadow nodes, does not change
+                        # the shadow node's pagerank value since the pagernk value of the shadow node's
+                        # dummy parent does not change and is hardcode to give us the 
+                        # shadow node value that we want. (Note: if the nods have a cycle then pagerank 
+                        # will be computed for a node more than once and we want the shadow node's value 
+                        # to be constant since the parent node that the shadow node represents is not 
+                        # in this cycle so it's pagerank value should not change.)
+                        # Note: One advantage of partitioning the input graph's nodes is that nodes
+                        # that are not in a cycle have their pagerank values computed only once. Normally
+                        # all of the nodes have their pagerank values computed many times if there is a cycle..
                         data_dict_value = v
                         data_dict[data_dict_key] = data_dict_value
 
@@ -4180,10 +4207,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # Group has fanouts/fanins/faninNBs/collapses that are TBC
                 # so workers will put this state in the continue_queue and lambdas
                 # will terminate. 
-                # Note that the lambda called withdraw() above and passed 
+                # (Note that the lambda called withdraw() above and passed 
                 # the task sate and output in case no new DAG was available in which case 
-                # the (state,output) will have been saved by withdraw(), When we get a new DAG
-                # we will get this state from the continue queue. We have already
+                # the (state,output) will have been saved by withdraw().)
+                # 
+                # When we get a new DAG we will get this state from the continue queue. We have already
                 # executed this state, so we will skip task execution and do 
                 # the continued fanouts/fanins/faninNBs/collapses. Note that when
                 # we get a new DAG that this group that had continued 
@@ -4220,8 +4248,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # We were going to add the fanouts to the work queue (minus the become
             # task) or start real lambdas to execute them, but clustered them instad. 
             # We add the becomre task's state to the cluster queue, just like a collapsed task. 
-            # Notice that the input for
-            # the become task (a fanout task) will be retieved from the data_dict, i.e., 
+            # Notice that the input for the become task (a fanout task) will be retieved from the data_dict, i.e., 
             # after T was excuted, we saved its output in the data dict so we know it
             # is there (in our local data dict if we are a process or lambda or the 
             # global data dict if we are a thread.) So we only put the state in the 
@@ -5951,4 +5978,26 @@ def inc1(inp):
     output = {'inc1': value}
     logger.trace("inc1 output: " + str(output))
     return output
+"""
+
+"""
+Note: Last partition L (groups of partition) in incremental DAG is continued. The previous
+partition P was continued but then we pulled down thr children of P to generate L so
+P became complete and L is continued since we do not know its output as its children
+have not been pulled dowm. P has fanins/fanouts to a continued partition/group L.
+
+We can execute P and we know its outputs so P's output to indiividual fanouts/fanins
+can be labeled. But we cannot execute L, even though we have L's inputs since we 
+do not know L's outputs an so cannot label L's outputs. Thus we execute P, save 
+its state and outputs in continue queue and then after we get new incremental DAG
+we perform P's fanin/fanouts. 
+
+For partition, we know P has a collapse to L, and we know P's outputs to L so we know 
+L's inputs from P. We could thus execute L but we don't know whether L has a collapse,
+i.e., it may be the last partition in it connected component. 
+
+So: if we aer using shadow nodes for L's collapsed next partition N we cannot set 
+the shadow nodes for N since we do not have it and likewise we cannot label L's 
+outputs so we could execute L and then after we et N we would have to finish 
+connecting L to N?
 """
