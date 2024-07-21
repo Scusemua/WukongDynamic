@@ -1946,11 +1946,61 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         # Note: continued_task initialized above
         process_continue_queue = False
         continue_queue = None
-        # workers and simulated labdas use the continue_queue during incremental
+        # Workers and simulated lambdas use the continue_queue during incremental
         # DAG generation. Real lambdas use the continue queue when they are executing 
-        # a restarted task for incremental DAG generation but only on the very frist
-        # iteration of the work loop.
+        # a restarted task for incremental DAG generation but only on the very first
+        # iteration of the work loop. (The restartd task is put in the continue queue 
+        # at the beginning of the work loop and immediately retrieved from the 
+        # continue_queue and excuted.The continue_queue is used to make the code
+        # more consistent with th worker code.)
+        #
+        # The continue_queue is used to handle to-be-continued tasks during incremental
+        # DAG generation. For example, for the first incremental DAG generated, there are
+        # two partitions - partition 1 and partition 2. When we generate partition 1, t
+        # means that we identify the nodes in partition 1. However, we do not know the 
+        # node's in partition 1 whose pagerank values will be send to partition 2 (or the 
+        # groups in partition 2). We do not identify the outputs of partition 1 until
+        # we generate partition 2. Since we will not identify the output information about
+        # partition 1 until we later generate partition 2, we say that the generation of 
+        # partition 1 is "to-be-continued" or just continued. We complete the generation of
+        # partition 1 by visiting the children of the nodes in partition
+        # 1 that are not in partition 1. If node X in partition 1 has a child node Y in 
+        # partition 2 then X is a parent of Y and the pagerank value of X is needed to compute
+        # the pagerank of Y. (Node X may also have childen in partition 1.) Note that the executor of 
+        # partition 2 will send the pagerank of X to the executor of Y during DAG execution.)
+        # At this point during DAG generation, partition 2 is to-be-continued while partition 1
+        # is not. When we execute this first incremental DAG (with partitions 1 and 2) we 
+        # execute task partition 1 (i.e, compute the pagerank values of the nodes in 
+        # partition 2). We also get the output of partition 1, which are those pagerank values
+        # in partition 1 that must be communicated to partition 2 (or the groups in partition 2.)
+        # Since partition 1 has fanins/fanouts/collapses to partition 2 (or the groups in partition 2),
+        # and partition 2 is continued (i.e., we do not have complete information about partition 2
+        # since we won't know partition 2's outputs until we generate partition 3 (which will be 
+        # i next incremental DAG generated), we do not excute partition 2; instead we put the 
+        # state for partition 1 (not partition 2) in the continue queue. Note that we put the 
+        # state for partition 1 in the continue queue even though it is partition 2 that is 
+        # the continued task. We put the state for 1 in the continue queue since afger we get 
+        # the next incremental DAG we will restart DAG execution by performing the fanins/fanouts/
+        # collapses of state 1 for partition 1. We will perform these fanins/fanouts/collapses which
+        # will lead to the excution of paritition 2 (or the groups in partition 2)
+        # We also use the continue_queue for managing leaf tasks when we are using workers duting 
+        # incremental DAG generation. When a leaf task is identified the leaf task will be 
+        # added to the work_queue so that it is available for execution. If the leaf task is 
+        # withdrawn from the work queue and the leaf task is a continued task, the leaf
+        # task is not exected, instead it is put into the continue queue. The leaf task 
+        # will be executed by the worker who added it to the continue queue when this worker
+        # gets a new DAG (in which the leaf task is guaranteed to not be a continued task.)
         if DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
+            # Note that there is a local continue queue for each worker/lambda. If a worker/lambda
+            # puts a task T in its continue queue than that worker/lamaba is the only worker/lambda
+            # that can get T from that queue. The work_queue is shared by the workers (global).
+            # Note that there can be only one continued partition in an incremental DAG, which is 
+            # the last partition P added to the DAG (assuing we are generating a DAG of partitions
+            # instead of a DAG of groups). In the next incremental DAG generated, partition P
+            # will not be continued. If there is a continued partition P2 in the new DAG, it 
+            # will be out in the work_queue, and execution will restart by getting P from 
+            # the continue queue. Partition P2 may be put in the continue queue but nly after
+            # we get P1 from te continue queue.
             continue_queue = queue.Queue()
 #hrc lambda inc:
         # True if we are executing the first iteration of the work loop
@@ -2463,11 +2513,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # Note: If there is work in the continue queue we get it,
                 # else if there is work in the cluster_queue we get it
                 # else we try to get work from the work queue.
+                #
                 # When using partitions, all the partitions in the DAG
-                # that are not the last partition are complete an can be 
-                # executed. The last partition may be incomplete - it is
-                # complete only if the DAG is complete (all the grah nodes
-                # aer in a paritition.)
+                # that are not the last partition added to the incrementl DG are complete 
+                # and can be executed. The last partition may be incomplete - it is
+                # complete only if the DAG is complete (all the graph nodes
+                # are in a paritition.) or it is the last partition in its connected
+                # component (whch means it does not send its outputs to another partition.)
                 if process_continue_queue:
                     try:
                         msg = "[Error]: work loop: process_continue_queue but" +  " not COMPUTE_PAGERANK or not USE_INCREMENTAL_DAG_GENERATION."
@@ -2486,8 +2538,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # when we got the new DAG_info and there should be no more
                     # partitions in the continue queue since there can be only 
                     # one partition that is to-be-continued.
-#brc: issue: put 4 in queue twice due to failure to clear leaf tasks
-#Q: but can we put two single node CCs in cont. queue?
+                    # Note that there can be only one continued partition in an incremental DAG, which is 
+                    # the last partition P added to the DAG (assuing we are generating a DAG of partitions
+                    # instead of a DAG of groups). In the next incremental DAG generated, partition P
+                    # will not be continued. If there is a continued partition P2 in the new DAG, it 
+                    # will be out in the work_queue, and execution will restart by getting P from 
+                    # the continue queue. Partition P2 may be put in the continue queue but nly after
+                    # we get P1 from te continue queue.
                     try:
                         msg = "[Error]: work loop: process_continue_queue but" \
                             + " using partitions so this second to be continued" \
@@ -2590,9 +2647,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # lot of synchronization to ensure that leaf tasks are added to the work
                             # queue (and thus are made available to workers) only after *every* 
                             # worker has obtained their next incremental DAG. 
-    #brc: issue: just return the leaf tasks on withdraw to ensure they are in DAG?
-    # ==> add assert below that leaf is in DAG?
-    # and see dag infobufer monitor for leafs.clear()
 
                             logger.info("DAG_executor_work_loop: cluster_queue.qsize() == 0 so"
                                 + " get work")

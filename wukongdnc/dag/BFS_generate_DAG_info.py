@@ -1645,12 +1645,12 @@ def generate_DAG_info():
         footer_line = "\t\t" + "}"
         dsk_lines.append(footer_line)
 
-        logger.trace("Dask dsk lines for Partitions:")
+        logger.info("Dask dsk lines for Partitions:")
         for line in dsk_lines:
-            logger.trace(line)
+            logger.info(line)
 
-        logger.trace("")
-        logger.trace("")
+        logger.info("")
+        logger.info("")
     else:
         dsk_lines = []
         dsk_lines.append(header_line)
