@@ -408,7 +408,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         else:
             # using real lambdas
             try:
-                # start simulated lambdas that with the new DAG_info
+                # start real lambdas with the new DAG_info
                 for start_tuple in self._buffer:
                     try: 
                         logger.info("get tuple")
@@ -419,7 +419,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         # it generated previously (before terminating) sand use the output
                         # to do the group's/task's fanins/fanout. If the task is a partition,
                         # we give the partition the input for its execution. 
-                        #(Tricky: after executing a group with TBC fanins/fanout/collpases,
+                        # (Tricky: after executing a group with TBC fanins/fanout/collpases,
                         # if it has TBC fanouts/faninNBs/fanins, we cannot do any of them so we
                         # have to wait until we get a new DAG and restart the group/task
                         # so we can complete the fanouts/faninNBs/fanins. After excuting 
