@@ -572,6 +572,9 @@ DEALLOCATE_BFS_SENDERS_AND_RECEIVERS = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_
 # We may want to do the above deallocations only for large input graphs
 # so we guard the dellocations above with 
 # (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)
+
+DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and False
+
 THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY = 1
 #
 # We also manage the size of the incremental DAG generated during incremental

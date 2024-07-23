@@ -234,6 +234,36 @@ Partition_DAG_is_complete = False
 #brc: num_nodes: 
 Partition_DAG_num_nodes_in_graph = 0
 
+#brc: deallocate DAG structures
+start_deallocation_index = -1
+stop_deallocation_index = -1
+next_deallocation_index = -1
+
+def deallocate_Partition_DAG_structures(i):
+    Partition_all_fanout_task_names[i] = None
+    Partition_all_fanin_task_names[i] = None
+    Partition_all_faninNB_task_names[i] = None
+    Partition_all_collapse_task_names[i] = None
+    Partition_all_fanin_sizes[i] = None
+    Partition_all_faninNB_sizes[i] = None
+    Partition_DAG_leaf_tasks[i] = None
+    Partition_DAG_leaf_task_start_states[i] = None
+    Partition_DAG_leaf_task_inputs[i] = None
+
+    partition_name = "PR" + str(i) + + "_1"
+    del Partition_DAG_states[partition_name]
+    del Partition_DAG_map[partition_name]
+    del Partition_DAG_tasks[partition_name]
+
+    # We are not doing deallocations for the non-collections
+    #Partition_DAG_version_number
+    #Partition_DAG_previous_partition_name
+    #Partition_DAG_number_of_tasks
+    #Partition_DAG_number_of_incomplete_tasks
+    #Partition_DAG_is_complete
+    #Partition_DAG_num_nodes_in_graph
+
+
 def destructor():
     # deallocate memory. Called at the end of bfs()
     global Partition_all_fanout_task_names
@@ -1362,16 +1392,18 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
 #brc: deallocate DAG structures
-        """
-        if DAG_executor_constants.DEALLOCATE_Partition_Group_DAG_structures and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+# ToDo: Need to assign start stop next
+        if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
             if current_partition_number >= 3:
                 # should we deallocate if we are done?
                 if (not to_be_continued) \
                     or (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
                     # deallocate from low-1 to middle-2
-                    for i in low-1 to middle-2:
-                        deallocate_Partition_DAG_structures(i)
-        """
+                    if start_deallocation_index != -1:
+                        # range(2,6) means from 2 to 6 (but not including 6):
+                        for i in range(start_deallocation_index-1, stop_deallocation_index-1):
+                            deallocate_Partition_DAG_structures(i)
+
         # If we will generate another DAG make sure state_info of 
         # current partition is not read/write shared with the DAG_executor.
         # We will change this state_info when we generate the 
