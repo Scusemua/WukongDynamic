@@ -1361,6 +1361,17 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             else:
                 DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
+#brc: deallocate DAG structures
+        """
+        if DAG_executor_constants.DEALLOCATE_Partition_Group_DAG_structures and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+            if current_partition_number >= 3:
+                # should we deallocate if we are done?
+                if (not to_be_continued) \
+                    or (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
+                    # deallocate from low-1 to middle-2
+                    for i in low-1 to middle-2:
+                        deallocate_Partition_DAG_structures(i)
+        """
         # If we will generate another DAG make sure state_info of 
         # current partition is not read/write shared with the DAG_executor.
         # We will change this state_info when we generate the 
