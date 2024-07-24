@@ -1391,19 +1391,6 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             else:
                 DAG_info = generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
-#brc: deallocate DAG structures
-# ToDo: Need to assign start stop next
-        if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
-            if current_partition_number >= 3:
-                # should we deallocate if we are done?
-                if (not to_be_continued) \
-                    or (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
-                    # deallocate from low-1 to middle-2
-                    if start_deallocation_index != -1:
-                        # range(2,6) means from 2 to 6 (but not including 6):
-                        for i in range(start_deallocation_index-1, stop_deallocation_index-1):
-                            deallocate_Partition_DAG_structures(i)
-
         # If we will generate another DAG make sure state_info of 
         # current partition is not read/write shared with the DAG_executor.
         # We will change this state_info when we generate the 
@@ -1624,6 +1611,32 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 #logging.shutdown()
                 #os._exit(0)
                 """
+
+    #brc: deallocate DAG structures
+# ToDo: Need to assign start stop next
+        if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+
+            # when do we do this? when doing 2 or publishing > 2?
+            if current_partition_number == 2 or (
+                not to_be_continued or (
+                (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
+                )):
+ 
+
+                start_deallocation_index = stop_deallocation_index
+                stop_deallocation_index = next_deallocation_index
+                next_deallocation_index = current_partition_number
+
+            if current_partition_number >= 3:
+
+                # should we deallocate if we are done?
+                if (not to_be_continued) \
+                    or (num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0:
+                    # deallocate from low-1 to middle-2
+                    if start_deallocation_index != -1:
+                        # range(2,6) means from 2 to 6 (but not including 6):
+                        for i in range(start_deallocation_index-1, stop_deallocation_index-1):
+                            deallocate_Partition_DAG_structures(i)
 
         logger.info("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
