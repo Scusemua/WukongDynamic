@@ -349,9 +349,14 @@ def generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tas
     DAG_info_dictionary = {}
     # These key/value pairs were added for incremental DAG generation.
 
-    # If there is only one partition in the entire DAG then it is complete and is version 1.
-    # Otherwise, version 1 is the DAG_info with partitions 1 and 2, where 1 is complete 
-    # and 2 is complete, if there are 2 partitons in the entire DAG, or incomplete otherwise.
+    # If there is only one partition in the entire DAG then it is complete and is version 1
+    # and version 1 is given to the DAG_executor_driver,
+    # DAG with partitions 1 and 2 is version 2, etc. Version 2 is the firat version executed
+    # if version 1 is not complete, as it is given to the DAG_executor_driver. Version 3 is 
+    # the first version requested by workers/lambdas (if Version 2 isn't complete,
+    #  i.e., the last generated version of the DAG). If the interval for publishing DAGs
+    # is, say, 4, then Version 3 has partitions 1 and 2, and 3, 4, 5, and 6 (i.e,
+    # partitions 1 through 2+4=6)
     Partition_DAG_version_number += 1
     # if the last partition has incomplete information, then the DAG is 
     # incomplete. When partition i is added to the DAG, it is incomplete
@@ -379,7 +384,7 @@ def generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tas
 # the monitor knows.
 # Also, comment about workers can hev difft dags. Why did we change that? They have
 # difft values of num tasks in DAG and num tasks executed so it messes up -1's?
-# So give them local vars of both?
+# So give them local vars of both? Then requesting difft versions
     Partition_DAG_number_of_tasks = len(Partition_DAG_tasks)
     # For partitions, this is at most 1. When we are generating a DAG
     # of groups, there may be many groups in the incomplete last
@@ -2249,8 +2254,19 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                     logger.info("generate_DAG_info_incremental_partitions: publish so do deallocations:")
                     for i in range(start_deallocation_index-1, stop_deallocation_index-1):
                         logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
-#brc: issue: But i may not have been excuted yet. We canonly deallocate executed states.
+#brc: issue: But i may not have been excuted yet. We can only deallocate executed states.
 # Is there are formula for relating the requested version number of workers and the start index? 
+# If workers request version n, n>2 then they have just executed partitions 1 through
+# 2 + ((n-3)*pub_interval), where the last partition 2 + ((n-3)*pub_interval) is continued and 
+# the preceding partition has a collapse to the continued task. 
+# Example: interval is 4 and they request Version 4. Then partitions are 1, 2, 3, 4, 5, 6
+# where Version 3 has P's 1, 2, 3, 4, 5, 6 and Version 2 has P's 1 and 2. They are requesting
+# Version 4, which will add 7, 8, 9, and 10, which makes 6 not-continued so 5 has no collapse
+# to a continued state. So we can deallocate 1, 2, 3, 4, which is 1 through (2+((n-3)*pub_interval))-2
+# which is 1 through 2+(1*4)-2 = 4. Note that we don't always start at 1, we start where we left off,
+# so in this example start becomes 5. Note that if they request version 3, then 
+# 2+((n-3)*pub_interval))-2 is 2+(0*4)-2 = 0 so we deallocate from 1 to 0 so no deallocations.
+
 # We have to call this from the monitor? in withdraw?
                         deallocate_Partition_DAG_structures(i)
 
