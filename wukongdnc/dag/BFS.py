@@ -3975,7 +3975,13 @@ def bfs(visited, node):
                             logger.info("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
                             #DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
-#brc: use of DAG_info: 
+#brc: deallocate DAG structures: need to do this same call both places
+# lambdas: save most recent DAG generated so can give it to multiple lambdas?
+                            current_version_number_DAG_info, _restart = DAG_infobuffer_monitor.get_current_version_number_DAG_info()
+                            BFS_generate_DAG_info_incremental_partitions.deallocate_DAG_structures(current_partition_number,
+                                current_version_number_DAG_info, num_incremental_DAGs_generated_since_base_DAG)
+#brc: use of DAG_info:      
+
                             DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued,
                                 num_incremental_DAGs_generated_since_base_DAG)
                             # Note: references "num_incremental_DAGs_generated_since_base_DAG+1" in order

@@ -16,6 +16,7 @@ from .BFS_generate_DAG_info import Partition_senders, Partition_receivers
 from .BFS_generate_DAG_info import leaf_tasks_of_partitions_incremental
 #from .BFS_generate_DAG_info import num_nodes_in_graph
 from . import BFS
+#from ..server import DAG_infoBuffer_Monitor
 
 logger = logging.getLogger(__name__)
 
@@ -2189,8 +2190,11 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         logger.info("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
     
-
-    #brc: deallocate DAG structures
+    return DAG_info
+    
+def deallocate_DAG_structures(current_partition_number,current_version_number_DAG_info,
+        num_incremental_DAGs_generated_since_base_DAG):
+#brc: deallocate DAG structures
     if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
 
         # Set the deallocation_indices if current_partition_number is 2, in which case we publish 
@@ -2203,6 +2207,10 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # still going to deallocate memory now. If execution is in fact ending soon then we did not 
         # need to deallocate now since we are just going to terminate DAG generation and execution
         # soon.
+
+        logger.info("generate_DAG_info_incremental_partitions: current_version_number_DAG_info: "
+            + str(current_version_number_DAG_info))
+
         if current_partition_number == 2 or \
             (
             current_partition_number > 2 
@@ -2266,6 +2274,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 # which is 1 through 2+(1*4)-2 = 4. Note that we don't always start at 1, we start where we left off,
 # so in this example start becomes 5. Note that if they request version 3, then 
 # 2+((n-3)*pub_interval))-2 is 2+(0*4)-2 = 0 so we deallocate from 1 to 0 so no deallocations.
+# Note that the initial value of the version number in the monitor is 1.
 
 # We have to call this from the monitor? in withdraw?
                         deallocate_Partition_DAG_structures(i)
@@ -2298,6 +2307,3 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         logger.info("here, num_nodes_in_graph: " + str(num_nodes_in_graph))
         logger.info("DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES :"
             + str(DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES))
-    return DAG_info
-    
-

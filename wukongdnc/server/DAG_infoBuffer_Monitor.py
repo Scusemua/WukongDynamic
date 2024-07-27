@@ -24,6 +24,9 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         super(DAG_infoBuffer_Monitor, self).__init__(monitor_name=monitor_name)
         # For testing, if we havn't called init() then version number will be 1
         self.current_version_DAG_info = None
+        # The Version 2 (with partitions 1 and 2, assuming there are at least two partitions)
+        # is given to the DAG_excutor_driver so the first requested version is version 3. 
+        # We init this to 1.
         self.current_version_number_DAG_info = 1
 #brc leaf tasks
         # The initial DAG has the initial leaf task(s) in it. As later we find
@@ -124,9 +127,9 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         logger.trace("DAG_infoBuffer_Monitor: get_current_version_number_DAG_info() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
 
         restart = False
-        current_DAG_info = self.current_version_DAG_info
+        current_version_number = self.current_version_number_DAG_info
         super().exit_monitor()
-        return current_DAG_info, restart
+        return current_version_number, restart
 
     def deposit(self,**kwargs):
         # deposit a new DAG_info object. It's version number will be one more
