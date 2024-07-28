@@ -210,7 +210,7 @@ class DAG_Generator_Multithreaded:
 #brc: use of DAG_info:
         num_incremental_DAGs_generated_since_base_DAG):
         
-
+        # Note: This is non-incremental testing so we are not deallocating DAG structures on the fly.
         DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued,
 #brc: use of DAG_info:
             num_incremental_DAGs_generated_since_base_DAG)

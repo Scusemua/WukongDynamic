@@ -2191,119 +2191,182 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             + " partition " + str(current_partition_name))
     
     return DAG_info
-    
+
+def deallocate_DAG_structures(current_partition_number,current_version_number_DAG_info,
+        num_incremental_DAGs_generated_since_base_DAG):
+    # Version 2 of the incremental DAG is given to the DAG_executor_driver for exxecution
+    # (assuming th DAG has more than 1 partition). So the firstversion workers can request 
+    # is version 3. At that point, they will have executed partition 1, found that 
+    # partition 2 was to-be-continued, partition 1, which is not to-be-continued has a collapse to 
+    # continued partition 1, and that the DAG was not complete, and so requested version 3.
+    # (The worker that executed partition 1, actually the task corresponding to computing the 
+    # pagerank values of partition 1, will save the state and output for that task in its continue queue. When 
+    # that worker gets a new incremental DAG, it will get the state and output from its continue
+    # queue and retart DAG execution by getting the collapse for partition 1 which is partition 2
+    # and executing partition 2 as usual. In geneal if workers request version n, n>2, (all workers)
+    # request the same version of the DAG each round, then they have already executed partitions 1 through
+    # 2+((n-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL), where the last 
+    # partition 2+((n-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL) is continued and 
+    # the preceding partition has a collapse to the continued task. Again, the workers have alrady executed
+    # partitions 1 and 2 and a certain number of partitions that have been added in each new version
+    # of the incremental DAG. Version 2 has partitions 1 and 2 and version 3 is the irst version that 
+    # can be requested by the workers. Note that if they request version 3, they have only excuted
+    # partitions 1 and 2 (and really only executed partition 1 as partiton 2 was to-be-continued)
+    # so that n-3 in this case is 3-3=0 and 2+(0*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL)
+    # is 2 as expected.
+    # Example: DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4 and they request Version 4. 
+    # Then the partitions that have been executed are 1, 2, 3, 4, 5, and 6, where version 3 has partitons 1, 
+    # 2, 3, 4, 5, and 6, where 6 is to-be-continued, and version 2 has partitons 1 and 2. Workers are 
+    # requesting Version 4, which will add the 4 partitons 7, 8, 9, and 10 as DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL 
+    # is 4. In the new version 4 of the DAG, partition 6 now is not-continued and partition 5 now has no collapse
+    # to a continued state. So we can deallocate the info in the DAG strctures about 1, 2, 3, 4, which 
+    # is 1 through (2+((n-3)*pub_interval))-2, which is 1 through 2+(1*4)-2 = 4. Note that when workers request 
+    # version 4 we can deallocate DAG structure informatiob about some of the partitions in version 3 - 1, 2, 3, 4 - but 
+    # not partition 5 and 6. This is because the status of 5 and 6 in version 3 is changed in version 4.
+    # Partition 5 has a collapse to continued task 6 in version 3 but in version 4 task 6 is not
+    # to-be-continued and thus 5 no longer has a collapse to a continued task. So when the workers
+    # get version 4 of the DAG they restart execution by getting the state and output for already
+    # executed task 5 from the continue queue, retrieving the collapse task 6 of state 5, and 
+    # executing task 6. Thus we do not dealloate the DAG structre information for 5 and 6 even though 
+    # they were in version 3 and we are getting a new version 4.
+    # Note that we don't always start deallocation at 1, we start where the last deallocation ended.
+    # So in this example, after deallocating 1, 2, 3, and 4, start_deallocation becomes 5. Note that if 
+    # workers request version 3, then 2+((n-3)*pub_interval))-2 is 2+(0*4)-2 = 0 so we deallocate from 1 to 0 
+    # so no deallocations will be done. As mentioned above, the states for partitions 1 and 2 in 
+    # version 2 will change in version 3, so we do not deallocate 1 and 2 when the workers
+    # request version 3. Partitions 1 and 2 will be among the partitions deallocated when workers
+    # request version 4.
+    # Note that the initial value of the version number in the DAG_infoBufferMonitor that 
+    # maintains the last version number requested by the user is 1. We could use 2. Workers
+    # don't request version 1 or 2 as version 2 when generated is given to the DAG_executor_driver,
+    # which starts DAG execution with version 2 of the incremental DAG. (Partition 1 is a leaf task.
+    # Partiton 2 either depends on partittion 1 or is another leaf task. More leaf tasks can be 
+    # discovered during incremental DAG generation. This is unlike non-incremental DAG generation 
+    # which discovers all of the leaf tasks during DAG gneration and gives these leaf tasks
+    # to the DAD_excutor_driver (as part of the DAG structure). The DAG_executor_driver will 
+    # start a lambda for each leaf task, or if workers are being used it will enqueue the leaf tasks
+    # in the work queue.
+    pass
+    deallocation_start_index = -1
+    deallocation_end_index = (2+((current_version_number_DAG_info-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+    # we will use deallocation_end_index in a range so it needs to be one past the last partition
+    # to be dealloctated.
+    deallocation_end_index += 1
+    logger.info("deallocate_DAG_structures: deallocation_start: " + str(deallocation_start_index)
+        + " deallocation_end: " + str(deallocation_end_index))
+    for i in range(deallocation_start_index, deallocation_end_index):
+        logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
+        deallocate_Partition_DAG_structures(i)
+
+"""
+Suppose we have generated version 5. then we added ... to the partitions in version 4. If
+DAG execution has kept up and workers are requsting version 5, the, we can deallocate
+... in version 4 and we can assume partitions ... were deallocated when workers requested 
+version 3, i.e.,  deallocation_start_index is x which was the value of deallocation_end_index+1
+when ...
+
+Note that whe workers request version i they can get version i or a later version j, j>i.
+Version j will include all the partitions that were in version i so we give workers
+the latest version generated.
+
+"""
+
+""" OLD
 def deallocate_DAG_structures(current_partition_number,current_version_number_DAG_info,
         num_incremental_DAGs_generated_since_base_DAG):
 #brc: deallocate DAG structures
-    if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
 
-        # Set the deallocation_indices if current_partition_number is 2, in which case we publish 
-        # the DAG or current_partition_number > 2 and we will publish the DAG. Note that we do not 
-        # set the deallocation_indices if current_partition_number is 1.
-        # Note that we do this regardless of the value of to_be_continued. If to_be_continued is 
-        # True then incremental DAG generation is continuing so we want to deallocate space as 
-        # we go. If to_be_continued is False then incremental DAG generation is over so but
-        # we may still have some time before the execution of the DAG ends. In that case, we are 
-        # still going to deallocate memory now. If execution is in fact ending soon then we did not 
-        # need to deallocate now since we are just going to terminate DAG generation and execution
-        # soon.
+    # Set the deallocation_indices if current_partition_number is 2, in which case we publish 
+    # the DAG or current_partition_number > 2 and we will publish the DAG. Note that we do not 
+    # set the deallocation_indices if current_partition_number is 1.
+    # Note that we do this regardless of the value of to_be_continued. If to_be_continued is 
+    # True then incremental DAG generation is continuing so we want to deallocate space as 
+    # we go. If to_be_continued is False then incremental DAG generation is over so but
+    # we may still have some time before the execution of the DAG ends. In that case, we are 
+    # still going to deallocate memory now. If execution is in fact ending soon then we did not 
+    # need to deallocate now since we are just going to terminate DAG generation and execution
+    # soon.
 
-        logger.info("generate_DAG_info_incremental_partitions: current_version_number_DAG_info: "
-            + str(current_version_number_DAG_info))
+    logger.info("generate_DAG_info_incremental_partitions: current_version_number_DAG_info: "
+        + str(current_version_number_DAG_info))
 
-        if current_partition_number == 2 or \
-            (
-            current_partition_number > 2 
-            and
-            ((num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0)
-            ):
+    if current_partition_number == 2 or \
+        (
+        current_partition_number > 2 
+        and
+        ((num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0)
+        ):
 
-            global start_deallocation_index
-            global stop_deallocation_index
-            global next_deallocation_index
+        global start_deallocation_index
+        global stop_deallocation_index
+        global next_deallocation_index
 
-            start_deallocation_index = stop_deallocation_index
-            stop_deallocation_index = next_deallocation_index
-            next_deallocation_index = current_partition_number
-            logger.info("generate_DAG_info_incremental_partitions: set start, stop next: start_deallocation_index: " + str(start_deallocation_index)
-                + ", stop_deallocation_index: " + str(stop_deallocation_index) 
-                + ", next_deallocation_index: " + str(next_deallocation_index))
+        start_deallocation_index = stop_deallocation_index
+        stop_deallocation_index = next_deallocation_index
+        next_deallocation_index = current_partition_number
+        logger.info("generate_DAG_info_incremental_partitions: set start, stop next: start_deallocation_index: " + str(start_deallocation_index)
+            + ", stop_deallocation_index: " + str(stop_deallocation_index) 
+            + ", next_deallocation_index: " + str(next_deallocation_index))
 
-            # Examples:
-            # If interval is 2, then we process partition 1 and publish 2 to get 
-            # start = -1, stop = -1, next = 2. We then process 3 and publish 4, to get
-            # start = -1, stop = 2, next = 4. We then process 5 and publish 6, to get
-            # start = 2, stop = 4, next = 6. 
+        # Examples:
+        # If interval is 2, then we process partition 1 and publish 2 to get 
+        # start = -1, stop = -1, next = 2. We then process 3 and publish 4, to get
+        # start = -1, stop = 2, next = 4. We then process 5 and publish 6, to get
+        # start = 2, stop = 4, next = 6. 
 
-            # If interval is 1, then we process partition 1 and publish 2 to get 
-            # start = -1, stop = -1, next = 2. We then publish 3, to get
-            # start = -1, stop = 2, next = 3. We then publish 4 to get
-            # start = 2, stop = 3, next = 4. 
+        # If interval is 1, then we process partition 1 and publish 2 to get 
+        # start = -1, stop = -1, next = 2. We then publish 3, to get
+        # start = -1, stop = 2, next = 3. We then publish 4 to get
+        # start = 2, stop = 3, next = 4. 
 
-            # If interval is 4, then we process partition 1 and publish 2 to get 
-            # start = -1, stop = -1, next = 2. We then publish 6, to get
-            # start = -1, stop = 2, next = 6. We then publish 10 to get
-            # start = 2, stop = 6, next = 10. 
-        else:
-            logger.info("generate_DAG_info_incremental_partitions: do not set start, stop next: start_deallocation_index: ")
-        # Don't do any deallocation until after we have processed/published partition 2. Actually,
-        # start is -1 until we have published 3 times, i.e., partition 2 (always published)
-        # and two more partitions. If the publishing intervals is 1, then we publish 2, 3, 
-        # and 4, which is the earliest we can do a deallocation, i.e., we have processed
-        # 4 partitions and published 3.
-        if start_deallocation_index != -1:
-            logger.info("generate_DAG_info_incremental_partitions: start_deallocation_index is not -1.")
-            if current_partition_number > 2:
-                logger.info("generate_DAG_info_incremental_partitions: current_partition_number is " 
-                    + str(current_partition_number) + ", so greater than 2.")
-                if ((num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0):
-                    # deallocate from start_deallocation_index-1 (including start_deallocation_index-1) to stop_deallocation_index-1 (not including stop_deallocation_index-1),
-                    # where range(2,6) means from 2 (including 2) to 6 (but not including 6):
-                    logger.info("generate_DAG_info_incremental_partitions: publish so do deallocations:")
-                    for i in range(start_deallocation_index-1, stop_deallocation_index-1):
-                        logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
-#brc: issue: But i may not have been excuted yet. We can only deallocate executed states.
-# Is there are formula for relating the requested version number of workers and the start index? 
-# If workers request version n, n>2 then they have just executed partitions 1 through
-# 2 + ((n-3)*pub_interval), where the last partition 2 + ((n-3)*pub_interval) is continued and 
-# the preceding partition has a collapse to the continued task. 
-# Example: interval is 4 and they request Version 4. Then partitions are 1, 2, 3, 4, 5, 6
-# where Version 3 has P's 1, 2, 3, 4, 5, 6 and Version 2 has P's 1 and 2. They are requesting
-# Version 4, which will add 7, 8, 9, and 10, which makes 6 not-continued so 5 has no collapse
-# to a continued state. So we can deallocate 1, 2, 3, 4, which is 1 through (2+((n-3)*pub_interval))-2
-# which is 1 through 2+(1*4)-2 = 4. Note that we don't always start at 1, we start where we left off,
-# so in this example start becomes 5. Note that if they request version 3, then 
-# 2+((n-3)*pub_interval))-2 is 2+(0*4)-2 = 0 so we deallocate from 1 to 0 so no deallocations.
-# Note that the initial value of the version number in the monitor is 1.
-
-# We have to call this from the monitor? in withdraw?
-                        deallocate_Partition_DAG_structures(i)
-
-                    # Examples:
-                    # If interval is 2, then we get start = 2, stop = 4, next = 6 and we do
-                    # for i in range(1, 3) # from 1 (including 1) to 2 (not including 5)
-                    #    deallocate_Partition_DAG_structures(i)
-                    # which will deallocate Partition_DAG structures for indices 1 and 2
-
-                    # If interval is 1, then we get start = 2, stop = 3, next = 4 and we do
-                    # for i in range(1, 2) # from 1 (including 1) to 2 (not including 2)
-                    #    deallocate_Partition_DAG_structures(i)
-                    # which will deallocate Partition_DAG structures for index 1.
-
-                    # If interval is 4, then we get start = 2, stop = 6, next = 10 and we do
-                    # for i in range(1, 5)  # from 1 (including 1) to 5 (not including 5)
-                    #    deallocate_Partition_DAG_structures(i)
-                    # which will deallocate for 1, 2, 3 and 4. Next deallocation will be 
-                    # with start = 6, stop = 10, next = 14, which deallocates 
-                    # Partition_DAG structures for indices 5, 6, 7, and 8.
-                else:
-                    logger.info("generate_DAG_info_incremental_partitions: no publish so np deallocations:")
-            else:
-                logger.info("generate_DAG_info_incremental_partitions: current_partition_number is " 
-                + str(current_partition_number) + " no deallocation.")  
-        else:
-            logger.info("generate_DAG_info_incremental_partitions: start_deallocation_index is -1, no deallocation.")
+        # If interval is 4, then we process partition 1 and publish 2 to get 
+        # start = -1, stop = -1, next = 2. We then publish 6, to get
+        # start = -1, stop = 2, next = 6. We then publish 10 to get
+        # start = 2, stop = 6, next = 10. 
     else:
-        logger.info("here, num_nodes_in_graph: " + str(num_nodes_in_graph))
-        logger.info("DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES :"
-            + str(DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES))
+        logger.info("generate_DAG_info_incremental_partitions: do not set start, stop next: start_deallocation_index: ")
+    # Don't do any deallocation until after we have processed/published partition 2. Actually,
+    # start is -1 until we have published 3 times, i.e., partition 2 (always published)
+    # and two more partitions. If the publishing intervals is 1, then we publish 2, 3, 
+    # and 4, which is the earliest we can do a deallocation, i.e., we have processed
+    # 4 partitions and published 3.
+    if start_deallocation_index != -1:
+        logger.info("generate_DAG_info_incremental_partitions: start_deallocation_index is not -1.")
+        if current_partition_number > 2:
+            logger.info("generate_DAG_info_incremental_partitions: current_partition_number is " 
+                + str(current_partition_number) + ", so greater than 2.")
+            if ((num_incremental_DAGs_generated_since_base_DAG+1) % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0):
+                # deallocate from start_deallocation_index-1 (including start_deallocation_index-1) to stop_deallocation_index-1 (not including stop_deallocation_index-1),
+                # where range(2,6) means from 2 (including 2) to 6 (but not including 6):
+                logger.info("generate_DAG_info_incremental_partitions: publish so do deallocations:")
+                for i in range(start_deallocation_index-1, stop_deallocation_index-1):
+                    logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
+
+
+                    deallocate_Partition_DAG_structures(i)
+
+                # Examples:
+                # If interval is 2, then we get start = 2, stop = 4, next = 6 and we do
+                # for i in range(1, 3) # from 1 (including 1) to 2 (not including 5)
+                #    deallocate_Partition_DAG_structures(i)
+                # which will deallocate Partition_DAG structures for indices 1 and 2
+
+                # If interval is 1, then we get start = 2, stop = 3, next = 4 and we do
+                # for i in range(1, 2) # from 1 (including 1) to 2 (not including 2)
+                #    deallocate_Partition_DAG_structures(i)
+                # which will deallocate Partition_DAG structures for index 1.
+
+                # If interval is 4, then we get start = 2, stop = 6, next = 10 and we do
+                # for i in range(1, 5)  # from 1 (including 1) to 5 (not including 5)
+                #    deallocate_Partition_DAG_structures(i)
+                # which will deallocate for 1, 2, 3 and 4. Next deallocation will be 
+                # with start = 6, stop = 10, next = 14, which deallocates 
+                # Partition_DAG structures for indices 5, 6, 7, and 8.
+            else:
+                logger.info("generate_DAG_info_incremental_partitions: no publish so np deallocations:")
+        else:
+            logger.info("generate_DAG_info_incremental_partitions: current_partition_number is " 
+            + str(current_partition_number) + " no deallocation.")  
+    else:
+        logger.info("generate_DAG_info_incremental_partitions: start_deallocation_index is -1, no deallocation.")
+"""

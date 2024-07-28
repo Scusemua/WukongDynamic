@@ -2361,7 +2361,8 @@ def run():
                 
             #else we started the leaf tasks above with process_leaf_tasks_batch
 
-            # if the number of leaf tasks is less than number_workers, we need to create more workers
+            # if the number of leaf tasks is less than user-specified num_workers, we need to start more workers ( as starting a 
+            # worker for each leaf task did not start enough workers)
             if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.USING_WORKERS and num_threads_created < DAG_executor_constants.NUM_WORKERS:
                 # starting leaf tasks did not start NUM_WORKERS workers so start NUM_WORKERS-num_threads_created
                 # more threads/processes.
