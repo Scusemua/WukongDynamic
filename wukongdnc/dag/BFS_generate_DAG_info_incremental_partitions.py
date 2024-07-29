@@ -239,6 +239,7 @@ Partition_DAG_num_nodes_in_graph = 0
 start_deallocation_index = -1
 stop_deallocation_index = -1
 next_deallocation_index = -1
+deallocation_start_index = -1
 
 def deallocate_Partition_DAG_structures(i):
     global Partition_all_fanout_task_names
@@ -2214,12 +2215,18 @@ def deallocate_DAG_structures(current_partition_number,current_version_number_DA
     # partitions 1 and 2 (and really only executed partition 1 as partiton 2 was to-be-continued)
     # so that n-3 in this case is 3-3=0 and 2+(0*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL)
     # is 2 as expected.
+    #
     # Example: DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4 and they request Version 4. 
     # Then the partitions that have been executed are 1, 2, 3, 4, 5, and 6, where version 3 has partitons 1, 
     # 2, 3, 4, 5, and 6, where 6 is to-be-continued, and version 2 has partitons 1 and 2. Workers are 
-    # requesting Version 4, which will add the 4 partitons 7, 8, 9, and 10 as DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL 
-    # is 4. In the new version 4 of the DAG, partition 6 now is not-continued and partition 5 now has no collapse
-    # to a continued state. So we can deallocate the info in the DAG strctures about 1, 2, 3, 4, which 
+    # requesting Version 4, which will add the 4 partitions 7, 8, 9, and 10 as 
+    # DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4. In the new version 4 of the DAG, 
+    # partition 6 now is not-continued and partition 5 now has no collapse to a continued state. 
+    # (Note that when we add partition 7 to the DAG, we change partiion 6 to be non-to-be-continued
+    # and we change partition 5 so that it has no collapse to a continued partition. The new DAG with
+    # partition 7, which is a to-b-contnued partition, is not published, and neither are the 
+    # DAGS created by adding partitions 8, and 9, respectively. The DAG crrated by adding 10 is published.)
+    # So we can deallocate the info in the DAG strctures about 1, 2, 3, 4, which 
     # is 1 through (2+((n-3)*pub_interval))-2, which is 1 through 2+(1*4)-2 = 4. Note that when workers request 
     # version 4 we can deallocate DAG structure informatiob about some of the partitions in version 3 - 1, 2, 3, 4 - but 
     # not partition 5 and 6. This is because the status of 5 and 6 in version 3 is changed in version 4.
@@ -2246,17 +2253,18 @@ def deallocate_DAG_structures(current_partition_number,current_version_number_DA
     # to the DAD_excutor_driver (as part of the DAG structure). The DAG_executor_driver will 
     # start a lambda for each leaf task, or if workers are being used it will enqueue the leaf tasks
     # in the work queue.
-    pass
-    deallocation_start_index = -1
+    
+    global deallocation_start_index
     deallocation_end_index = (2+((current_version_number_DAG_info-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
     # we will use deallocation_end_index in a range so it needs to be one past the last partition
     # to be dealloctated.
     deallocation_end_index += 1
-    logger.info("deallocate_DAG_structures: deallocation_start: " + str(deallocation_start_index)
-        + " deallocation_end: " + str(deallocation_end_index))
+    logger.info("deallocate_DAG_structures: deallocation_start_index: " + str(deallocation_start_index)
+        + " deallocation_end_index: " + str(deallocation_end_index))
     for i in range(deallocation_start_index, deallocation_end_index):
         logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
         deallocate_Partition_DAG_structures(i)
+    deallocation_start_index = deallocation_end_index+1
 
 """
 Suppose we have generated version 5. then we added ... to the partitions in version 4. If
@@ -2265,9 +2273,9 @@ DAG execution has kept up and workers are requsting version 5, the, we can deall
 version 3, i.e.,  deallocation_start_index is x which was the value of deallocation_end_index+1
 when ...
 
-Note that whe workers request version i they can get version i or a later version j, j>i.
-Version j will include all the partitions that were in version i so we give workers
-the latest version generated.
+Note that whe workers request version i they can get version i or a later version j, j>i,
+(i.e., the last version deposited >= version i). Version j will include all the partitions 
+that were in version i so we give workers the latest version generated.
 
 """
 

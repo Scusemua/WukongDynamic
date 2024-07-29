@@ -3979,6 +3979,11 @@ def bfs(visited, node):
 # lambdas: save most recent DAG generated so can give it to multiple lambdas?
                             if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES and (BFS_generate_DAG_info.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                                 current_version_number_DAG_info, _restart = DAG_infobuffer_monitor.get_current_version_number_DAG_info()
+                                # We have the current_version_number_DAG_info returned by the call to get_current_version_number_DAG_info()
+                                # but immediately after we make this call (all) the workers can theoretically call withdraw() again and 
+                                # update the version number to a higher value. Now we will pass the returned/older value to 
+                                # deallocate_DAG_structures, which is less than the updated value; this is not an error, we will just 
+                                # deallocat fewer values than we could deallocate with the new (higher) value for the version number.
                                 BFS_generate_DAG_info_incremental_partitions.deallocate_DAG_structures(current_partition_number,
                                     current_version_number_DAG_info, num_incremental_DAGs_generated_since_base_DAG)
 #brc: use of DAG_info:      
