@@ -573,7 +573,19 @@ DEALLOCATE_BFS_SENDERS_AND_RECEIVERS = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_
 # so we guard the dellocations above with 
 # (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)
 
-DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and True
+# Deallocaet the Partition and Group DAG data structures, i.e., the  Partition_DAG_map
+# Partition_DAG_tasks and Partition_DAG_tasks that are used in the inctemental DAG
+# generation methods for partitions and groups. These data structures are used to create
+# the DAG_info DAG representations. They accumulate DAG info but we can deallocate information
+# about the DAG's partitions/groups if the partitons/groups have already been executed.
+# When we are using workers, bfs() gets the most recent version number from the 
+# DAG_infoBufer_monitor (which has methods deposit and withdraw used by bfs to make a 
+# new incremental DAG available and by workers to get (withdaw) a new incrementsl DAG)
+# and calls the incremental DAG generation methods for generating a DAG with a new
+# partition or the groups of a new partition. The deallocation is done before the DAG
+# generation method is called so that the DAG data structures aer cleared of old DAG
+# informmation before the next incremental DAG is generated.
+DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and USING_WORKERS and True
 
 THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY = 1
 #
@@ -3294,8 +3306,8 @@ def test35():
     global USE_MUTLITHREADED_NONINCREMENTAL_BFS
     global INPUT_ALL_GROUPS_PARTITIONS_AT_START
 
-    global DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES
-    DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES = True
+    global DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS
+    DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS = True
 
     RUN_ALL_TASKS_LOCALLY = True
     BYPASS_CALL_TO_INVOKE_REAL_LAMBDA = (not RUN_ALL_TASKS_LOCALLY) and True 

@@ -3977,7 +3977,7 @@ def bfs(visited, node):
                             #DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
 #brc: deallocate DAG structures: need to do this same call both places
 # lambdas: save most recent DAG generated so can give it to multiple lambdas?
-                            if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES and (BFS_generate_DAG_info.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                            if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                                 current_version_number_DAG_info, _restart = DAG_infobuffer_monitor.get_current_version_number_DAG_info()
                                 # We have the current_version_number_DAG_info returned by the call to get_current_version_number_DAG_info()
                                 # but immediately after we make this call (all) the workers can theoretically call withdraw() again and 

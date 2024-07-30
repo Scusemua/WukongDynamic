@@ -263,6 +263,24 @@ def deallocate_Partition_DAG_structures(i):
     state = Partition_DAG_states[partition_name]
     logger.info("deallocate_Partition_DAG_structures: partition_name: " + str(partition_name))
     logger.info("deallocate_Partition_DAG_structures: state: " + str(state))
+
+    # We may be iterating through these data structures in, e.g., DAG_executor concurrently 
+    # with attempts to to the del on the data structure, which would be an error. We only 
+    # iterate when we are tracing the DAG for debugging so we could turn these iterations
+    # off when we set the deallocate option on. 
+    # Note: we can change Partition_DAG_tasks and Partition_DAG_states to maps instead of 
+    # lists and use del for the deallocation, which might be a lot faster (O(1)) than deleting
+    # from the lists (O(n))for large maps/lists. This would require that we dal with the 
+    # itertions as just mentioned and we would need atomic ops on the dictionary and 
+    # they should not requre the use of the GIL. Or we coould copy the DAG data structurs
+    # when we make a new incremental DAG but this would be time consuming.
+    # Currently, we set item referenced to None, which would save space sine None takes
+    # less space than the class state_info (see DFS_visit.py) objects in Partition_DAG_map.
+    # Also, None presumably takes less space than a pagerank function object. It is not clear
+    # how Noen compares to an integer object.
+    # Note: we can easily determine the pagerank function to call at excution time instead of 
+    # storing a function in the DAG for each task. (It's the same code that determines which 
+    # function to store in the DG) This would save space in the DAG representation.
     #del Partition_DAG_map[state]
     Partition_DAG_map[state] = None
     #del Partition_DAG_tasks[partition_name]
@@ -2253,7 +2271,7 @@ def deallocate_DAG_structures(current_partition_number,current_version_number_DA
     # to the DAD_excutor_driver (as part of the DAG structure). The DAG_executor_driver will 
     # start a lambda for each leaf task, or if workers are being used it will enqueue the leaf tasks
     # in the work queue.
-    
+
     global deallocation_start_index
     deallocation_end_index = (2+((current_version_number_DAG_info-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
     # we will use deallocation_end_index in a range so it needs to be one past the last partition
