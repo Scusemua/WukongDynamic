@@ -239,7 +239,8 @@ Partition_DAG_num_nodes_in_graph = 0
 start_deallocation_index = -1
 stop_deallocation_index = -1
 next_deallocation_index = -1
-deallocation_start_index = -1
+
+deallocation_start_index = 1
 
 def deallocate_Partition_DAG_structures(i):
     global Partition_all_fanout_task_names
@@ -256,7 +257,7 @@ def deallocate_Partition_DAG_structures(i):
     global Partition_DAG_tasks
 
     #brc: deallocate DAG map-based structures
-    logger.info("partition_names: ")
+    logger.info("deallocate_Partition_DAG_structures: partition_names: ")
     for name in BFS.partition_names:
         logger.info(name)
     partition_name = BFS.partition_names[i-1]
@@ -377,7 +378,12 @@ def generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tas
     #  i.e., the last generated version of the DAG). If the interval for publishing DAGs
     # is, say, 4, then Version 3 has partitions 1 and 2, and 3, 4, 5, and 6 (i.e,
     # partitions 1 through 2+4=6)
-    Partition_DAG_version_number += 1
+    #
+    # We do not increment the version numbr for incremental DAGs that are not 
+    # published. In the trace, we print, e.g., "2P" for version "2 P"artial.
+    # For example, the base DAG has partitions 1 and 2. This is 
+    #Partition_DAG_version_number += 1
+
     # if the last partition has incomplete information, then the DAG is 
     # incomplete. When partition i is added to the DAG, it is incomplete
     # unless it is the last partition in the DAG). It becomes complete
@@ -450,8 +456,8 @@ def generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tas
     # for debugging
     if show_generated_DAG_info:
         logger.info("generate_DAG_info_incremental_partitions: generate_partial_DAG_for_partitions: partial DAG:")
-        logger.info("DAG_version_number:")
-        logger.info(str(Partition_DAG_version_number))
+        logger.info("DAG_version_number (which was not incemented for partial DAG): ")
+        logger.info(str(Partition_DAG_version_number) + "P")
         logger.info("")
         logger.info("DAG_is_complete:")
         logger.info(str(Partition_DAG_is_complete))
@@ -2213,7 +2219,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 
 def deallocate_DAG_structures(current_partition_number,current_version_number_DAG_info,
         num_incremental_DAGs_generated_since_base_DAG):
-    # Version 2 of the incremental DAG is given to the DAG_executor_driver for exxecution
+    # Version 2 of the incremental DAG is given to the DAG_executor_driver for execution
     # (assuming th DAG has more than 1 partition). So the firstversion workers can request 
     # is version 3. At that point, they will have executed partition 1, found that 
     # partition 2 was to-be-continued, partition 1, which is not to-be-continued has a collapse to 
@@ -2272,17 +2278,37 @@ def deallocate_DAG_structures(current_partition_number,current_version_number_DA
     # start a lambda for each leaf task, or if workers are being used it will enqueue the leaf tasks
     # in the work queue.
 
+#brc: issue: version number gets incremented for each partition added, not just when we publish?
+# yes, since we now either call full or partital. Should partial inc version number since 
+# we are not publishing? No.
+# then what is initial value of version number? 0 or 1? So with only partition 1 it is version 0
+# then we publish 1 and 2 as version 1. then 1,2, 3 as version 1P then version 1, 2 3, 4
+# as version 2?
+# We assueme in formula that first version they can request is 3 but if we start version at 0
+# then 1 is partia and 2 is ful so 1 2 is version 1 and frist version they can request is 2?
+# then 1 2 3 is still version 2 and 1 2 3 4 is version 3. So current_version_number_DAG_info-2?
     global deallocation_start_index
     deallocation_end_index = (2+((current_version_number_DAG_info-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+
     # we will use deallocation_end_index in a range so it needs to be one past the last partition
     # to be dealloctated.
-    deallocation_end_index += 1
+    # Don't increment it unless we might actually do a deallocation. If statr index is still
+    # 1 then end index is 1 we can do a deallocation - we will deallocte for partition 1
+    # using a range from 1 to 1, which is range(1,2), where 1 is inclusive but 2 is exclusive
+    if deallocation_end_index > 0:
+        deallocation_end_index += 1
+
     logger.info("deallocate_DAG_structures: deallocation_start_index: " + str(deallocation_start_index)
         + " deallocation_end_index: " + str(deallocation_end_index))
     for i in range(deallocation_start_index, deallocation_end_index):
         logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
         deallocate_Partition_DAG_structures(i)
-    deallocation_start_index = deallocation_end_index+1
+    
+    # set start to end if we did a deallocation, i.e., if start < end. Note that if
+    # start equals end then we did not do a deallocation since end is eclusive.
+    # Note that end was exclusive so we can set start to end instead of end+1.
+    if deallocation_start_index < deallocation_end_index:
+        deallocation_start_index = deallocation_end_index
 
 """
 Suppose we have generated version 5. then we added ... to the partitions in version 4. If

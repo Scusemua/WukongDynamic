@@ -3976,16 +3976,24 @@ def bfs(visited, node):
                                 + " partition " + str(partition_name) + " using workers.")
                             #DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
 #brc: deallocate DAG structures: need to do this same call both places
+# BUT: use BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph
 # lambdas: save most recent DAG generated so can give it to multiple lambdas?
-                            if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                            if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                                 current_version_number_DAG_info, _restart = DAG_infobuffer_monitor.get_current_version_number_DAG_info()
                                 # We have the current_version_number_DAG_info returned by the call to get_current_version_number_DAG_info()
                                 # but immediately after we make this call (all) the workers can theoretically call withdraw() again and 
                                 # update the version number to a higher value. Now we will pass the returned/older value to 
                                 # deallocate_DAG_structures, which is less than the updated value; this is not an error, we will just 
                                 # deallocat fewer values than we could deallocate with the new (higher) value for the version number.
+                                logger.info("BFS: current_version_number_DAG_info for call to deallocate: "
+                                    + str(current_version_number_DAG_info))
                                 BFS_generate_DAG_info_incremental_partitions.deallocate_DAG_structures(current_partition_number,
                                     current_version_number_DAG_info, num_incremental_DAGs_generated_since_base_DAG)
+                            else:
+                                logger.info("DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: "
+                                    + str(DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS)
+                                    + " BFS_generate_DAG_info.num_nodes_in_graph: "
+                                    + str(BFS_generate_DAG_info.num_nodes_in_graph))
 #brc: use of DAG_info:      
 
                             DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued,
