@@ -230,6 +230,88 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 # See also the comment in DAG_executor.py about adding the output values to 
 # the data_dict.
 
+def PageRank_Function_Driver_ASzr(task_file_name,total_num_nodes,results_dictionary,
+    groups_partitions):
+    pass
+
+"""
+
+PageRank_output = {}
+# Look at the frontier_parents for each node in the partition. A frontier_parent
+# tells you where to send the parent pr value, i.e., partition/group name and the 
+# index of the shadow node in destination partition that will receive the 
+# parent pr value.
+for i in range(len(partition_or_group)):
+    if len(partition_or_group[i].frontier_parents) > 0:
+        for frontier_parent in partition_or_group[i].frontier_parents:
+            # Not using these
+            #partition_number = frontier_parent[0]
+            #group_number = frontier_parent[1]
+
+            # index of the shadow node in partition_or_group_name that will 
+            # receiev the parent pagerank value being sent. 
+            parent_or_group_index = frontier_parent[2]
+            partition_or_group_name = frontier_parent[3]
+            # keeping a list of outputs for each partition_or_group_name that 
+            # this just computed task outputs to
+            output_list = PageRank_output.get(partition_or_group_name)
+            if output_list is None:
+                output_list = []
+            # list of tuples: index of shadow node to receive the parent pagerank
+            # value, and the pagerank value of parent.
+            output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
+            output_list.append(output_tuple)
+            # map partition_or_group_name to its list
+            PageRank_output[partition_or_group_name] = output_list
+
+# map name to list of tuples  
+print("XXPageRank output tuples for " + task_file_name + ":")           
+for k, v in PageRank_output.items():
+    if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
+        print_val += "(%s, %s) " % (k, v)
+    print((k, v),end=" ")
+
+
+return PageRank_output, result_tuple_list
+==>
+XXPageRank output tuples for PR6_1:
+[2024-07-31 10:18:10,210][BFS][MainProcess][MainThread]:
+('PR7_1', [(0, 0.0062499999999999995)])
+
+In process fanouts:
+# Each fanout of a task gets its own output; use qualified names
+# e.g., "PR1_1-PR2_3" as the calling task instead of 
+# just "PR1_1". Assuming the output is a dictionary
+# where keys are fanout/faninNB names and the valus are
+# the outputs for that fanout/faninNB.
+# Note: For DAG generation, for each state we execute a task and 
+# for each task T we have t say what T;s task_inputs are - these are the 
+# names of tasks that give inputs to T. When we have per-fanout output
+# instead of having the same output for all fanouts, we specify the 
+# task_inputs as "sending task - receiving task". So a sending task
+# S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+# as the task_inputs, instad of just using "S", which is the Dask way.
+
+#if name.endswith('L'):  
+#    dict_of_results[qualfied_name] = output[name[:-1]]
+#    qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
+#else:
+qualified_name = str(calling_task_name) + "-" + str(name)
+dict_of_results[qualified_name] = output[name]
+
+where:
+    payload = {
+#ToDo: Lambda:          # use parallel invoker with list piggybacked on batch fanonNBs, as usual
+        #"state": int(fanout_task_start_state),
+        #"input": output,
+        #"input": results,
+        "input": dict_of_results,
+        "DAG_executor_state": lambda_DAG_executor_state,
+        "DAG_info": DAG_info,
+        #"server": server   # used to mock server during testing
+    }
+"""
+
 #def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
 def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary,
     groups_partitions):
