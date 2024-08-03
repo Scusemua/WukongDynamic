@@ -2288,13 +2288,14 @@ def deallocate_DAG_structures(current_partition_number,current_version_number_DA
 # then 1 is partia and 2 is ful so 1 2 is version 1 and frist version they can request is 2?
 # then 1 2 3 is still version 2 and 1 2 3 4 is version 3. So current_version_number_DAG_info-2?
     global deallocation_start_index
-    deallocation_end_index = (2+((current_version_number_DAG_info-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+    #deallocation_end_index = (2+((current_version_number_DAG_info-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+    deallocation_end_index = (2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
     # we will use deallocation_end_index in a range so it needs to be one past the last partition
     # to be dealloctated.
     # Don't increment it unless we might actually do a deallocation. If statr index is still
     # 1 then end index is 1 we can do a deallocation - we will deallocte for partition 1
-    # using a range from 1 to 1, which is range(1,2), where 1 is inclusive but 2 is exclusive
+    # using a range from 1 to 1, which is implemented as range(1,2), where 1 is inclusive but 2 is exclusive
     if deallocation_end_index > 0:
         deallocation_end_index += 1
 

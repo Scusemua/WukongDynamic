@@ -156,6 +156,7 @@ Each fanin/fanout/faninNB set is empty All state transtions are collapses.
 import logging
 import cloudpickle
 import os
+import datetime 
 
 from .DAG_info import DAG_Info
 from .DFS_visit import state_info
@@ -1687,6 +1688,42 @@ def generate_DAG_info():
             logger.trace(line)
         logger.trace("")
         logger.trace("")
+
+        if not DAG_executor_constants.SERVERLESS_PLATFORM_IS_AWS:
+            # generate an output folder, and then within that a folder for that particular 
+            # PageRank DAG (whose name is based on the time you run the code):
+
+            # The top-level PageRank DAG output directory
+            output_directory:str = "output_pagerank_dags/"
+
+            # The sub-directory, which will reside within the top-level directory
+            inner_output_directory:str = 'pagerank-dag-{date:%Y-%m-%d_%H-%M-%S}'.format(date=datetime.datetime.now())
+
+            # Concatenate the paths
+            output_directory = os.path.join(output_directory, inner_output_directory)
+
+            # Create the output directory 
+            os.makedirs(output_directory, exist_ok = True)
+
+            if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                pass
+                for leaf_task_name in Partition_DAG_leaf_tasks:
+                    state = Partition_DAG_states[leaf_task_name]
+                    leaf_partition = partitions[state-1]
+                    filename:str = f"{leaf_task_name}.pickle"
+                    output_file:str = os.path.join(output_directory, filename)
+                    # Get output file path by concatenating the directory name with the filename. 
+                    with open(output_file, "wb") as partition_pickle_file:
+                    # Pickle the DAG partition, storing it in a file at the path that was generated above.
+                        cloudpickle.dump(partition_pickle_file, leaf_partition)
+
+            else:
+                pass
+                for leaf_task in Group_DAG_leaf_tasks:
+                    pass
+
+
+
 
 """
 DELETE THIS - note: it was not updated with changes, e.g., clustering

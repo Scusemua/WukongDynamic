@@ -319,13 +319,13 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary,
     for (_,v) in results_dictionary.items():
         # The dictionarry is a task_name key and a result value. We do not 
         # care about the task names when we compute pagerank, so we just grab all
-        # the result values sent by the tasks.
+        # the result values sent by the tasks and add them to the input_tuples list
         # Pagerank leaf tasks have no input. This results in a result_dictionary
         # in DAG_executor of "DAG_executor_driver_0" --> (), where
         # DAG_executor_driver_0 is used to mean that eh DAG_excutor_driver
         # provided an empty input tuple fpr the leaf task. Here, we just ignore
         # empty input tuples so that the input_tuples provided to the 
-        # PageRank_Function will be an empty list.
+        # PageRank_Function will be an empty list for leaf tasks.
         if not v ==  ():
             input_tuples += v
     # This sort is not necessary. Sorting ensures that shadow nodes are processed
