@@ -109,7 +109,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # creat a work queue - not used for lambdas since lambdas currently do not use a work queue
                 "create_work_queue": self.create_work_queue,
                 # invoke the leaf tasl fanouts in lambdas which will trigger their leaf tasks
-                "process_leaf_tasks_batch": self.process_leaf_tasks_batch
+                "['DAG_executor_driver']": self.process_leaf_tasks_batch
             }
 
             try:

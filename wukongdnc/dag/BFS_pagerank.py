@@ -230,9 +230,50 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 # See also the comment in DAG_executor.py about adding the output values to 
 # the data_dict.
 
-def PageRank_Function_Driver_ASzr(task_file_name,total_num_nodes,results_dictionary,
-    groups_partitions):
-    pass
+#brc: AzSR
+def PageRank_Function_Driver_ASzr(results_dictionary,
+    partition_or_group, total_num_nodes):
+    keysList = list(results_dictionary.keys())
+    try:
+        msg = "[Error]: results_dictionary for PageRank_Function_Driver_ASzr has > 1 keys for DAG with no fanins."
+        assert len(keysList) == 1 , msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+            logging.shutdown()
+            os._exit(0)
+    task_file_name = keysList[0]
+
+    input_tuples = []
+    for (_,v) in results_dictionary.items():
+        # The dictionary is a task_name key and a result value. We do not 
+        # care about the task names when we compute pagerank, so we just grab all
+        # the result values sent by the tasks and add them to the input_tuples list
+        # Pagerank leaf tasks have no input. We use () for this.
+        # For PageRank, this results in a result_dictionary
+        # in DAG_executor of "DAG_executor_driver_0" --> (), where
+        # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver (ie., as 
+        # calling task) provided an empty input tuple for the leaf task. Here, we just 
+        # ignore empty input tuples so that the input_tuples provided to the 
+        # PageRank_Function will be an empty list for leaf tasks.
+        if not v ==  ():
+            input_tuples += v
+    # This sort is not necessary. Sorting ensures that shadow nodes are processed
+    # in ascending order of their IDs, i.e., 2 before 17, so that the parents of
+    # the shadow nodes are placed in the partition in the order of their associated
+    # shadow nodes. Helps visualize execution during debugging.
+    if (debug_pagerank):
+        input_tuples.sort()
+    logger.info("PageRank_Function_Driver_ASzr: length of input_tuples for " + task_file_name + ":" + str(len(input_tuples)))
+
+    #output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
+
+    groups_partitions = None
+
+#brc: AzSR: passing partition_or_group since we got it as input
+    output, result_tuple_list = PageRank_Function(task_file_name,total_num_nodes,input_tuples,
+        groups_partitions, partition_or_group)
+    return output, result_tuple_list
 
 """
 
@@ -320,11 +361,12 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary,
         # The dictionarry is a task_name key and a result value. We do not 
         # care about the task names when we compute pagerank, so we just grab all
         # the result values sent by the tasks and add them to the input_tuples list
-        # Pagerank leaf tasks have no input. This results in a result_dictionary
+        # Pagerank leaf tasks have no input. We use () for this.
+        # For PageRank, this results in a result_dictionary
         # in DAG_executor of "DAG_executor_driver_0" --> (), where
-        # DAG_executor_driver_0 is used to mean that eh DAG_excutor_driver
-        # provided an empty input tuple fpr the leaf task. Here, we just ignore
-        # empty input tuples so that the input_tuples provided to the 
+        # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver (ie., as 
+        # calling task) provided an empty input tuple for the leaf task. Here, we just 
+        # ignore empty input tuples so that the input_tuples provided to the 
         # PageRank_Function will be an empty list for leaf tasks.
         if not v ==  ():
             input_tuples += v
@@ -336,70 +378,83 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary,
         input_tuples.sort()
     logger.info("PageRank_Function_Driver: length of input_tuples for " + task_file_name + ":" + str(len(input_tuples)))
 
+#brc: AzSR: passing partition_or_group since the AzSR driver needs to do it. It
+# is None but when we are not using AzSR the PageRank_Function will input the partition_or_group.
+    partition_or_group = None
+
     #output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
     output, result_tuple_list = PageRank_Function(task_file_name,total_num_nodes,input_tuples,
-        groups_partitions)
+        groups_partitions, 
+#brc: AzSR
+        partition_or_group)
     return output, result_tuple_list
 
-def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partitions):
+def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partitions,
+
+# brc: AzSR: passing partition_or_group since the AzSR driver needs to do it. It
+# is None but when we are not using AzSR we will input the partition_or_group.
+    partition_or_group):
 
 #brc: groups partitions
-    partition_or_group = None
-    if not DAG_executor_constants.INPUT_ALL_GROUPS_PARTITIONS_AT_START:
-        # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
-        # We check for task_file_name ending with "L" for loop below,
-        # so we make this check esy by having 'L' at the end (endswith)
-        # instead of having to parse ("PR1_1.pickle")
-        complete_task_file_name = './'+task_file_name+'.pickle'
-        if debug_pagerank:
-            logger.info("PageRank_Function: complete_task_file_name:" 
-                + str(complete_task_file_name))
-        try:
-            with open(complete_task_file_name, 'rb') as handle:
-                partition_or_group = (cloudpickle.load(handle))
-        except EOFError:
-            logger.exception("[Error]: PageRank_Function: EOFError:"
-                + " complete_task_file_name:" + str(complete_task_file_name))
-            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
-                logging.shutdown()
-                os._exit(0)
-        logger.info("PageRank_Function: partition_or_group: length: " + str(len(partition_or_group)))
-        print_val = ""
-        print_val += "-- (" + str(len(partition_or_group)) + "):" + " "
-        for node in partition_or_group:
-            print_val += str(node) + " "
-            #print(node,end=" ")
-        logger.info(print_val)
-        logger.info("")
-    else:
-        try:
-            msg = "[Error]: PageRank_Function:" + " groups_partitions is []."
-            assert not (groups_partitions == []) , msg
-        except AssertionError:
-            logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
-                logging.shutdown()
-                os._exit(0)
-        #assertOld:
-        #if groups_partitions == []:
-        #    logger.error("[Error]: PageRank_Function:"
-        #        + " groups_partitions is [].")
-        #    traceback.print_exc(file=sys.stderr)
-        #   logging.shutdown()
-        #    os._exit(0)
+#brc: AzSR: If we are not using AzSR thrn we need to input the partition or group.
+# if we are using AzSR then the partitin or grooup is input to function PageRank_Function_Driver_ASzr()
+    if DAG_executor_constants.SERVERLESS_PLATFORM_IS_AWS:
+        partition_or_group = None
+        if not DAG_executor_constants.INPUT_ALL_GROUPS_PARTITIONS_AT_START:
+            # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
+            # We check for task_file_name ending with "L" for loop below,
+            # so we make this check esy by having 'L' at the end (endswith)
+            # instead of having to parse ("PR1_1.pickle")
+            complete_task_file_name = './'+task_file_name+'.pickle'
+            if debug_pagerank:
+                logger.info("PageRank_Function: complete_task_file_name:" 
+                    + str(complete_task_file_name))
+            try:
+                with open(complete_task_file_name, 'rb') as handle:
+                    partition_or_group = (cloudpickle.load(handle))
+            except EOFError:
+                logger.exception("[Error]: PageRank_Function: EOFError:"
+                    + " complete_task_file_name:" + str(complete_task_file_name))
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                    logging.shutdown()
+                    os._exit(0)
+            logger.info("PageRank_Function: partition_or_group: length: " + str(len(partition_or_group)))
+            print_val = ""
+            print_val += "-- (" + str(len(partition_or_group)) + "):" + " "
+            for node in partition_or_group:
+                print_val += str(node) + " "
+                #print(node,end=" ")
+            logger.info(print_val)
+            logger.info("")
+        else:
+            try:
+                msg = "[Error]: PageRank_Function:" + " groups_partitions is []."
+                assert not (groups_partitions == []) , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld:
+            #if groups_partitions == []:
+            #    logger.error("[Error]: PageRank_Function:"
+            #        + " groups_partitions is [].")
+            #    traceback.print_exc(file=sys.stderr)
+            #   logging.shutdown()
+            #    os._exit(0)
 
-        #print ("BFS_pagerank: groups_partitions:")
-        #keys = list(groups_partitions.keys())
-        #for key in keys:
-        #    print(key + ":")
-        #    g_p = groups_partitions[key]
-        #    for node in g_p:
-        #        print(str(node))
-        #logging.shutdown()
-        #os._exit(0)
+            #print ("BFS_pagerank: groups_partitions:")
+            #keys = list(groups_partitions.keys())
+            #for key in keys:
+            #    print(key + ":")
+            #    g_p = groups_partitions[key]
+            #    for node in g_p:
+            #        print(str(node))
+            #logging.shutdown()
+            #os._exit(0)
 
-        logger.trace("PageRank_Function: INPUT_ALL_GROUPS_PARTITIONS_AT_START")
-        partition_or_group = groups_partitions[task_file_name]
+            logger.trace("PageRank_Function: INPUT_ALL_GROUPS_PARTITIONS_AT_START")
+            partition_or_group = groups_partitions[task_file_name]
 
     if (debug_pagerank):
         logger.info("PageRank_Function: partition_or_group (node:parent indices):")

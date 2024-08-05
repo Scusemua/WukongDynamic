@@ -3956,6 +3956,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # the tcp_server_lambda to invoke a fanout, like any other triggered
                         # fanout, using process_leaf_tasks_batch.
                         # args will be a tuple of input values, e.g., (1,), as usual
+                        # See tcp_server_lambda for its use of DAG_executor_driver.
+                        # We use it here next.
                         args = task_inputs['DAG_executor_driver']
                         logger.trace(thread_name + " argsY: " + str(args))
 

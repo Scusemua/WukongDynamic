@@ -168,6 +168,8 @@ from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 
+from . import BFS
+
 logger = logging.getLogger(__name__)
 
 """
@@ -1689,41 +1691,47 @@ def generate_DAG_info():
         logger.trace("")
         logger.trace("")
 
-        if not DAG_executor_constants.SERVERLESS_PLATFORM_IS_AWS:
-            # generate an output folder, and then within that a folder for that particular 
-            # PageRank DAG (whose name is based on the time you run the code):
+    if True: # not DAG_executor_constants.SERVERLESS_PLATFORM_IS_AWS:
+        # generate an output folder, and then within that a folder for that particular 
+        # PageRank DAG (whose name is based on the time you run the code):
 
-            # The top-level PageRank DAG output directory
-            output_directory:str = "output_pagerank_dags/"
+        # The top-level PageRank DAG output directory
+        output_directory:str = "output_pagerank_dags/"
 
-            # The sub-directory, which will reside within the top-level directory
-            inner_output_directory:str = 'pagerank-dag-{date:%Y-%m-%d_%H-%M-%S}'.format(date=datetime.datetime.now())
+        # The sub-directory, which will reside within the top-level directory
+        inner_output_directory:str = 'pagerank-dag-{date:%Y-%m-%d_%H-%M-%S}'.format(date=datetime.datetime.now())
 
-            # Concatenate the paths
-            output_directory = os.path.join(output_directory, inner_output_directory)
+        # Concatenate the paths
+        output_directory = os.path.join(output_directory, inner_output_directory)
 
-            # Create the output directory 
-            os.makedirs(output_directory, exist_ok = True)
+        # Create the output directory 
+        os.makedirs(output_directory, exist_ok = True)
 
-            if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
-                pass
-                for leaf_task_name in Partition_DAG_leaf_tasks:
-                    state = Partition_DAG_states[leaf_task_name]
-                    leaf_partition = partitions[state-1]
-                    filename:str = f"{leaf_task_name}.pickle"
-                    output_file:str = os.path.join(output_directory, filename)
-                    # Get output file path by concatenating the directory name with the filename. 
-                    with open(output_file, "wb") as partition_pickle_file:
-                    # Pickle the DAG partition, storing it in a file at the path that was generated above.
-                        cloudpickle.dump(partition_pickle_file, leaf_partition)
+        #if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        for name, partition in zip(BFS.partition_names, BFS.partitions):
+            filename:str = f"{name}.pickle"
+            output_file:str = os.path.join(output_directory, filename)
+            # Get output file path by concatenating the directory name with the filename. 
+            with open(output_file, "wb") as partition_pickle_file:
+            # Pickle the DAG partition, storing it in a file at the path that was generated above.
+                cloudpickle.dump(partition,partition_pickle_file)
 
-            else:
-                pass
-                for leaf_task in Group_DAG_leaf_tasks:
-                    pass
+            if name in Partition_DAG_leaf_tasks:
+                leaf_input = {}
+                leaf_input[name] = ()
+                filename:str = f"{name}-input-0.pickle"
+                output_file:str = os.path.join(output_directory, filename)
+                # Get output file path by concatenating the directory name with the filename. 
+                with open(output_file, "wb") as leaf_input_pickle_file:
+                # Pickle the DAG partition, storing it in a file at the path that was generated above.
+                    cloudpickle.dump(leaf_input,leaf_input_pickle_file)
 
-
-
+        filename:str = "total_num_nodes.pickle"
+        output_file:str = os.path.join(output_directory, filename)
+        # Get output file path by concatenating the directory name with the filename. 
+        with open(output_file, "wb") as total_num_nodes_pickle_file:
+        # Pickle the DAG partition, storing it in a file at the path that was generated above.
+            cloudpickle.dump(num_nodes_in_graph,total_num_nodes_pickle_file)
 
 """
 DELETE THIS - note: it was not updated with changes, e.g., clustering
