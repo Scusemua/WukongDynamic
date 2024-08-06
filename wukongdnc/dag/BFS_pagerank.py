@@ -231,8 +231,35 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 # the data_dict.
 
 #brc: AzSR
-def PageRank_Function_Driver_ASzr(results_dictionary,
-    partition_or_group, total_num_nodes):
+#def PageRank_Function_Driver_ASzr(results_dictionary,
+#    partition_or_group, total_num_nodes):
+def PageRank_Function_Driver_ASzr(args):
+    # This is a tuple (results_dictionary,result_tuple_list ) from below:
+    #   output, result_tuple_list = PageRank_Function(...), where
+    #   output is a dictionary of results to be sent to dependent tasks
+    # and result_tuple_list is a list of pagerank values of all the nodes. 
+    # Note that the pagerank values sent to dependent tasks
+    # are a subset of all the pagerank values in result_tuple_list
+    # return output, result_tuple_list.
+    #
+    # Note The result_tuple_list is not needed here in the 
+    # PageRank_Function_Driver_ASzr. These results are also given to the 
+    # SINK_TASK and represent (part of) the results of executing the PageRank DAG.
+    #
+    # Note We would like to split the PageRank_Function_Driver_ASzr outut meaning
+    # that we only send the result dictionary to downsteam tasks and we only
+    # send the result_tuple_list to the SINK_TASK.
+    resultDictionary_and_result_tuple_list = args[0]
+    results_dictionary = resultDictionary_and_result_tuple_list[0]
+
+    # Not used here:
+    # result_tuple_list = resultDictionary_and_result_tuple_list[1]
+
+    # partition of the input graph 
+    partition_or_group = args[1]
+    # number of nodes in the input graph.
+    total_num_nodes = args[2]
+
     keysList = list(results_dictionary.keys())
     try:
         msg = "[Error]: results_dictionary for PageRank_Function_Driver_ASzr has > 1 keys for DAG with no fanins."
@@ -266,11 +293,11 @@ def PageRank_Function_Driver_ASzr(results_dictionary,
         input_tuples.sort()
     logger.info("PageRank_Function_Driver_ASzr: length of input_tuples for " + task_file_name + ":" + str(len(input_tuples)))
 
-    #output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
-
     groups_partitions = None
 
-#brc: AzSR: passing partition_or_group since we got it as input
+#brc: AzSR: 
+    # Passing partition_or_group since we got it as input, as oppsed to inputtting
+    # it in PageRank_Function from a file.
     output, result_tuple_list = PageRank_Function(task_file_name,total_num_nodes,input_tuples,
         groups_partitions, partition_or_group)
     return output, result_tuple_list

@@ -1704,6 +1704,8 @@ def generate_DAG_info():
         # Concatenate the paths
         output_directory = os.path.join(output_directory, inner_output_directory)
 
+        # Example: WukongDynamic\output_pagerank_dags\pagerank-dag-2024-08-05_09-50-00
+
         # Create the output directory 
         os.makedirs(output_directory, exist_ok = True)
 
