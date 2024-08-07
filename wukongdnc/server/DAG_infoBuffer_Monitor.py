@@ -24,8 +24,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         super(DAG_infoBuffer_Monitor, self).__init__(monitor_name=monitor_name)
         # For testing, if we havn't called init() then version number will be 1
         self.current_version_DAG_info = None
-        # The Version 2 (with partitions 1 and 2, assuming there are at least two partitions)
-        # is given to the DAG_excutor_driver so the first requested version is version 3. 
+        # The Version 1 (with partitions 1 and 2, assuming there are at least two partitions)
+        # is given to the DAG_excutor_driver so the first requested version is version 2. 
         # We init this to 1.
         self.current_version_number_DAG_info = 1
 #brc leaf tasks

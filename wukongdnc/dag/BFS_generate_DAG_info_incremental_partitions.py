@@ -213,7 +213,11 @@ Partition_DAG_map = {}
 # we access Partition_DAG_tasks for current state
 Partition_DAG_tasks = {}
 
-# version of DAG, incremented for each DAG generated
+# version of DAG, incremented for each DAG generated. So DAG with partiton is version
+# 1 and DAG with partitions 1 and 2 is version 2. First requested DAG is version 3,
+# i.e., after executing partition 1 task and seeing partiton 2 is contined, we
+# know we need a new DAG so we will request a new DAG having version: 
+# current version number + 1 
 Partition_DAG_version_number = 0
 # Saving current_partition_name as previous_partition_name after processing the 
 # current partition. We cannot just subtract one, e.g. PR3_1 becomes PR2_1, since
@@ -2219,83 +2223,98 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 
 def deallocate_DAG_structures(current_partition_number,current_version_number_DAG_info,
         num_incremental_DAGs_generated_since_base_DAG):
-    # Version 2 of the incremental DAG is given to the DAG_executor_driver for execution
-    # (assuming th DAG has more than 1 partition). So the firstversion workers can request 
-    # is version 3. At that point, they will have executed partition 1, found that 
+    # Version 1 of the incremental DAG is given to the DAG_executor_driver for execution
+    # (assuming th DAG has more than 1 partition). So the first version workers can request 
+    # is version 2. At that point, they will have executed partition 1, found that 
     # partition 2 was to-be-continued, partition 1, which is not to-be-continued has a collapse to 
-    # continued partition 1, and that the DAG was not complete, and so requested version 3.
+    # continued partition 2, and that the DAG was not complete, and so requested version 2.
     # (The worker that executed partition 1, actually the task corresponding to computing the 
     # pagerank values of partition 1, will save the state and output for that task in its continue queue. When 
     # that worker gets a new incremental DAG, it will get the state and output from its continue
     # queue and retart DAG execution by getting the collapse for partition 1 which is partition 2
-    # and executing partition 2 as usual. In geneal if workers request version n, n>2, (all workers)
+    # and executing partition 2 as usual. In general if workers request version n, n>1, (all workers)
     # request the same version of the DAG each round, then they have already executed partitions 1 through
-    # 2+((n-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL), where the last 
-    # partition 2+((n-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL) is continued and 
-    # the preceding partition has a collapse to the continued task. Again, the workers have alrady executed
+    # 2+((n-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL), where the last 
+    # partition 2+((n-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL) is continued and 
+    # the preceding partition has a collapse to the continued task. Again, the workers have already executed
     # partitions 1 and 2 and a certain number of partitions that have been added in each new version
-    # of the incremental DAG. Version 2 has partitions 1 and 2 and version 3 is the irst version that 
-    # can be requested by the workers. Note that if they request version 3, they have only excuted
+    # of the incremental DAG. Version 1 has partitions 1 and 2 and version 2 is the first version that 
+    # can be requested by the workers. Note that if they request version 2, they have only excuted
     # partitions 1 and 2 (and really only executed partition 1 as partiton 2 was to-be-continued)
-    # so that n-3 in this case is 3-3=0 and 2+(0*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL)
+    # so that use of n-2 in this case is 2-2=0 and the last partition 2+(0*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL)
     # is 2 as expected.
     #
-    # Example: DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4 and they request Version 4. 
-    # Then the partitions that have been executed are 1, 2, 3, 4, 5, and 6, where version 3 has partitons 1, 
-    # 2, 3, 4, 5, and 6, where 6 is to-be-continued, and version 2 has partitons 1 and 2. Workers are 
-    # requesting Version 4, which will add the 4 partitions 7, 8, 9, and 10 as 
-    # DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4. In the new version 4 of the DAG, 
+    # Example: DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4 and they request Version 3. 
+    # Then the partitions that have been executed are 1, 2, 3, 4, 5, and 6, where version 2 has partitons 1, 
+    # 2, 3, 4, 5, and 6, where 6 is to-be-continued, and version 2 has partitions 1 and 2. Workers are 
+    # requesting Version 3, which will add the 4 partitions 7, 8, 9, and 10 as 
+    # DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4. In the new version 3 of the DAG, 
     # partition 6 now is not-continued and partition 5 now has no collapse to a continued state. 
-    # (Note that when we add partition 7 to the DAG, we change partiion 6 to be non-to-be-continued
-    # and we change partition 5 so that it has no collapse to a continued partition. The new DAG with
-    # partition 7, which is a to-b-contnued partition, is not published, and neither are the 
-    # DAGS created by adding partitions 8, and 9, respectively. The DAG crrated by adding 10 is published.)
-    # So we can deallocate the info in the DAG strctures about 1, 2, 3, 4, which 
-    # is 1 through (2+((n-3)*pub_interval))-2, which is 1 through 2+(1*4)-2 = 4. Note that when workers request 
-    # version 4 we can deallocate DAG structure informatiob about some of the partitions in version 3 - 1, 2, 3, 4 - but 
-    # not partition 5 and 6. This is because the status of 5 and 6 in version 3 is changed in version 4.
-    # Partition 5 has a collapse to continued task 6 in version 3 but in version 4 task 6 is not
+    # (Note that when we add partition 7 to the DAG, we change partition 6 to be non-to-be-continued
+    # and we change partition 5 so that it has no collapse to a to-be-continued partition. The new DAG with
+    # partition 7, which is a to-bo-continued partition (due to DEPOSIT INTERVAL = 4), is not published, and neither 
+    # are the DAGS created by adding partitions 8, and 9, respectively. The DAG created by adding 10 is published.)
+    # (We have added 8 partitions since we generated the base DAG (with partitions 1 and 2) and
+    # 8 mod 4 (DAG INTERVAL) is 0). Note that we aded 7, 8, 9, and 10 but we also changed 5
+    # and 6, so we need 5 and 6 to be in version 3 of the DAG.
+    # So we can deallocate the info in the DAG strctures about DAG states 1, 2, 3, 4, which 
+    # is 1 through (2+((n-2)*pub_interval))-2, n=3, which is 1 through 2+(1*4)-2 = 4. Note that when workers request 
+    # version 3 we can deallocate DAG structure information about some of the partitions in version 2: 1, 2, 3, 4, but 
+    # not partition 5 and 6. This is because the status of 5 and 6 in version 3 is changed in version 3.
+    # Partition 5 has a collapse to continued task 6 in version 2 but in version 3 task 6 is not
     # to-be-continued and thus 5 no longer has a collapse to a continued task. So when the workers
-    # get version 4 of the DAG they restart execution by getting the state and output for already
+    # get version 3of the DAG they restart execution by getting the state and output for already
     # executed task 5 from the continue queue, retrieving the collapse task 6 of state 5, and 
-    # executing task 6. Thus we do not dealloate the DAG structre information for 5 and 6 even though 
-    # they were in version 3 and we are getting a new version 4.
+    # executing task 6. Thus we do not dealloate the DAG states for 5 and 6, even though they
+    # were in version 2 and we are getting a new version 3.
     # Note that we don't always start deallocation at 1, we start where the last deallocation ended.
     # So in this example, after deallocating 1, 2, 3, and 4, start_deallocation becomes 5. Note that if 
-    # workers request version 3, then 2+((n-3)*pub_interval))-2 is 2+(0*4)-2 = 0 so we deallocate from 1 to 0 
+    # workers request version 2, then 2+((n-2)*pub_interval))-2 is 2+(0*4)-2 = 0 so we deallocate from 1 to 0 
     # so no deallocations will be done. As mentioned above, the states for partitions 1 and 2 in 
-    # version 2 will change in version 3, so we do not deallocate 1 and 2 when the workers
-    # request version 3. Partitions 1 and 2 will be among the partitions deallocated when workers
-    # request version 4.
+    # version 1 will change in version 2, so we do not deallocate 1 and 2 when the workers
+    # request version 2. Partitions 1 and 2 will be among the partitions deallocated when workers
+    # request version 3. (From above, we will deallocate 1, 2, 3, 4.)
+    #
     # Note that the initial value of the version number in the DAG_infoBufferMonitor that 
-    # maintains the last version number requested by the user is 1. We could use 2. Workers
-    # don't request version 1 or 2 as version 2 when generated is given to the DAG_executor_driver,
-    # which starts DAG execution with version 2 of the incremental DAG. (Partition 1 is a leaf task.
-    # Partiton 2 either depends on partittion 1 or is another leaf task. More leaf tasks can be 
-    # discovered during incremental DAG generation. This is unlike non-incremental DAG generation 
-    # which discovers all of the leaf tasks during DAG gneration and gives these leaf tasks
-    # to the DAD_excutor_driver (as part of the DAG structure). The DAG_executor_driver will 
+    # maintains the last version number requested by the user is 1. Workers don't actually 
+    # request version 1 as version 1, which contains partitions 1 and 2, is given to
+    # the DAG_executor_driver, which starts DAG execution with version 1 of the incremental DAG. 
+    # (Partition 1 is a leaf task. Partiton 2 either depends on partition 1 or is another leaf task. 
+    # More leaf tasks can be discovered during incremental DAG generation. This is unlike non-incremental 
+    # DAG generation, which discovers all of the leaf tasks during DAG gneration and gives these leaf tasks
+    # to the DAD_executor_driver (as part of the DAG structure). The DAG_executor_driver will 
     # start a lambda for each leaf task, or if workers are being used it will enqueue the leaf tasks
-    # in the work queue.
+    # in the work queue.)
+    # So the first version requested by the users is 2, and the irst version deposited
+    # in the DAG_infoBufferMonitor is 2. The workers can excute DAG version 1 and request
+    # DAG version 2 before bfs() has deposited version 2 into the DAG_infoBufferMonitor.
+    # (This maks the new version available to workers, who call withdraw() to get a new
+    # version.) Before bfs() deposits new version 2, it will ask DAG_infoBufferMonitor for 
+    # the most recent version requested by the workers. This will be the initial value 1
+    # since bfs() has not called deposit for the first time to deposit version 2 (which 
+    # bfs will do next). bfs will pass 1 to deallocate_DAG_structures as the value
+    # of current_version_number_DAG_info so the value of 
+    # 2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+    # will be 2+((1-2) * 4)-2 = -4 so we will deallocate from 1 to -1 so no deallocations
+    # as expected. (We cannot deallocate 1 or 2 yet as we are not done with them - in version
+    # 2 partition 2 becomes not to-be-continued and partition 1 now has no collapse to a 
+    # continued state, so we restart executing the DAG by accessing 1's state information
+    # to get 1's collpase task 2, which we can now execute. We already excuted 1 and then
+    # stopped execution when we saw 1's collapse was to a t0-be-continued state 2)
 
-#brc: issue: version number gets incremented for each partition added, not just when we publish?
-# yes, since we now either call full or partital. Should partial inc version number since 
-# we are not publishing? No.
-# then what is initial value of version number? 0 or 1? So with only partition 1 it is version 0
-# then we publish 1 and 2 as version 1. then 1,2, 3 as version 1P then version 1, 2 3, 4
-# as version 2?
-# We assueme in formula that first version they can request is 3 but if we start version at 0
-# then 1 is partia and 2 is ful so 1 2 is version 1 and frist version they can request is 2?
-# then 1 2 3 is still version 2 and 1 2 3 4 is version 3. So current_version_number_DAG_info-2?
+    # Note: the version number gets incremented only when we publish a new DAG. The first 
+    # DAG we publish is the base DAG with partitions 1 and 2. If the interval s 4,
+    # the next DAG we generate has partitions 1, 2, and 3 but it is not published since
+    # we publish every 4 partitions (after the base DAG) So the next verson is version 2
+    # which will have partitions 1, 2, 3, 4, 5, 6. 
     global deallocation_start_index
-    #deallocation_end_index = (2+((current_version_number_DAG_info-3)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
     deallocation_end_index = (2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
     # we will use deallocation_end_index in a range so it needs to be one past the last partition
-    # to be dealloctated.
-    # Don't increment it unless we might actually do a deallocation. If statr index is still
-    # 1 then end index is 1 we can do a deallocation - we will deallocte for partition 1
-    # using a range from 1 to 1, which is implemented as range(1,2), where 1 is inclusive but 2 is exclusive
+    # to be dealloctated. However, don't increment deallocation_end_index unless we might 
+    # actually do a deallocation. If start index is still 1 and end index is 1 we can do a 
+    # deallocation - we will deallocate partition 1 using a range "1 to 1", 
+    # which is implemented as range(1,2), where 1 is inclusive but 2 is exclusive
     if deallocation_end_index > 0:
         deallocation_end_index += 1
 

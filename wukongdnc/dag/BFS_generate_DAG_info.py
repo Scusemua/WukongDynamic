@@ -1578,122 +1578,136 @@ def generate_DAG_info():
                 logger.trace(Group_DAG_num_nodes_in_graph)
                 logger.trace("")
 
-    """
-    # Generate Dask program for this DAG. Example of Dask dsk generated below:
-    dsk = {
-            'PR1_1': (PageRank_Function_Driver),
-            'PR9_1': (PageRank_Function_Driver),
-            'PR2_1': (PageRank_Function_Driver, 'PR1_1'),
-            'PR3_1': (PageRank_Function_Driver, 'PR2_1'),
-            'PR3_2': (PageRank_Function_Driver, 'PR2_1'),
-            'PR3_3': (PageRank_Function_Driver, 'PR2_1'),
-            'PR4_1': (PageRank_Function_Driver, 'PR3_1'),
-            'PR4_2': (PageRank_Function_Driver, 'PR3_3'),
-            'PR4_3': (PageRank_Function_Driver, 'PR3_3'),
-            'PR5_1': (PageRank_Function_Driver, 'PR4_2'),
-            'PR5_2': (PageRank_Function_Driver, 'PR4_2'),
-            'PR5_3': (PageRank_Function_Driver, 'PR4_3'),
-            'PR5_4': (PageRank_Function_Driver, ['PR5_2', 'PR4_3']),
-            'PR6_1': (PageRank_Function_Driver, 'PR5_1'),
-            'PR6_2': (PageRank_Function_Driver, ['PR5_3', 'PR5_1']),
-            'PR6_3': (PageRank_Function_Driver, 'PR5_3'),
-            'PR7_1': (PageRank_Function_Driver, 'PR6_3'),
-            'PR7_2': (PageRank_Function_Driver, 'PR6_3'),
-            'PR8_1': (PageRank_Function_Driver, 'PR7_1'),
-            'PR8_2': (PageRank_Function_Driver, 'PR7_2'),
-            'PR8_3': (PageRank_Function_Driver, 'PR7_2'),
-            'PR10_1': (PageRank_Function_Driver, 'PR9_1'),
-            'PR10_2': (PageRank_Function_Driver, 'PR9_1'),
-            'PR10_3': (PageRank_Function_Driver, 'PR9_1'),
-            'PR11_1': (PageRank_Function_Driver, ['PR10_2', 'PR10_3'])
-    }
-    """
 
-    logger.trace("")
-    
-    if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
-        driver = "PageRank_Function_Driver"
-    else:
-        driver = "PageRank_Function_Driver_Shared"
-    header_line = "\t" + "dsk = {"
+    if DAG_executor_constants.GENERATE_DASK_PROGRAM_FOR_NONINCREMENTAL_DAG:
+        """
+        # Generate Dask program and ready inputs for this DAG. Example of Dask dsk generated below:
 
-    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
-        dsk_lines = []
-        dsk_lines.append(header_line)
-        for leaf_task in Partition_DAG_leaf_tasks:
-            leaf_line = "\t\t\t" + "\'" + str(leaf_task) + "\': (" + driver + "),"
-            dsk_lines.append(leaf_line)
+        dsk = {  # OLD
+                'PR1_1': (PageRank_Function_Driver),
+                'PR9_1': (PageRank_Function_Driver),
+                'PR2_1': (PageRank_Function_Driver, 'PR1_1'),
+                'PR3_1': (PageRank_Function_Driver, 'PR2_1'),
+                'PR3_2': (PageRank_Function_Driver, 'PR2_1'),
+                'PR3_3': (PageRank_Function_Driver, 'PR2_1'),
+                'PR4_1': (PageRank_Function_Driver, 'PR3_1'),
+                'PR4_2': (PageRank_Function_Driver, 'PR3_3'),
+                'PR4_3': (PageRank_Function_Driver, 'PR3_3'),
+                'PR5_1': (PageRank_Function_Driver, 'PR4_2'),
+                'PR5_2': (PageRank_Function_Driver, 'PR4_2'),
+                'PR5_3': (PageRank_Function_Driver, 'PR4_3'),
+                'PR5_4': (PageRank_Function_Driver, ['PR5_2', 'PR4_3']),
+                'PR6_1': (PageRank_Function_Driver, 'PR5_1'),
+                'PR6_2': (PageRank_Function_Driver, ['PR5_3', 'PR5_1']),
+                'PR6_3': (PageRank_Function_Driver, 'PR5_3'),
+                'PR7_1': (PageRank_Function_Driver, 'PR6_3'),
+                'PR7_2': (PageRank_Function_Driver, 'PR6_3'),
+                'PR8_1': (PageRank_Function_Driver, 'PR7_1'),
+                'PR8_2': (PageRank_Function_Driver, 'PR7_2'),
+                'PR8_3': (PageRank_Function_Driver, 'PR7_2'),
+                'PR10_1': (PageRank_Function_Driver, 'PR9_1'),
+                'PR10_2': (PageRank_Function_Driver, 'PR9_1'),
+                'PR10_3': (PageRank_Function_Driver, 'PR9_1'),
+                'PR11_1': (PageRank_Function_Driver, ['PR10_2', 'PR10_3'])
+        }
 
-        for receiverX in Partition_receivers:
-            logger.trace("receiverX:" + receiverX)
-            sender_set_for_receiverX = Partition_receivers.get(receiverX)
-            logger.trace("sender_set_for_receiverX:" + str(sender_set_for_receiverX))
-            non_leaf_line_prefix = "\t\t\t" + "\'" + str(receiverX) + "\': (" + driver + ", "
-            if len(sender_set_for_receiverX) > 1:
-                non_leaf_line = "["
-                first = True
-                for sender_task in sender_set_for_receiverX:
-                    if first:
-                        first = False
-                        non_leaf_line += "\'" + str(sender_task) + "\'"
-                    else:
-                        non_leaf_line += ", " + "\'" + str(sender_task) + "\'"
-                non_leaf_line += "]),"
-            else:
-                sender_task = tuple(sender_set_for_receiverX)[0]
-                non_leaf_line = "\'" + sender_task + "\'),"
-            dsk_lines.append(non_leaf_line_prefix + non_leaf_line)
+        # No, this neds to be updated. It now looks like this:
+        dsk = {
+            'PR1_1': (PageRank_Function_Driver_AzSR, result_dictionary, 'partition-PR1_1', num_nodes),
+            'PR4_1': (PageRank_Function_Driver_AzSR, result_dictionary, 'partition-PR4_1', num_nodes),
+            'PR6_1': (PageRank_Function_Driver_AzSR, result_dictionary, 'partition-PR6_1', num_nodes),
+            'PR2_1L': (PageRank_Function_Driver_AzSR, 'PR1_1', 'partition-PR2_1L', num_nodes),
+            'PR3_1': (PageRank_Function_Driver_AzSR, 'PR2_1L', 'partition-PR3_1', num_nodes),
+            'PR5_1': (PageRank_Function_Driver_AzSR, 'PR4_1', 'partition-PR5_1', num_nodes),
+            'PR7_1': (PageRank_Function_Driver_AzSR, 'PR6_1', 'partition-PR7_1', num_nodes),
+            'SINK_TASK': (SinkTask, num_nodes, 'PR1_1', 'PR2_1L', 'PR3_1', 'PR4_1', 'PR5_1', 'PR6_1', 'PR7_1'),
+        }
+        """
 
-        dsk_lines[len(dsk_lines)-1] = dsk_lines[len(dsk_lines)-1][:-1]
-        footer_line = "\t\t" + "}"
-        dsk_lines.append(footer_line)
-
-        logger.info("Dask dsk lines for Partitions:")
-        for line in dsk_lines:
-            logger.info(line)
-
-        logger.info("")
-        logger.info("")
-    else:
-        dsk_lines = []
-        dsk_lines.append(header_line)
-        for leaf_task in Group_DAG_leaf_tasks:
-            leaf_line = "\t\t\t" + "\'" + str(leaf_task) + "\': (" + driver + "),"
-            dsk_lines.append(leaf_line)
-
-        for receiverX in Group_receivers:
-            logger.trace("receiverX:" + receiverX)
-            sender_set_for_receiverX = Group_receivers.get(receiverX)
-            logger.trace("sender_set_for_receiverX:" + str(sender_set_for_receiverX))
-            non_leaf_line_prefix = "\t\t\t" + "\'" + str(receiverX) + "\': (" + driver + ", "
-            if len(sender_set_for_receiverX) > 1:
-                non_leaf_line = "["
-                first = True
-                for sender_task in sender_set_for_receiverX:
-                    if first:
-                        first = False
-                        non_leaf_line += "\'" + str(sender_task) + "\'"
-                    else:
-                        non_leaf_line += ", " + "\'" + str(sender_task) + "\'"
-                non_leaf_line += "]),"
-            else:
-                sender_task = tuple(sender_set_for_receiverX)[0]
-                non_leaf_line = "\'" + sender_task + "\'),"
-            dsk_lines.append(non_leaf_line_prefix + non_leaf_line)
-
-        dsk_lines[len(dsk_lines)-1] = dsk_lines[len(dsk_lines)-1][:-1]
-        footer_line = "\t\t" + "}"
-        dsk_lines.append(footer_line)
-
-        logger.trace("Dask dsk lines for Groups:")
-        for line in dsk_lines:
-            logger.trace(line)
         logger.trace("")
-        logger.trace("")
+        
+        if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
+            driver = "PageRank_Function_Driver"
+        else:
+            driver = "PageRank_Function_Driver_Shared"
+        header_line = "\t" + "dsk = {"
 
-    if True: # not DAG_executor_constants.SERVERLESS_PLATFORM_IS_AWS:
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+            dsk_lines = []
+            dsk_lines.append(header_line)
+            for leaf_task in Partition_DAG_leaf_tasks:
+                leaf_line = "\t\t\t" + "\'" + str(leaf_task) + "\': (" + driver + "),"
+                dsk_lines.append(leaf_line)
+
+            for receiverX in Partition_receivers:
+                logger.trace("receiverX:" + receiverX)
+                sender_set_for_receiverX = Partition_receivers.get(receiverX)
+                logger.trace("sender_set_for_receiverX:" + str(sender_set_for_receiverX))
+                non_leaf_line_prefix = "\t\t\t" + "\'" + str(receiverX) + "\': (" + driver + ", "
+                if len(sender_set_for_receiverX) > 1:
+                    non_leaf_line = "["
+                    first = True
+                    for sender_task in sender_set_for_receiverX:
+                        if first:
+                            first = False
+                            non_leaf_line += "\'" + str(sender_task) + "\'"
+                        else:
+                            non_leaf_line += ", " + "\'" + str(sender_task) + "\'"
+                    non_leaf_line += "]),"
+                else:
+                    sender_task = tuple(sender_set_for_receiverX)[0]
+                    non_leaf_line = "\'" + sender_task + "\'),"
+                dsk_lines.append(non_leaf_line_prefix + non_leaf_line)
+
+            dsk_lines[len(dsk_lines)-1] = dsk_lines[len(dsk_lines)-1][:-1]
+            footer_line = "\t\t" + "}"
+            dsk_lines.append(footer_line)
+
+            logger.info("Dask dsk lines for Partitions:")
+            for line in dsk_lines:
+                logger.info(line)
+
+            logger.info("")
+            logger.info("")
+        else:
+            dsk_lines = []
+            dsk_lines.append(header_line)
+            for leaf_task in Group_DAG_leaf_tasks:
+                leaf_line = "\t\t\t" + "\'" + str(leaf_task) + "\': (" + driver + "),"
+                dsk_lines.append(leaf_line)
+
+            for receiverX in Group_receivers:
+                logger.trace("receiverX:" + receiverX)
+                sender_set_for_receiverX = Group_receivers.get(receiverX)
+                logger.trace("sender_set_for_receiverX:" + str(sender_set_for_receiverX))
+                non_leaf_line_prefix = "\t\t\t" + "\'" + str(receiverX) + "\': (" + driver + ", "
+                if len(sender_set_for_receiverX) > 1:
+                    non_leaf_line = "["
+                    first = True
+                    for sender_task in sender_set_for_receiverX:
+                        if first:
+                            first = False
+                            non_leaf_line += "\'" + str(sender_task) + "\'"
+                        else:
+                            non_leaf_line += ", " + "\'" + str(sender_task) + "\'"
+                    non_leaf_line += "]),"
+                else:
+                    sender_task = tuple(sender_set_for_receiverX)[0]
+                    non_leaf_line = "\'" + sender_task + "\'),"
+                dsk_lines.append(non_leaf_line_prefix + non_leaf_line)
+
+            dsk_lines[len(dsk_lines)-1] = dsk_lines[len(dsk_lines)-1][:-1]
+            footer_line = "\t\t" + "}"
+            dsk_lines.append(footer_line)
+
+            logger.info("Dask dsk lines for Groups:")
+            for line in dsk_lines:
+                logger.info(line)
+            logger.info("")
+            logger.info("")
+
         # generate an output folder, and then within that a folder for that particular 
-        # PageRank DAG (whose name is based on the time you run the code):
+        # PageRank DAG (whose folder name is based on the time you run the code):
 
         # The top-level PageRank DAG output directory
         output_directory:str = "output_pagerank_dags/"
@@ -1709,24 +1723,42 @@ def generate_DAG_info():
         # Create the output directory 
         os.makedirs(output_directory, exist_ok = True)
 
-        #if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
-        for name, partition in zip(BFS.partition_names, BFS.partitions):
-            filename:str = f"{name}.pickle"
-            output_file:str = os.path.join(output_directory, filename)
-            # Get output file path by concatenating the directory name with the filename. 
-            with open(output_file, "wb") as partition_pickle_file:
-            # Pickle the DAG partition, storing it in a file at the path that was generated above.
-                cloudpickle.dump(partition,partition_pickle_file)
-
-            if name in Partition_DAG_leaf_tasks:
-                leaf_input = {}
-                leaf_input[name] = ()
-                filename:str = f"{name}-input-0.pickle"
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+            for name, partition in zip(BFS.partition_names, BFS.partitions):
+                filename:str = f"{name}.pickle"
                 output_file:str = os.path.join(output_directory, filename)
                 # Get output file path by concatenating the directory name with the filename. 
-                with open(output_file, "wb") as leaf_input_pickle_file:
+                with open(output_file, "wb") as partition_pickle_file:
                 # Pickle the DAG partition, storing it in a file at the path that was generated above.
-                    cloudpickle.dump(leaf_input,leaf_input_pickle_file)
+                    cloudpickle.dump(partition,partition_pickle_file)
+
+                if name in Partition_DAG_leaf_tasks:
+                    leaf_input = {}
+                    leaf_input[name] = ()
+                    filename:str = f"{name}-input-0.pickle"
+                    output_file:str = os.path.join(output_directory, filename)
+                    # Get output file path by concatenating the directory name with the filename. 
+                    with open(output_file, "wb") as leaf_input_pickle_file:
+                    # Pickle the DAG partition, storing it in a file at the path that was generated above.
+                        cloudpickle.dump(leaf_input,leaf_input_pickle_file)
+        else:
+            for name, group in zip(BFS.group_names, BFS.groups):
+                filename:str = f"{name}.pickle"
+                output_file:str = os.path.join(output_directory, filename)
+                # Get output file path by concatenating the directory name with the filename. 
+                with open(output_file, "wb") as group_pickle_file:
+                # Pickle the DAG partition, storing it in a file at the path that was generated above.
+                    cloudpickle.dump(group,group_pickle_file)
+
+                if name in Group_DAG_leaf_tasks:
+                    leaf_input = {}
+                    leaf_input[name] = ()
+                    filename:str = f"{name}-input-0.pickle"
+                    output_file:str = os.path.join(output_directory, filename)
+                    # Get output file path by concatenating the directory name with the filename. 
+                    with open(output_file, "wb") as leaf_input_pickle_file:
+                    # Pickle the DAG partition, storing it in a file at the path that was generated above.
+                        cloudpickle.dump(leaf_input,leaf_input_pickle_file)               
 
         filename:str = "total_num_nodes.pickle"
         output_file:str = os.path.join(output_directory, filename)
