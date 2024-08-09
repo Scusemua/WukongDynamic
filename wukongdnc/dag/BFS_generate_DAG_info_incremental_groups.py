@@ -312,7 +312,8 @@ Group_next_state = 1
 #brc: num_nodes:
 Group_DAG_num_nodes_in_graph = 0
 
-deallocation_start_index = 1
+deallocation_start_index_partitions = 1
+deallocation_start_index_groups = 1
 
 def deallocate_Group_DAG_structures(i):
     global Group_all_fanout_task_names
@@ -2519,8 +2520,8 @@ def deallocate_DAG_structures(current_partition_number,current_version_number_DA
     # the next DAG we generate has partitions 1, 2, and 3 but it is not published since
     # we publish every 4 partitions (after the base DAG) So the next verson is version 2,
     # which will have partitions 1, 2, 3, 4, 5, 6 for a total of 2+4 partitions.
-    global deallocation_start_index
-    deallocation_end_index = (2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+    global deallocation_start_index_partitions
+    deallocation_end_index_partitions = (2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
     # we will use deallocation_end_index in a range so it needs to be one past the last partition
     # to be dealloctated. Example, to deallocate "1 to 1" use range(1,2), where 1 is inclusive 
@@ -2531,33 +2532,117 @@ def deallocate_DAG_structures(current_partition_number,current_version_number_DA
     # than 1. If end index > 0 we can deallocate as the value of the above formula for end index
     # just keeps growing as the version number increases.
     # which is implemented as range(1,2), 
-    if deallocation_end_index > 0:
-        deallocation_end_index += 1
+    if deallocation_end_index_partitions > 0:
+        deallocation_end_index_partitions += 1
 
-    logger.info("deallocate_DAG_structures: deallocation_start_index: " + str(deallocation_start_index)
-        + " deallocation_end_index: " + str(deallocation_end_index))
-    for i in range(deallocation_start_index, deallocation_end_index):
+    logger.info("deallocate_DAG_structures: deallocation_start_index_partitions: " + str(deallocation_start_index_partitions)
+        + " deallocation_end_index: " + str(deallocation_end_index_partitions))
+    for i in range(deallocation_start_index_partitions, deallocation_end_index_partitions):
         logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
-#brc: ToDo: get the n groups of partition i and deallocate those n groups
-# need a start index for the groups:
-# delete (groups in) partitions 1 and 2.
-# start = 1
-# group_index = 1
-# delete partition 1 which always has 1 group, which is in position group_index=1
-# deallocate_Group_DAG_structures(group_index-1)
-# group_index+=1
-# delete partition 2, which has 3 groups, so delete groups in positions
-# deallocate_Group_DAG_structures(2-1), 
-# group_index+=1 deallocate_Group_DAG_structures(3-1), 
-# group_index+=1 deallocate_Group_DAG_structures(4-1),
-# start = group_index+1 = 5
-        deallocate_Group_DAG_structures(i)
+#brc: ToDo: get the size of the groups of partition i and deallocate those n groups
+        groups_of_partition_i = BFS.groups_of_partitions[i-1]
+        # number of groups >= 1
+        number_of_groups_of_partition_i = len(groups_of_partition_i)
+        # end index is now 1 past the last group to be deallocated, e.g., 
+        # if start is 1 and number of groups is 3 we want to deallocate 
+        # 1, 2, and 3. The value 4 is fine for end since we will use a 
+        # range(1,4) and 1 is inclusive but 4 is exclusive.
+        # After adding to deallocation_end_index_groups, 
+        # deallocation_start_index_groups<deallocation_end_index_groups.
+        deallocation_end_index_groups = deallocation_start_index_groups+number_of_groups_of_partition_i
+        for j in range(deallocation_start_index_groups, deallocation_end_index_groups):
+            # Note: This deallocation uses group_name = BFS.partition_names[i-1]
+            # so we deallocate group in position j-1
+            deallocate_Group_DAG_structures(j)
+        # rset start to end to prepare for the the next deallocations
+        deallocation_start_index_groups = deallocation_end_index_groups
     
-    # set start to end if we did a deallocation, i.e., if start < end. 
+    # Possibly reset deallocation_start_index_partitions. Note that 
+    # deallocation_start_index_groups was reset afer the last group 
+    # deallocation, and we know that we did deallocate 1 or more groups
+    # of a partition, since we are in ths code. However, we don't know 
+    # whether we actually tried to deallocate any partitions, i.e., whether
+    # deallocation_start_index_partitions < deallocation_end_index_partitions
+    # was true for the for i in range() loop. If not, then we did not 
+    # deallocate any groups in any partitions.
+    #
+    # Set start to end if we did a deallocation, i.e., if start < end. 
     # Note that if start equals end, then we did not do a deallocation since 
     # end is exclusive. (And we may have just incremented end, so dealllocating 
     # "1 to 1", with start = 1 and end = 1, was implemented as incrementing 
     # end to 2 and using range(1,2) so start < end for the deallocation "1 to 1"
     # Note that end was exclusive so we can set start to end instead of end+1.
-    if deallocation_start_index < deallocation_end_index:
-        deallocation_start_index = deallocation_end_index
+    if deallocation_start_index_partitions < deallocation_end_index_partitions:
+        deallocation_start_index_partitions = deallocation_end_index_partitions
+
+    # Example. Suppose the publishing interval is 4, i.e., after publishing the
+    # base DAG (version 1) with partitions 1 and 2, we publish version 2 with 
+    # 1 2 3 4 5 6 (base DAG plus 4 partitions). Before bfs() calls depost()
+    # to publish this DAG it gets the last requsted DAG version which is initializd
+    # to 1 and passes 1 to deallocate_DAG_structures.
+    # For deallocation_end_index_partitions = (2+((current_version_number_DAG_info-2)
+    #    * DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+    # we get end is -4. Thus the for loop for i in range() does not execute
+    # and we do not do any deallocations. Also, since deallocation_start_index_partitions
+    # is not less than  deallocation_end_index_partitions we do not set start to end.
+    # 
+    # Next, bfs() will generate version 3 with 1 2 3 4 5 6 7 8 9 10, which has
+    # 2 partitions from the base DAG version 1 and 2*4 partitions for versions
+    # 2 and 3. bfs() generats DAG version 3 and before bfs()
+    # calls deposit() to publish this new DAG version 3 it gets the last requsted 
+    # DAG version which we assume is 2 and passes 2 to deallocate_DAG_structures.
+    # For deallocation_end_index_partitions = (2+((current_version_number_DAG_info-2)
+    #    * DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+    # we get end is 0. Thus the for loop for i in range() does not execute
+    # and we do not do any deallocations. Also, since deallocation_start_index_partitions
+    # is not less than deallocation_end_index_partitions we do not set start to end.
+    # Recall that the first version for which deallocations can be done is 3, since
+    # the formula for end will evaluate to 1 when the version number is 3.
+    #
+    # Next, bfs() will generate version 4 with partitions 1 - 14, which has
+    # 2 partitions from the base DAG version 1 and 2*4 partitions for versions
+    # 2 and 3. bfs() generates DAG version 3 and before bfs()
+    # calls deposit() to publish this new DAG version 3 it gets the last requested 
+    # DAG version which we assume is 3 and passes 3 to deallocate_DAG_structures.
+    # For deallocation_end_index_partitions = (2+((current_version_number_DAG_info-2)
+    #    * DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+    # we get end is 2. Thus the for loop for i in range(1,3) will execute. We
+    # describe the groups deallocations for partitions 1 and 2 below, Also,
+    # since deallocation_start_index_partitions is less than deallocation_end_index_partitions 
+    # we will set start to end which sets start to 3, as in the next partition 
+    # whose groups will be deallocated is partition 3 (after just deallocating the 
+    # groups in partitions 1 and 2.)
+    # Assume we are building a DAG for the white board example.
+    # For the for i in range(1,3) loop, with i = 1 we do 
+    # groups_of_partition_i = BFS.groups_of_partitions[i-1]
+    # number_of_groups_of_partition_i = len(groups_of_partition_i)
+    # which sets groups_of_partition_i to a list containing the single group PR1_1 in 
+    # partition 1 so that number_of_groups_of_partition_i is 1. Now
+    # deallocation_end_index_groups = deallocation_start_index_groups+number_of_groups_of_partition_i
+    # = 1 + 1 = 2, which gives the for loop for j in range(1,2) (where 2 is exclusive).
+    # This loop will deallocate the single group in partition 1:
+    # deallocate_Group_DAG_structures(j) where this method accesses position j-1
+    # since the positions in structures we are deallocating start with position 0,
+    # i.e., the first group PR1_1 is in position 0, as in group_name = BFS.partition_names[j-1]
+    # After this for j in range (1,2) ends we set 
+    # deallocation_start_index_groups = deallocation_end_index_groups
+    # so deallocation_start_index_groups is set to 2. This means the next group
+    # that we deallocate is group 2 (in position 1).
+    # 
+    # The for loop for i in range(1,3) continues with i = 2. We do
+    # groups_of_partition_i = BFS.groups_of_partitions[i-1]
+    # number_of_groups_of_partition_i = len(groups_of_partition_i).
+    # This sets groups_of_partition_i to a list containing the groups of 
+    # partition PR2_1L, which are PR2_1, PR2_2L, and PR2_3, so that
+    # number_of_groups_of_partition_i is 3. (Note that partition 2 is PR2_1L
+    # where the L means that the nodes in partition 2 have a loop (cycle) so
+    # there must be a group in partition 2 that has a cycle, this is group PR2_2L,
+    # which is the 2nd group of the 3 groups in parititon PR2_1L.
+    # Now deallocation_end_index_groups = deallocation_start_index_groups+number_of_groups_of_partition_i
+    # = 2 + 3 = 5, which gives the for loop for j in range(2,5) (where 5 is exclusive).
+    # This loop will deallocate the three groups in partition 2 using
+    # deallocate_Group_DAG_structures(j). After this for j in range (2,5) loop ends we set 
+    # deallocation_start_index_groups = deallocation_end_index_groups
+    # so deallocation_start_index_groups is set to 5. This means the next group
+    # that we deallocate will be group 5, the first group of partition 3.
+
