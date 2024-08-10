@@ -3985,7 +3985,7 @@ def bfs(visited, node):
                                 # update the version number to a higher value. Now we will pass the returned/older value to 
                                 # deallocate_DAG_structures, which is less than the updated value; this is not an error, we will just 
                                 # deallocat fewer values than we could deallocate with the new (higher) value for the version number.
-                                logger.info("BFS: current_version_number_DAG_info for call to deallocate: "
+                                logger.info("BFS: current_version_number_DAG_info for call to deallocate partitions: "
                                     + str(current_version_number_DAG_info))
                                 BFS_generate_DAG_info_incremental_partitions.deallocate_DAG_structures(current_partition_number,
                                     current_version_number_DAG_info, num_incremental_DAGs_generated_since_base_DAG)
@@ -4010,7 +4010,8 @@ def bfs(visited, node):
                             logger.info("BFS: calling generate_DAG_info_incremental_groups for"
                                 + " partition " + str(partition_name) + " groups_of_current_partition: "
                                 + str(groups_of_current_partition)
-                                + " groups_of_partitions: " + str(groups_of_partitions))
+                                + " groups_of_partitions: " + str(groups_of_partitions))                            
+
                             #logger.info("BFS: BFS_queue empty: " + str(len(BFS_queue)))
                             #if len(BFS_queue)==1:
                             #    logger.info("BFS: BFS_queue[0]: " + str(BFS_queue[0]))
@@ -4028,7 +4029,7 @@ def bfs(visited, node):
                                 # update the version number to a higher value. Now we will pass the returned/older value to 
                                 # deallocate_DAG_structures, which is less than the updated value; this is not an error, we will just 
                                 # deallocat fewer values than we could deallocate with the new (higher) value for the version number.
-                                logger.info("BFS: current_version_number_DAG_info for call to deallocate: "
+                                logger.info("BFS: current_version_number_DAG_info for call to deallocate groups: "
                                     + str(current_version_number_DAG_info))
                                 BFS_generate_DAG_info_incremental_groups.deallocate_DAG_structures(current_partition_number,
                                     current_version_number_DAG_info, num_incremental_DAGs_generated_since_base_DAG)

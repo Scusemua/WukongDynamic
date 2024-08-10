@@ -330,10 +330,10 @@ def deallocate_Group_DAG_structures(i):
     global Group_DAG_tasks
 
     #brc: deallocate DAG map-based structures
-    logger.info("deallocate_Partition_DAG_structures: partition_names: ")
-    for name in BFS.partition_names:
+    logger.info("deallocate_Group_DAG_structures: group_names: ")
+    for name in BFS.group_names:
         logger.info(name)
-    group_name = BFS.partition_names[i-1]
+    group_name = BFS.group_names[i-1]
     state = Group_DAG_states[group_name]
     logger.info("deallocate_Group_DAG_structures: Group_name: " + str(group_name))
     logger.info("deallocate_Group_DAG_structures: state: " + str(state))
@@ -447,8 +447,12 @@ def generate_partial_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
 
     # If there is only one partition in the entire DAG then it is complete and is version 1.
     # Otherwise, version 1 is the DAG_info with partitions 1 and 2, where 1 is complete 
-    # and 2 is complete, if there are 2 partitons in the entire DAG, or incomplete otherwise.
-    Group_DAG_version_number += 1
+    # and 2 is complete if there are 2 partitons in the entire DAG, or incomplete otherwise.
+    #    
+    # # We do not increment the version numbr for incremental DAGs that are not 
+    # published. In the trace, we print, e.g., "2P" for version "2 P"artial.
+    #Group_DAG_version_number += 1
+    
     # if the last partition has incomplete information, then the DAG is 
     # incomplete. When partition i is added to the DAG, it is incomplete
     # unless it is the last partition in the DAG). It becomes complete
@@ -1877,8 +1881,11 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # group and change the state info by adding these sets.
             #
             # get the state (number) of previous group
+
             previous_group_state = Group_DAG_states[previous_group]
             # get the state_info of previous group
+            logger.info("previous_group: " + str(previous_group)
+                + " previous_group_state: " + str(previous_group_state))
             state_info_of_previous_group = Group_DAG_map[previous_group_state]
 
             logger.trace("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
@@ -2536,9 +2543,9 @@ def deallocate_DAG_structures(current_partition_number,current_version_number_DA
         deallocation_end_index_partitions += 1
 
     logger.info("deallocate_DAG_structures: deallocation_start_index_partitions: " + str(deallocation_start_index_partitions)
-        + " deallocation_end_index: " + str(deallocation_end_index_partitions))
+        + " deallocation_end_index_partitions: " + str(deallocation_end_index_partitions))
     for i in range(deallocation_start_index_partitions, deallocation_end_index_partitions):
-        logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
+        logger.info("deallocate_DAG_structures: deallocate " + str(i))
 #brc: ToDo: get the size of the groups of partition i and deallocate those n groups
         groups_of_partition_i = BFS.groups_of_partitions[i-1]
         # number of groups >= 1
@@ -2547,14 +2554,33 @@ def deallocate_DAG_structures(current_partition_number,current_version_number_DA
         # if start is 1 and number of groups is 3 we want to deallocate 
         # 1, 2, and 3. The value 4 is fine for end since we will use a 
         # range(1,4) and 1 is inclusive but 4 is exclusive.
-        # After adding to deallocation_end_index_groups, 
-        # deallocation_start_index_groups<deallocation_end_index_groups.
+        # After adding number_of_groups_of_partition_i to deallocation_end_index_groups, 
+        # deallocation_start_index_groups < deallocation_end_index_groups.
+        global deallocation_start_index_groups
         deallocation_end_index_groups = deallocation_start_index_groups+number_of_groups_of_partition_i
+
+        try:
+            msg = "[Error]: deallocate_DAG_structures:" \
+                + " deallocation_start_index_groups is not less than deallocation_end_index_groups after add." \
+                + " deallocation_start_index_groups: " + str(deallocation_start_index_groups) \
+                + " deallocation_end_index_groups: "  + str(deallocation_end_index_groups)
+            assert deallocation_start_index_groups < deallocation_end_index_groups , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                logging.shutdown()
+                os._exit(0)
+
+        logger.info("deallocate_DAG_structures: "
+            + " number_of_groups_of_partition_i " + str(number_of_groups_of_partition_i)
+            + " deallocation_start_index_groups: " + str(deallocation_start_index_groups)
+            + " deallocation_end_index_groups: "  + str(deallocation_end_index_groups))
+
         for j in range(deallocation_start_index_groups, deallocation_end_index_groups):
-            # Note: This deallocation uses group_name = BFS.partition_names[i-1]
-            # so we deallocate group in position j-1
+            # Note: This deallocation uses group_name = BFS.partition_names[j-1]
+            # so deallocate_Group_DAG_structures deallocates group in position j-1
             deallocate_Group_DAG_structures(j)
-        # rset start to end to prepare for the the next deallocations
+        # reset start to end to prepare for the the next deallocations
         deallocation_start_index_groups = deallocation_end_index_groups
     
     # Possibly reset deallocation_start_index_partitions. Note that 
