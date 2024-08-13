@@ -5,6 +5,8 @@ import threading
 #import json
 import os
 #import time
+import sys
+import getopt
 
 import cloudpickle
 #import base64
@@ -31,6 +33,8 @@ from threading import Lock
 
 import logging 
 from ..dag.addLoggingLevel import addLoggingLevel
+
+
 """ How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
     >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
     >>> logging.getLogger(__name__).setLevel("TRACE")
@@ -1896,8 +1900,6 @@ class TCPServer(object):
                 logging.shutdown()
                 os._exit(0)
 
-import sys
-import getopt
 def configure_test(argv):
     test_number = ''
     opts, _args = getopt.getopt(argv, "ht:",["test="])

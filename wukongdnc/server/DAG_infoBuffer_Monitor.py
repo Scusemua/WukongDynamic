@@ -28,6 +28,16 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # is given to the DAG_excutor_driver so the first requested version is version 2. 
         # We init this to 1.
         self.current_version_number_DAG_info = 1
+        # The current_version_number_DAG_info may have only been requested by some
+        # of the workers. This most_recent_version_number is the most recent
+        # version number that has been requested by all the workers. We need
+        # to make sure all the workers are finished executng their current
+        # version of the DAG before we allow parts of that DAG to be
+        # deallocated when using incremental DAG generation. One worker may be 
+        # finished but others may still be executing states in the DAG that 
+        # can be deallocated when all the workers are finished (and requst a 
+        # new version of the DAG)
+        self.most_recent_version_number_that_has_been_requested_by_all_workers = 1
 #brc leaf tasks
         # The initial DAG has the initial leaf task(s) in it. As later we find
         # more leaf tasks (that start new connected components), we supply them 
@@ -115,7 +125,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         print(DAG_info.get_DAG_info_is_complete())
         print()
 
-    def get_current_version_number_DAG_info(self):
+    def get_most_recent_version_number(self):
         try:
             super(DAG_infoBuffer_Monitor, self).enter_monitor(method_name="get_current_version_number_DAG_info")
         except Exception as ex:
@@ -127,9 +137,14 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         logger.trace("DAG_infoBuffer_Monitor: get_current_version_number_DAG_info() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
 
         restart = False
-        current_version_number = self.current_version_number_DAG_info
+        #current_version_number = self.current_version_number_DAG_info
+#brc: todo:
+        most_recent_version = self.most_recent_version_number_that_has_been_requested_by_all_workers
         super().exit_monitor()
-        return current_version_number, restart
+        #return current_version_number, restart
+        return most_recent_version, restart
+#brc: todo:
+        #Q: return the restart when not using lambdas?
 
     def deposit(self,**kwargs):
         # deposit a new DAG_info object. It's version number will be one more
@@ -167,6 +182,9 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
         self.current_version_new_leaf_tasks += new_leaf_tasks
         logger.info("DAG_infoBuffer_Monitor: DAG_info deposited: ")
+        # bfs() calls deposit so we know that bfs() is not tryin to change the 
+        # ADG while we are iterating over the DAG structures (e.g., DAG_map) in
+        # method print_DAG_info
         self.print_DAG_info(self.current_version_DAG_info)
 
 #brc leaf tasks
@@ -225,9 +243,17 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # any new workers can enter withdraw, or a signalled worker can exit and reenter 
             # the monitor on their next call to withdraw, or deposit can be renetered on 
             # another call to deposit(). So signalled workers have priority.
+            #
+            # Note: we are not resetting most_recent_version after the round ends so it keeps 
+            # increasing as workers increase the version number they are requesting.
+            #
+            # Grab requested_version_number_in_this_round befoer we reset it.
+            self.most_recent_version_number_that_has_been_requested_by_all_workers = self.requested_version_number_in_this_round
+            
             self.requested_version_number_in_this_round = -1
 
-            logger.info("DAG_infoBuffer_Monitor: deposit() signal waiting writers:"
+
+            logger.info("DAG_infoBuffer_Monitor: deposit() signal waiting writers: reset"
                 + " self.requested_version_number_in_this_round: " 
                 + str(self.requested_version_number_in_this_round))
             # Note: deposit() cannot self.current_version_new_leaf_tasks.clear() since
@@ -332,6 +358,12 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # (Note: awakened workers below do not do this reset as it was done by 
             # deosit or by the last worker to call withdraw this round (and this last
             # worker does not block/wait))
+
+            # Note: we are not resetting this after the round so it keeps 
+            # increasing as workers increase the version number they are requesting.
+            # We grab the value of self.requested_version_number_in_this_round before we rest it.
+            self.most_recent_version_number_that_has_been_requested_by_all_workers = self.requested_version_number_in_this_round
+            
             self.requested_version_number_in_this_round = -1
 
             DAG_info = self.current_version_DAG_info

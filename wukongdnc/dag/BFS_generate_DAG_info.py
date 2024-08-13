@@ -574,7 +574,7 @@ def generate_DAG_info():
                         # task only sends to one task, so collapse receiverY, i.e.,
                         # senderX becomes receiverY
                         logger.info("sender " + senderX + " --> " + receiverY + " : Collapse")
-                        if not receiverY in Partition_all_collapse_task_names:
+                        if receiverY not in Partition_all_collapse_task_names:
                             Partition_all_collapse_task_names.append(receiverY)
                         else:
                             pass # error only one task can collapse a given task
@@ -589,7 +589,7 @@ def generate_DAG_info():
                         # task sends to other tasks too, so senderX does a fanout 
                         # to receiverY         
                         logger.trace("sender " + senderX + " --> " + receiverY + " : Fanout")
-                        if not receiverY in Partition_all_fanout_task_names:
+                        if receiverY not in Partition_all_fanout_task_names:
                             Partition_all_fanout_task_names.append(receiverY)
                         fanouts.append(receiverY)
     #brc: clustering
@@ -621,7 +621,7 @@ def generate_DAG_info():
                             break
                     if isFaninNB:
                         logger.trace("sender " + senderX + " --> " + receiverY + " : FaninNB")
-                        if not receiverY in Partition_all_faninNB_task_names:
+                        if receiverY not in Partition_all_faninNB_task_names:
                             Partition_all_faninNB_task_names.append(receiverY)
                             Partition_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
                         faninNBs.append(receiverY)
@@ -630,7 +630,7 @@ def generate_DAG_info():
                         # senderX sends an input only to receiverY, same for any other
                         # tasks that sends inputs to receiverY so receiverY is a fanin task.
                         logger.trace("sender " + senderX + " --> " + receiverY + " : Fanin")
-                        if not receiverY in Partition_all_fanin_task_names:
+                        if receiverY not in Partition_all_fanin_task_names:
                             Partition_all_fanin_task_names.append(receiverY)
                             Partition_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
                         fanins.append(receiverY)
@@ -962,6 +962,9 @@ def generate_DAG_info():
             if output_DAG:
                 # FYI:
                 logger.trace("DAG_map:")
+                # This is for non-incremental DAG generation. So we are not iterating
+                # over the DAG_map while we are concurrently modifyng the map as we 
+                # might do if we are using incremental DAG generation.
                 for key, value in DAG_map.items():
                     logger.trace(str(key) + ' : ' + str(value))
                     #logger.trace(key)
@@ -1193,7 +1196,7 @@ def generate_DAG_info():
                         # task (senderX) ) sends to one task, so collapse receiverY, i.e.,
                         # senderX becomes receiverY
                         logger.info("sender " + senderX + " --> " + receiverY + " : Collapse")
-                        if not receiverY in Group_all_collapse_task_names:
+                        if receiverY not in Group_all_collapse_task_names:
                             Group_all_collapse_task_names.append(receiverY)
                         else:
                             pass # this is an error, only one task can collapse a given task
@@ -1203,7 +1206,7 @@ def generate_DAG_info():
                         # task sends to other tasks too, so senderX does a fanout 
                         # to receiverY   
                         logger.info("sender " + senderX + " --> " + receiverY + " : Fanout")
-                        if not receiverY in Group_all_fanout_task_names:
+                        if receiverY not in Group_all_fanout_task_names:
                             Group_all_fanout_task_names.append(receiverY)
                         fanouts.append(receiverY)
     #brc: clustering
@@ -1230,7 +1233,7 @@ def generate_DAG_info():
                             break
                     if isFaninNB:
                         logger.info("sender " + senderX + " --> " + receiverY + " : FaninNB")
-                        if not receiverY in Group_all_faninNB_task_names:
+                        if receiverY not in Group_all_faninNB_task_names:
                             Group_all_faninNB_task_names.append(receiverY)
                             Group_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
                         logger.trace ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
@@ -1241,7 +1244,7 @@ def generate_DAG_info():
                         # senderX sends an input only to receiverY, same for any other
                         # tasks that sends inputs to receiverY so receiverY is a fanin task.
                         logger.info("sender " + senderX + " --> " + receiverY + " : Fanin")
-                        if not receiverY in Group_all_fanin_task_names:
+                        if receiverY not in Group_all_fanin_task_names:
                             Group_all_fanin_task_names.append(receiverY)
                             Group_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
                         fanins.append(receiverY)
@@ -1533,6 +1536,9 @@ def generate_DAG_info():
             if output_DAG:
                 # FYI:
                 logger.trace("DAG_map:")
+                # This is for non-incremental DAG generation. So we are not iterating
+                # over the DAG_map while we are concurrently modifyng the map as we 
+                # might do if we are using incremental DAG generation.
                 for key, value in DAG_map.items():
                     print_str = ""
                     print_str = str(key) + " " + str(value)
@@ -2032,6 +2038,9 @@ def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partitio
     if output_DAG:
         # FYI:
         logger.trace("DAG_map:")
+        # This is for non-incremental DAG generation. So we are not iterating
+        # over the DAG_map while we are concurrently modifyng the map as we 
+        # might do if we are using incremental DAG generation.
         for key, value in DAG_map.items():
             logger.trace(str(key) + ' : ' + str(value))
             #logger.trace(key)

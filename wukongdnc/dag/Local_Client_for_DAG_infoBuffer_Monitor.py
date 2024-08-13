@@ -51,6 +51,6 @@ class Local_Client_for_DAG_infoBuffer_Monitor:
         #return DAG_info, new_leaf_task_states
         return DAG_info_and_new_leaf_task_states_tuple
     
-    def get_current_version_number_DAG_info(self):
-            current_version_number_DAG_info = self.wrapped_DAG_infobuffer_monitor.get_current_version_number_DAG_info()
+    def get_most_recent_version_number(self):
+            current_version_number_DAG_info = self.wrapped_DAG_infobuffer_monitor.get_most_recent_version_number()
             return current_version_number_DAG_info

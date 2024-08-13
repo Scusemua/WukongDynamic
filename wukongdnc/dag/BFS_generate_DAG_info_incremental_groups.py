@@ -452,7 +452,7 @@ def generate_partial_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
     # # We do not increment the version numbr for incremental DAGs that are not 
     # published. In the trace, we print, e.g., "2P" for version "2 P"artial.
     #Group_DAG_version_number += 1
-    
+
     # if the last partition has incomplete information, then the DAG is 
     # incomplete. When partition i is added to the DAG, it is incomplete
     # unless it is the last partition in the DAG). It becomes complete
@@ -785,6 +785,10 @@ def generate_full_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
         if output_DAG:
             # FYI:
             logger.trace("DAG_map:")
+            # We are in an incremental DAG generation method so we can 
+            # iterate over the DAG; we cannot iterate over the map while 
+            # some other thread is changing the map but we are the thread
+            # that changes the map.
             for key, value in DAG_map.items():
                 logger.trace(str(key) + ' : ' + str(value))
                 #logger.trace(key)
@@ -1803,7 +1807,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         try:
                             msg = "[Error]: generate_DAG_info_incremental_groups:" \
                                 + "group " + receiverY + " is in the collapse set of two groups."
-                            assert not receiverY in Group_all_collapse_task_names , msg
+                            assert receiverY not in Group_all_collapse_task_names , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
                             if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -1825,7 +1829,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # group sends to other roups too, so group_name does a fanout 
                         # to group receiverY.  
                         logger.trace("sender " + previous_group + " --> " + receiverY + " : Fanout")
-                        if not receiverY in Group_all_fanout_task_names:
+                        if receiverY not in Group_all_fanout_task_names:
                             Group_all_fanout_task_names.append(receiverY)
                         # we are generating the sets of collapse/fanin/fanout/faninNB
                         # of previous_group
@@ -1859,7 +1863,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
                     if isFaninNB:
                         logger.trace("group " + previous_group + " --> " + receiverY + " : FaninNB")
-                        if not receiverY in Group_all_faninNB_task_names:
+                        if receiverY not in Group_all_faninNB_task_names:
                             Group_all_faninNB_task_names.append(receiverY)
                             Group_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
                         logger.trace ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
@@ -1870,7 +1874,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # all tasks that send inputs to receiverY don't send inputs to any other
                         # task/grup, so receiverY is a fanin task.
                         logger.trace("group " + previous_group + " --> " + receiverY + " : Fanin")
-                        if not receiverY in Group_all_fanin_task_names:
+                        if receiverY not in Group_all_fanin_task_names:
                             Group_all_fanin_task_names.append(receiverY)
                             Group_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
                         fanins.append(receiverY)
@@ -1893,7 +1897,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             try:
                 msg = "[Error]: generate_DAG_info_incremental_groups: state_info_of_previous_group: " \
                     + "state_info_of_previous_group is None."
-                assert not (state_info_of_previous_group is None) , msg
+                assert (state_info_of_previous_group is not None) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 logger.error("DAG_map:")

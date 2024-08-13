@@ -1637,6 +1637,13 @@ def run():
             + str(DAG_map[1]) + " address DAG_map[1]: "
             + str(hex(id(DAG_map[1]))))
         logger.info("DAG_executor_driver: DAG_map:")
+        # The question here is: can we be iterating over the map while the 
+        # inctemental DAG generation thread (running bfs()) is modifying the
+        # DAG by deallocatibg DAG structures on the fly? No, since no
+        # deallocations are done until after the workers request a new version
+        # of the DAG (where this is version 1 and no deallocations are done
+        # until workers request version 3) and the workers (if we are using 
+        # workers) have not yet been started by this DAG_executor_driver.
         for key, value in DAG_map.items():
             logger.info(str(key))
             logger.info(str(value))

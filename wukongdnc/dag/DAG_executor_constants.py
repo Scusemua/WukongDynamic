@@ -39,7 +39,7 @@ SERVERLESS_PLATFORM_IS_AWS = True
 # a Dask program frot this DAG. This program is executed to get a Dask DAG which is
 # compiled into JSON and the JSON is input to AzSR for DAG execution. This uses
 # out PageRank_Func_Driver_AzSR as the function for executing a task.
-GENERATE_DASK_PROGRAM_FOR_NONINCREMENTAL_DAG = True
+GENERATE_DASK_PROGRAM_FOR_NONINCREMENTAL_DAG = False
 
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # locally, i.e., on one machine.

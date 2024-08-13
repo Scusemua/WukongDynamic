@@ -381,7 +381,6 @@ def generate_partial_DAG_for_partitions(to_be_continued,number_of_incomplete_tas
     #
     # We do not increment the version numbr for incremental DAGs that are not 
     # published. In the trace, we print, e.g., "2P" for version "2 P"artial.
-    # For example, the base DAG has partitions 1 and 2. This is 
     #Partition_DAG_version_number += 1
 
     # if the last partition has incomplete information, then the DAG is 
@@ -706,6 +705,10 @@ def generate_full_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
         if output_DAG:
             # FYI:
             logger.trace("DAG_map:")
+            # We are in an incremental DAG generation method so we can 
+            # iterate over the DAG; we cannot iterate over the map while 
+            # some other thread is changing the map but we are the thread
+            # that changes the map.
             for key, value in DAG_map.items():
                 logger.trace(str(key) + ' : ' + str(value))
                 #logger.trace(key)
@@ -920,7 +923,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # (We know that current_partition either received input from the previous partition 
         # or the current_partition is a leaf task in which case it receives no input. We 
         # use "senders" to determine whether current_partition is a leaf node. 
-        if not senders == None:
+        if senders is not None:
             # partitions that send to current_partition_name, which can only
             # be the previous partition
             del Partition_receivers[current_partition_name]

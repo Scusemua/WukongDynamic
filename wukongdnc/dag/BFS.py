@@ -743,8 +743,6 @@ from . import BFS_generate_DAG_info_incremental_partitions
 from . import BFS_generate_DAG_info_incremental_groups
 #from .BFS_generate_DAG_info import generate_DAG_info
 from . import BFS_generate_DAG_info
-from . import BFS_generate_DAG_info_incremental_groups
-from . import BFS_generate_DAG_info_incremental_partitions
 #from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
 #from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental
 #from .BFS_generate_DAG_info import leaf_tasks_of_groups, leaf_tasks_of_groups_incremental
@@ -1533,13 +1531,13 @@ def dfs_parent(visited, node):  #function for dfs
         # assserting the if statement is True
         try:
             msg = "[Error]: BFS: partition_group_tuple is None"
-            assert partition_group_tuple != None , msg
+            assert partition_group_tuple is not None , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
-        if partition_group_tuple != None:   # if this is false it's an error (see the else-part)
+        if partition_group_tuple is not None:   # if this is false it's an error (see the else-part)
             parent_partition_number = partition_group_tuple[0]
             # If parent is not in the previous partition, the parent may still
             # be in a previous group (same partition). So in this then-branch we will 
@@ -1748,13 +1746,13 @@ def dfs_parent(visited, node):  #function for dfs
                 # This must be true (leave this if for now)
                 try:
                     msg = "[Error]: BFS: partition_group_tuple is None"
-                    assert partition_group_tuple != None , msg
+                    assert partition_group_tuple is not None , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
                     if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                         logging.shutdown()
                         os._exit(0)
-                if partition_group_tuple != None:
+                if partition_group_tuple is not None:
                     # we have visited parent, but if visit was part of a loop then 
                     # the parent may not have been assigned to a partition or group
                     # yet. (the assignment is done when recursion bcks up to the parent.)
@@ -3979,16 +3977,16 @@ def bfs(visited, node):
 # BUT: use BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph
 # lambdas: save most recent DAG generated so can give it to multiple lambdas?
                             if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
-                                current_version_number_DAG_info, _restart = DAG_infobuffer_monitor.get_current_version_number_DAG_info()
-                                # We have the current_version_number_DAG_info returned by the call to get_current_version_number_DAG_info()
+                                most_recent_version_number, _restart = DAG_infobuffer_monitor.get_most_recent_version_number()
+                                # We have the current_version_number_DAG_info returned by the call to get_most_recent_version_number()
                                 # but immediately after we make this call (all) the workers can theoretically call withdraw() again and 
                                 # update the version number to a higher value. Now we will pass the returned/older value to 
                                 # deallocate_DAG_structures, which is less than the updated value; this is not an error, we will just 
                                 # deallocat fewer values than we could deallocate with the new (higher) value for the version number.
                                 logger.info("BFS: current_version_number_DAG_info for call to deallocate partitions: "
-                                    + str(current_version_number_DAG_info))
+                                    + str(most_recent_version_number))
                                 BFS_generate_DAG_info_incremental_partitions.deallocate_DAG_structures(current_partition_number,
-                                    current_version_number_DAG_info, num_incremental_DAGs_generated_since_base_DAG)
+                                    most_recent_version_number, num_incremental_DAGs_generated_since_base_DAG)
                             else:
                                 logger.info("DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: "
                                     + str(DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS)
@@ -4023,16 +4021,16 @@ def bfs(visited, node):
                             # when the input graph is large.
 
                             if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
-                                current_version_number_DAG_info, _restart = DAG_infobuffer_monitor.get_current_version_number_DAG_info()
-                                # We have the current_version_number_DAG_info returned by the call to get_current_version_number_DAG_info()
+                                most_recent_version_number, _restart = DAG_infobuffer_monitor.get_most_recent_version_number()
+                                # We have the current_version_number_DAG_info returned by the call to get_most_recent_version_number()
                                 # but immediately after we make this call (all) the workers can theoretically call withdraw() again and 
                                 # update the version number to a higher value. Now we will pass the returned/older value to 
                                 # deallocate_DAG_structures, which is less than the updated value; this is not an error, we will just 
                                 # deallocat fewer values than we could deallocate with the new (higher) value for the version number.
                                 logger.info("BFS: current_version_number_DAG_info for call to deallocate groups: "
-                                    + str(current_version_number_DAG_info))
+                                    + str(most_recent_version_number))
                                 BFS_generate_DAG_info_incremental_groups.deallocate_DAG_structures(current_partition_number,
-                                    current_version_number_DAG_info, num_incremental_DAGs_generated_since_base_DAG)
+                                    most_recent_version_number, num_incremental_DAGs_generated_since_base_DAG)
                             else:
                                 logger.info("DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: "
                                     + str(DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS)

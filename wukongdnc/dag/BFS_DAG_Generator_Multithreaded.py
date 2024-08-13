@@ -174,6 +174,9 @@ class DAG_Generator_Multithreaded:
         DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
         DAG_num_nodes_in_graph = DAG_info.get_DAG_num_nodes_in_graph()
         # FYI:
+        # This is for non-incremental DAG generation. So we are not iterating
+        # over the DAG_map while we are concurrently modifyng the map as we 
+        # might do if we are using incremental DAG generation.
         logger.info("DAG_executor_driver: DAG_map:")
         for key, value in DAG_map.items():
             logger.info(str(key))
