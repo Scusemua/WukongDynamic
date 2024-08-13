@@ -2080,7 +2080,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # simulated or real lambdas are started with a payload that has a state,
             # put this state in the cluster_queue or the continue_queue
 #brc: lambda inc:
-            first_iteration_of_work_loop_for_lambda == True
+            first_iteration_of_work_loop_for_lambda = True
             if DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION and continued_task:
 #brc: lambda inc: cq.put
                 # On first iteration of lambda a continued_task is truly a continued_task.
@@ -2702,7 +2702,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 # in dict_of_results (i.e., the results executing one or more
                                 # fanout/fanin tasks whose outputs are input to the work task)
                                 # in the data_dict where they can be accessed for excuting the task.
-                                if dict_of_results != None:
+                                if dict_of_results is not None:
                                     # If the state is -1, there is no work task as all the tasks
                                     # in the (non-incremental) DAG have been executed so we can quit.
                                     logger.trace("DAG_executor_work_loop: dict_of_results from work_tuple: ")
@@ -2748,7 +2748,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             try:
                                                 msg = "[Error]: DAG_executor_work_loop:" \
                                                     + " state_info of leaf task in None - leaf task should be in DAG."
-                                                assert not (state_info is None) , msg
+                                                assert (state_info is not None) , msg
                                             except AssertionError:
                                                 logger.exception("[Error]: assertion failed")
                                                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -2829,7 +2829,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 dict_of_results = work_tuple[1]
                                 logger.info("DAG_executor_work_loop: got work for thread " + thread_name
                                     + " state from work tuple is " + str(DAG_executor_state.state))
-                                if dict_of_results != None:
+                                if dict_of_results is not None:
                                     logger.trace("DAG_executor_work_loop: dict_of_results from work_tuple: ")
                                     for key, value in dict_of_results.items():
                                         logger.trace(str(key) + " -> " + str(value))
@@ -2871,7 +2871,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             try:
                                                 msg = "[Error]: DAG_executor_work_loop:" \
                                                     + " state_info of leaf task in None - leaf task should be in DAG."
-                                                assert not (state_info is None) , msg
+                                                assert (state_info is not None) , msg
                                             except AssertionError:
                                                 logger.exception("[Error]: assertion failed")
                                                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -3258,7 +3258,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     + " continued_task: " + str(continued_task)
                     + " continued_task_state_info.task_name == PR1_1: " + str(continued_task_state_info.task_name == DAG_executor_constants.NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG)
                     + " (not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
-                    + str((not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks()))
+                    + str((continued_task_state_info.task_name not in DAG_info.get_DAG_leaf_tasks()))
                     + " num_tasks_executed *before* inc: " + str(completed_tasks_counter.get()))
                 
 #brc: lambda inc
@@ -3448,7 +3448,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                     # if we fail the asssertion above we will terminate
                     # the program.
-                    first_iteration_of_work_loop_for_lambda == False
+                    first_iteration_of_work_loop_for_lambda = False
 #brc: lambda inc: cq.get
                     #DAG_executor_state.state = continue_queue.get()
                     continue_tuple = continue_queue.get()
@@ -3476,7 +3476,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     logger.info("lambda continued task is true")
 
                 elif cluster_queue.qsize() > 0:
-                    first_iteration_of_work_loop_for_lambda == False
+                    first_iteration_of_work_loop_for_lambda = False
 #brc: lambda inc: cq.get
                     DAG_executor_state.state = cluster_queue.get()
                     # Question: Do not do this
@@ -3612,7 +3612,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 + " continued_task: " + str(continued_task)
                 + " is state_info.task_name == NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG: " + str(state_info.task_name == DAG_executor_constants.NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG)
                 + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
-                + str((not state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
+                + str((state_info.task_name not in DAG_info.get_DAG_leaf_tasks())))
 
 #brc: lambda inc
             # Note that group tasks in the continue queue may or may not have 
@@ -3737,7 +3737,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # i.ee., we aer not really continuing it.
                     #
                     # See the general comments about continued tasks where continue_queue is defined
-                    if state_info.task_name == DAG_executor_constants.NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()):
+                    if state_info.task_name == DAG_executor_constants.NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG or (state_info.task_name not in DAG_info.get_DAG_leaf_tasks()):
                         # task is a leaf task but its the first leaf task in the ADG (PR1_1) or it is not a leaf task.
                         # Process its fanins/fanouts/collapse by grabbing the collapse as there are no fanins/fanouts.
                         # Next we will execute the collapse task, which we now was added to the new incremental DAG.
@@ -5865,7 +5865,7 @@ def DAG_executor_lambda(payload):
 # Config: A4_local, A4_Remote
 def DAG_executor_task(payload):
     DAG_executor_state = payload['DAG_executor_state']
-    if DAG_executor_state != None:
+    if DAG_executor_state is not None:
         # DAG_executor_state is None when using workers
         logger.trace("DAG_executor_task: call DAG_executor(), state is " + str(DAG_executor_state.state))
     DAG_executor(payload)

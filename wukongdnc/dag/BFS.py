@@ -676,12 +676,6 @@ def dfs_parent(visited, node)
                 if parent_partition_parent_index != -1:
 """
 
-import networkx as nx
-import matplotlib.pyplot as plt
-import socket
-import cloudpickle
-import threading
-import os
 #import time
 #from statistics import mean
 import copy
@@ -693,8 +687,14 @@ import copy
 # we do not addLoggingLevel if we are computing pagerank. 
 # If we are not computing pagerank, we will run DAG_excutor_driver, and since
 # we are not computing pagernk, DAG_executor_driver will addLoggingLevel TRACE.
-
 import logging
+import os
+import socket
+import threading
+
+import cloudpickle
+import matplotlib.pyplot as plt
+import networkx as nx
 
 # if we run TestAll.py then it will addLoggingLevel so this will 
 # be a second addLoggingLevel and it will fail. If we run 
@@ -733,42 +733,49 @@ except AttributeError:
 #from .DAG_executor_constants import USE_MUTLITHREADED_BFS
 #from .DAG_executor_constants import ENABLE_RUNTIME_TASK_CLUSTERING
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
-from . import DAG_executor_constants
+from wukongdnc.constants import TCP_SERVER_IP
 
-from .BFS_Node import Node
-from .BFS_Partition_Node import Partition_Node
-from . import BFS_generate_DAG_info_incremental_partitions
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
-from . import BFS_generate_DAG_info_incremental_groups
 #from .BFS_generate_DAG_info import generate_DAG_info
-from . import BFS_generate_DAG_info
-#from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
-#from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental
-#from .BFS_generate_DAG_info import leaf_tasks_of_groups, leaf_tasks_of_groups_incremental
-from .BFS_generate_shared_partitions_groups import generate_shared_partitions_groups
-
-# This will either be a DAG_infoBuffer_Monitor or a DAG_infoBuffer_Monitor_for_Lambdas
-from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
-from .BFS_DAG_Generator_Multithreaded import DAG_Generator_Multithreaded
 #if not USING_WORKERS:
 #    import wukongdnc.dag.DAG_infoBuffer_Monitor_for_lambdas_for_threads 
 #    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_lambdas_for_threads .DAG_infobuffer_monitor
 #else:
 #    import wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads 
 #    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads .DAG_infobuffer_monitor
-
 #brc: shared
 #from .DAG_executor import shared_partition, shared_groups
 #from .DAG_executor import shared_partition_map, shared_groups_map
 #from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
-from . import BFS_Shared
+from . import (
+    BFS_generate_DAG_info,
+    BFS_generate_DAG_info_incremental_groups,
+    BFS_generate_DAG_info_incremental_partitions,
+    BFS_Shared,
+    DAG_executor_constants,
+)
+from .BFS_DAG_Generator_Multithreaded import DAG_Generator_Multithreaded
+
+#from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
+#from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental
+#from .BFS_generate_DAG_info import leaf_tasks_of_groups, leaf_tasks_of_groups_incremental
+from .BFS_generate_shared_partitions_groups import generate_shared_partitions_groups
+from .BFS_Node import Node
+from .BFS_Partition_Node import Partition_Node
 from .DAG_executor_driver import run
-#from .DAG_boundedbuffer_work_queue import Work_Queue_Client
-from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
-from .Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas
 from .DAG_executor_output_checker import get_pagerank_outputs, verify_pagerank_outputs
-from wukongdnc.constants import TCP_SERVER_IP
+
+# This will either be a DAG_infoBuffer_Monitor or a DAG_infoBuffer_Monitor_for_Lambdas
+from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
+
+#from .DAG_boundedbuffer_work_queue import Work_Queue_Client
+from .Remote_Client_for_DAG_infoBuffer_Monitor import (
+    Remote_Client_for_DAG_infoBuffer_Monitor,
+)
+from .Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import (
+    Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas,
+)
 
 logger = logging.getLogger(__name__)
 #if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
@@ -1723,7 +1730,7 @@ def dfs_parent(visited, node):  #function for dfs
                     try:
                         msg = "[Error] detected partition loop when" + " processing parent_node_visited_tuple that was not" \
                             + " detected when generating parent_node_visited_tuple"
-                        assert not (current_partition_isLoop == False) , msg
+                        assert current_partition_isLoop , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
                         if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -1818,7 +1825,7 @@ def dfs_parent(visited, node):  #function for dfs
                         try:
                             msg = "[Error]: detected group loop when" + " processing parent_node_visited_tuple that was not" \
                                 + " detected when generating parent_node_visited_tuple"
-                            assert not (current_group_isLoop == False) , msg
+                            assert current_group_isLoop , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
                             if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -3972,11 +3979,7 @@ def bfs(visited, node):
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                             logger.info("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
-                            #DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
-#brc: deallocate DAG structures: need to do this same call both places
-# BUT: use BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph
-# lambdas: save most recent DAG generated so can give it to multiple lambdas?
-                            if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                            if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                                 most_recent_version_number, _restart = DAG_infobuffer_monitor.get_most_recent_version_number()
                                 # We have the current_version_number_DAG_info returned by the call to get_most_recent_version_number()
                                 # but immediately after we make this call (all) the workers can theoretically call withdraw() again and 
@@ -4020,7 +4023,7 @@ def bfs(visited, node):
                             # Note: We use num_nodes when we are deallocating on-the-fly - we only deallocate
                             # when the input graph is large.
 
-                            if DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                            if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                                 most_recent_version_number, _restart = DAG_infobuffer_monitor.get_most_recent_version_number()
                                 # We have the current_version_number_DAG_info returned by the call to get_most_recent_version_number()
                                 # but immediately after we make this call (all) the workers can theoretically call withdraw() again and 
