@@ -592,10 +592,10 @@ DEALLOCATE_BFS_SENDERS_AND_RECEIVERS = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_
 # partition or the groups of a new partition. The deallocation is done before the DAG
 # generation method is called so that the DAG data structures aer cleared of old DAG
 # informmation before the next incremental DAG is generated.
-DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and USING_WORKERS and True
+DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS = COMPUTE_PAGERANK and USING_WORKERS and USE_INCREMENTAL_DAG_GENERATION and True
 
 THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY = 1
-#
+
 # We also manage the size of the incremental DAG generated during incremental
 # DAG generation. This is not considered to be part of "deallocation" since
 # we do not deallocate memory. We simply do not save/publish every incremental DAG 
@@ -3314,7 +3314,8 @@ def test35():
     global INPUT_ALL_GROUPS_PARTITIONS_AT_START
 
     global DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS
-    DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS = True
+    DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS = \
+        COMPUTE_PAGERANK and USING_WORKERS and USE_INCREMENTAL_DAG_GENERATION and True
 
     RUN_ALL_TASKS_LOCALLY = True
     BYPASS_CALL_TO_INVOKE_REAL_LAMBDA = (not RUN_ALL_TASKS_LOCALLY) and True 
