@@ -3,6 +3,8 @@ import sys
 import getopt
 import os
 
+import traceback
+
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
 
@@ -12,7 +14,28 @@ import os
 # Note: worker (multi)processes log to file mptestNew.txt in 
 # directory WukongDynamic.
 
+# https://stackoverflow.com/questions/6234405/logging-uncaught-exceptions-in-python/16993115#16993115
+def custom_excepthook(exc_type, exc_value, exc_traceback):
+    # Do not print exception when user cancels the program
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    # Here, we can output a label that the test script can look for.
+
+    logging.error("An uncaught exception occurred:")
+    logging.error("Type: %s", exc_type)
+    logging.error("Value: %s", exc_value)
+
+    if exc_traceback:
+        format_exception = traceback.format_tb(exc_traceback)
+        for line in format_exception:
+            logging.error(repr(line))
+
+sys.excepthook = custom_excepthook # handle_exception
+
 def main(argv):
+
     # Note: When we run a multiprocessing workers test, we start worker
     # processes and (from link below) "On Windows the subprocesses will 
     # import (i.e. execute) the main module at start." So we put all of 
@@ -151,7 +174,8 @@ def main(argv):
 # https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
                             
 if __name__ == "__main__":
-   main(sys.argv[1:]) # skip argv[0] which is name of script
+    main(sys.argv[1:]) # skip argv[0] which is name of script
+
 
 """
 where: in DAG_executor_constants:
