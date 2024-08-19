@@ -229,7 +229,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         #self._next_version.signal_c_and_exit_monitor()
 
         if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
-            # not using real lambdas
+            # not using real lambdas, using threads that simulate a lambda.
             try:
                 # start simulated lambdas that with the new DAG_info
                 for start_tuple in self._buffer:
@@ -246,8 +246,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # so we can complete the fanouts/faninNBs/fanins. After excuting 
                     # a partition the partition can only have a collapse, i.e., we know
                     # we must execute the colapse task. So when we restart the partition/task,
-                    # we supply the input for the collpase task and execute the collapse task.)
-                    input_or_output = start_tuple[1]
+                    # we supply the input for the collpase task and execute the collapse task.
+                    # That is, if partion P has a collapse task task that is a continued task,
+                    # we send P's output and its collapse task C as parameters of deposit() then
+                    # when we "restart" we execute C with P's output as C's input.
+                    input_or_output = start_tuple[1]    # output of P and input of collapse task C
                     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = True)
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
@@ -601,10 +604,28 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # deposited; instead lambda stops then is (re)startd by deposit
 
 #brc: lambda inc
-            # save start tuple which deposit wil use to restart lambda
-            value = kwargs["value"]
-            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw: value to deposit: " + str(value))
-            self._buffer.append(value)
+            # save start tuple which deposit will use to restart lambda
+            # Call is: requested_current_version_number,DAG_executor_state.state,output
+            # of which value is DAG_executor_state.state and output which is the info needed
+            # to restart the lambda.
+            start_tuple = kwargs["value"]
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw: value to deposit: " + str(start_tuple))
+
+            """
+            from collections import namedtuple
+            from operator import attrgetter
+            from bisect import insort
+            # Q use _buffer since it is a list so use _buffer for both dealloc and not dealloc?
+            # Then we want the tuple in buffer to be (requested version number, start_tuple) for both
+            lambdas_to_restart = []
+            Restarted_Lambda = namedtuple('Restarted_Lambda', ('requested_current_version_number', 'start_tuple'))
+            by_requested_current_version_number = attrgetter('requested_current_version_number')
+            restarted_lambda_tuple = Restarted_Lambda(requested_current_version_number,start_tuple)
+            # getting attr requested_current_version_number of restarted_lambda_tuple
+            insort(lambdas_to_restart, restarted_lambda_tuple, key=by_requested_current_version_number)
+            """
+            
+            self._buffer.append(start_tuple)
             #self._buffer.insert(self._in,value)
             #self._buffer[self._in] = value
             #self._in=(self._in+1) % int(self._capacity)
