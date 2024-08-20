@@ -233,6 +233,29 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             try:
                 # start simulated lambdas that with the new DAG_info
                 for start_tuple in self._buffer:
+#brc: dealloc: get requested_current_version_number and get start_tuple from _buffer tuple
+# for withdraw_tuple in self._buffer:
+#   requested_current_version_number = withdraw_tuple[0]; 
+#   start_tuple = withdraw_tuple[1]
+# if DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+#    use requested_current_version_number to prune
+# in sorted order by requsted version numbr so the higher the number the more you can dealloc
+# So: keep deallocating more and more: I think you can always start where you left off, i.e.,
+# if you last dealloc 10, and the next version requsted is at lest 1 verion higher thaen you 
+# can start dealloc at 11 (if version is the same then do nothing).
+# We are dealloc structures in a DAG_info, not a Partition/Group internal structure.
+# But eventuallly ou get a new Deposit which has no deallocs; also, you can get a withdraw
+# with a requsted version number that is smaller than the last round, and so has fewer
+# deallocs than the resulring DAG_info from the last round.
+# Note: we are saving the deallocated items in case we need them but since they aer sorted
+# we do not need them in the current round?
+# Consider: when you deposit, you only depost the new suffix? so yuo can keep the deallocs
+# that you have done so far? but if you get a smaller request number then yuo need to 
+# put some deallocated items back?
+# Note: doing dealloc in deposit so not concurrently dealloc items and adding new items
+# Note: do dealloc in withdraw too
+
+
                     # pass the state/task the thread is to execute at the start of its DFS path
                     start_state = start_tuple[0]
                     # Note: for incremental DAG generation, when we restart a lambda
@@ -581,6 +604,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             DAG_info = self.current_version_DAG_info
             logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw return current Lambda"
                 " with version " + str(self.current_version_number_DAG_info))
+            
+#brc: dealloc: here too 
 #brc leaf tasks
 
 #brc: lambda inc: 
@@ -611,20 +636,21 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             start_tuple = kwargs["value"]
             logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw: value to deposit: " + str(start_tuple))
 
+#brc: dealloc: 
             """
             from collections import namedtuple
             from operator import attrgetter
             from bisect import insort
             # Q use _buffer since it is a list so use _buffer for both dealloc and not dealloc?
             # Then we want the tuple in buffer to be (requested version number, start_tuple) for both
-            lambdas_to_restart = []
             Restarted_Lambda = namedtuple('Restarted_Lambda', ('requested_current_version_number', 'start_tuple'))
             by_requested_current_version_number = attrgetter('requested_current_version_number')
             restarted_lambda_tuple = Restarted_Lambda(requested_current_version_number,start_tuple)
             # getting attr requested_current_version_number of restarted_lambda_tuple
-            insort(lambdas_to_restart, restarted_lambda_tuple, key=by_requested_current_version_number)
+            insort(self._buffer, restarted_lambda_tuple, key=by_requested_current_version_number)
             """
-            
+
+#brc: dealloc: : put requested_current_version_number and start_tuple as a tuple in _buffer
             self._buffer.append(start_tuple)
             #self._buffer.insert(self._in,value)
             #self._buffer[self._in] = value

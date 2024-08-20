@@ -1,9 +1,15 @@
-print("DAG_executor_constants XXX")
+
 import multiprocessing
 import threading
+from inspect import currentframe
+import logging
+import os
+
+#print("DAG_executor_constants XXX")
+
 proc_name = multiprocessing.current_process().name
 thread_name = threading.current_thread().name
-from inspect import currentframe
+
 frame = currentframe().f_back
 while frame.f_code.co_filename.startswith('<frozen'):
     frame = frame.f_back
@@ -12,9 +18,6 @@ print(proc_name + ":" + thread_name + ":" + frame.f_code.co_filename)
 Important: This file incudes many tests at the end which illustrate 
 all the configurations and how to set the confguration flags below.
 """
-
-import logging
-import os
 
 # LOG_LEVEL = logging.INFO
 LOG_LEVEL = "INFO"
@@ -593,6 +596,8 @@ DEALLOCATE_BFS_SENDERS_AND_RECEIVERS = COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_
 # generation method is called so that the DAG data structures aer cleared of old DAG
 # informmation before the next incremental DAG is generated.
 DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS = COMPUTE_PAGERANK and USING_WORKERS and USE_INCREMENTAL_DAG_GENERATION and True
+
+DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS = COMPUTE_PAGERANK and not USING_WORKERS and USE_INCREMENTAL_DAG_GENERATION and False
 
 THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY = 1
 
@@ -3317,6 +3322,10 @@ def test35():
     DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS = \
         COMPUTE_PAGERANK and USING_WORKERS and USE_INCREMENTAL_DAG_GENERATION and True
 
+    global DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS
+    DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS = \
+        COMPUTE_PAGERANK and not USING_WORKERS and USE_INCREMENTAL_DAG_GENERATION and False
+    
     RUN_ALL_TASKS_LOCALLY = True
     BYPASS_CALL_TO_INVOKE_REAL_LAMBDA = (not RUN_ALL_TASKS_LOCALLY) and True 
     STORE_FANINS_FANINNBS_LOCALLY = True 
