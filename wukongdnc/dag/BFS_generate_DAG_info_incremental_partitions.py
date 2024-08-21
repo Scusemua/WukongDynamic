@@ -310,6 +310,20 @@ def deallocate_Partition_DAG_structures(i):
     #Partition_DAG_is_complete
     #Partition_DAG_num_nodes_in_graph
 
+def deallocate_Partition_DAG_structures_lambda(i):
+# need to save the deallocated items? Since requested version numbers arw 
+# mono increasing we only dealloc more as we restart waiting withdrawers.
+# At that point, we have max deallocs. Then we can get a withdraw that doesn't
+# wait and this might require putting some deallocs back. Or we can get a 
+# withdraw that waits and its requested version will result in more deallocs.
+# Or we can get a deposit for a larger version number - for this, there will be
+# more deallocs poasible, but the requested versions may be less than the just 
+# deposited version, so may need to put some back (from prev. version) or dealloc
+# more.
+    pass
+
+def deallocate_Group_DAG_structures_lambda(i):
+    pass
 
 def destructor():
     # deallocate memory. Called at the end of bfs()
