@@ -2234,8 +2234,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     
     return DAG_info
 
-def deallocate_DAG_structures(current_partition_number,current_version_number_DAG_info,
-        num_incremental_DAGs_generated_since_base_DAG):
+def deallocate_DAG_structures(current_version_number_DAG_info):
     # Version 1 of the incremental DAG is given to the DAG_executor_driver for execution
     # (assuming thw DAG has more than 1 partition). So the first version workers can request 
     # is version 2. At that point, they will have executed partition 1, found that 

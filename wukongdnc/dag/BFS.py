@@ -3988,8 +3988,7 @@ def bfs(visited, node):
                                 # deallocat fewer values than we could deallocate with the new (higher) value for the version number.
                                 logger.info("BFS: current_version_number_DAG_info for call to deallocate partitions: "
                                     + str(most_recent_version_number))
-                                BFS_generate_DAG_info_incremental_partitions.deallocate_DAG_structures(current_partition_number,
-                                    most_recent_version_number, num_incremental_DAGs_generated_since_base_DAG)
+                                BFS_generate_DAG_info_incremental_partitions.deallocate_DAG_structures(most_recent_version_number)
                             else:
                                 logger.info("DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: "
                                     + str(DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS)
@@ -4032,8 +4031,7 @@ def bfs(visited, node):
                                 # deallocat fewer values than we could deallocate with the new (higher) value for the version number.
                                 logger.info("BFS: current_version_number_DAG_info for call to deallocate groups: "
                                     + str(most_recent_version_number))
-                                BFS_generate_DAG_info_incremental_groups.deallocate_DAG_structures(current_partition_number,
-                                    most_recent_version_number, num_incremental_DAGs_generated_since_base_DAG)
+                                BFS_generate_DAG_info_incremental_groups.deallocate_DAG_structures(most_recent_version_number)
                             else:
                                 logger.info("DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: "
                                     + str(DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS)
@@ -4892,7 +4890,6 @@ def bfs(visited, node):
 #brc: Q : need parent_group for groups in place so delete prev prev?
 # Q: For partitions, do we ever need to patch frontier groups?
 # This needs to be after use in frontier groups?
-# Bug: groups_of_current_partition was cleared above?
                                 groups[index_in_groups_list_of_previous_group] = None
                                 group_names[index_in_groups_list_of_previous_group] = None
 
@@ -6644,7 +6641,7 @@ def main():
         logger.info("bfs: deallocate partitions (though all but the last position of partitions will previously have been set to None")
         partitions.clear()
         partition_names.clear()
-    # Do the same for the remaining partitions in partitions[].
+    # Do the same for the remaining groups in groups[].
     # Note: DAG_executor_constants.DEALLOCATE_BFS_PARTITIONS_GROUPS_NAMES can be True only if
     if (DAG_executor_constants.DEALLOCATE_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)):
         logger.info("bfs: deallocate groups (though all but the groups in the last partition will previously have been set to None")

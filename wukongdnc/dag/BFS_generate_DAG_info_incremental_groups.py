@@ -2436,8 +2436,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
     return DAG_info
 
-def deallocate_DAG_structures(current_partition_number,current_version_number_DAG_info,
-        num_incremental_DAGs_generated_since_base_DAG):
+def deallocate_DAG_structures(current_version_number_DAG_info):
     # Version 1 of the incremental DAG is given to the DAG_executor_driver for execution
     # (assuming thw DAG has more than 1 partition). So the first version workers can request 
     # is version 2. At that point, they will have executed partition 1, found that 
@@ -2550,7 +2549,6 @@ def deallocate_DAG_structures(current_partition_number,current_version_number_DA
         + " deallocation_end_index_partitions: " + str(deallocation_end_index_partitions))
     for i in range(deallocation_start_index_partitions, deallocation_end_index_partitions):
         logger.info("deallocate_DAG_structures: deallocate " + str(i))
-#brc: ToDo: get the size of the groups of partition i and deallocate those n groups
         groups_of_partition_i = BFS.groups_of_partitions[i-1]
         # number of groups >= 1
         number_of_groups_of_partition_i = len(groups_of_partition_i)
