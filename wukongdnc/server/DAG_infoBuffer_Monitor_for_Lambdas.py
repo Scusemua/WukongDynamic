@@ -247,6 +247,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # the next DAG we generate has partitions 1, 2, and 3 but it is not published since
         # we publish every 4 partitions (after the base DAG) So the next verson is version 2,
         # which will have partitions 1, 2, 3, 4, 5, 6 for a total of 2+4 partitions.
+
+#brc: ToDo: declare these globals
         global deallocation_start_index
         deallocation_end_index = (2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
@@ -608,7 +610,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 # for withdraw_tuple in self._buffer:
 #   requested_current_version_number = withdraw_tuple[0]; 
 #   start_tuple = withdraw_tuple[1]
-# if DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+# if DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
 #    use requested_current_version_number to prune
 # in sorted order by requsted version numbr so the higher the number the more you can dealloc
 # So: keep deallocating more and more: I think you can always start where you left off, i.e.,
