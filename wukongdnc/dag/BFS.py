@@ -842,6 +842,8 @@ groups_of_current_partition = [] # groups in current partition
 # to this list.
 groups_of_partitions = []       # list of groups of partitions.
 
+start_index_for_groups_of_partitions_copy = 0
+
 # map a node to its partition number, partition index, group number and group index.
 # A "global map"for nodes. May supercede nodeIndex_to_partitionIndex_map. 
 # We need a nodes position in its partition if we map partitions to functions and we need
@@ -4153,7 +4155,40 @@ def bfs(visited, node):
                                 # Note: We probably do not need to do this deposit() at all. Test it.
                                 new_leaf_tasks = []
                                 DAG_info_is_complete = True # based on above if-condition being True
-                                DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete)
+
+#brc: copy for deposit
+                                global start_index_for_groups_of_partitions_copy
+                                groups_of_partitions_in_current_batch = []
+                                end_index = len(groups_of_partitions)
+                                try:
+                                    msg = "[Error]: BFS: len(groups_of_partitions) is not 1 when current_partition_number is 1."
+                                    assert end_index == 1 , msg
+                                except AssertionError:
+                                    logger.exception("[Error]: assertion failed")
+                                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                        logging.shutdown()
+                                        os._exit(0)
+                                try:
+                                    msg = "[Error]: BFS: start_index_for_groups_of_partitions_copy is not 0 when current_partition_number is 1."
+                                    assert start_index_for_groups_of_partitions_copy == 0 , msg
+                                except AssertionError:
+                                    logger.exception("[Error]: assertion failed")
+                                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                        logging.shutdown()
+                                        os._exit(0)
+
+                                if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+                                    # start_index_of_groups_of_partitions_copyis inclusive; end_index is exclusive
+                                    for i in range(start_index_for_groups_of_partitions_copy,end_index):
+                                        groups_of_partitions_in_current_batch.append(groups_of_partitions[i])
+                                    logger.info("BFS: groups_of_partitions_in_current_batch:")
+                                    for list_of_groups in groups_of_partitions_in_current_batch:
+                                        logger.info(list_of_groups)
+                                #DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete)
+                                DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete,
+                                    groups_of_partitions_in_current_batch)
+
+                                start_index_for_groups_of_partitions_copy = end_index
 
                                 # We just processed the first and only partition; so we can output the 
                                 # initial DAG_info and start the DAG_executor_driver. DAG_info
@@ -4634,7 +4669,22 @@ def bfs(visited, node):
 
                                     if (current_partition_number) == 2:
                                         new_leaf_task_work_tuples = []
-                                
+
+#brc: copy for deposit
+                                    #global start_index_for_groups_of_partitions_copy
+                                    groups_of_partitions_in_current_batch = []
+                                    end_index = len(groups_of_partitions)
+
+                                    if True: # DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+                                        # start_index_of_groups_of_partitions_copyis inclusive; end_index is exclusive
+                                        for i in range(start_index_for_groups_of_partitions_copy,end_index):
+                                            groups_of_partitions_in_current_batch.append(groups_of_partitions[i])
+                                        logger.info("BFS: groups_of_partitions_in_current_batch:")
+                                        for list_of_groups in groups_of_partitions_in_current_batch:
+                                            logger.info(list_of_groups)
+
+                                    #DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete)
+
 #brc: use of DAG_info: if publish then pass DAG_info on deposit()
                                     DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete)
                                     # deposit starts a lambda with empty input payload (like DAG_executor_driver)
@@ -4647,6 +4697,7 @@ def bfs(visited, node):
                                     # a lambda to execute this leaf tasks since we will also start
                                     # the DAG_executor_driver and it will start a lamda for this 
                                     # leaf task.
+                                    start_index_for_groups_of_partitions_copy = end_index
 
                                 if (current_partition_number) == 2:
                                     # We just processed the second partition in a DAG that 
@@ -4753,6 +4804,8 @@ def bfs(visited, node):
                             partition_tuple = (partition_name, current_partition_number,to_be_continued,
                                 num_incremental_DAGs_generated_since_base_DAG)
                             
+                            # Again this is *non-incremental* so we are not doing deallocations
+                            # in this monitor.
                             #DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(partition_tuple)
                             DAG_generator_for_multithreaded_DAG_generation.deposit(partition_tuple)
                         else:
@@ -4776,6 +4829,8 @@ def bfs(visited, node):
                             group_tuple = (partition_name,current_partition_number,
                                 copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued,
                                     num_incremental_DAGs_generated_since_base_DAG)
+                            # Again this is *non-incremental* so we are not doing deallocations
+                            # in this monitor.
                             #DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(group_tuple)
                             DAG_generator_for_multithreaded_DAG_generation.deposit(group_tuple)
                             # we are done with groups_of_current_partition so clear it so it is empty at start

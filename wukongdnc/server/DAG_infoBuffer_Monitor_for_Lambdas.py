@@ -23,7 +23,7 @@ from ..dag import DAG_executor
 from ..wukong.invoker import invoke_lambda_DAG_executor
 
 from ..dag import BFS_generate_DAG_info_incremental_partitions
-from . import BFS
+from ..dag import BFS
 
 import logging 
 
