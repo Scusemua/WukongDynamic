@@ -12,8 +12,10 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 """
 
-# local wrapper for a DAG_infoBuffer_Monitor. there is also a 
-# local wrapper: Local_Client_for_DAG_infoBuffer_Monitor
+# wrapper for a remote DAG_infoBuffer_Monitor. there is also a 
+# wrapper Local_Client_for_DAG_infoBuffer_Monitor fo a local DAG_infoBuffer_Monitor.
+# Real lambdas use a remote DAG_infoBuffer_Monitor and smulated lambdas 
+# (which are local threads) use a local DAG_infoBuffer_Monitor.
 # This wrapper deals with the keyword argument parameters
 # that need to be sent to the DAG_infoBuffer_Monitor
 # and the restart value returned by the DAG_infoBuffer_Monitor,

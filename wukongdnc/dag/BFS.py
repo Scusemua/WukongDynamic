@@ -4675,8 +4675,10 @@ def bfs(visited, node):
                                         new_leaf_task_work_tuples = []
 
 #brc: copy for deposit
-
-
+# ToDo: real lambda always use a remote client for a monitor for lambdas, simulated lambdas uses local client for lambda 
+# for a monitor for lambdas. So we have a Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py
+# Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py. These are the deposits
+# used.
                                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
                                         #global start_index_for_groups_of_partitions_copy
                                         groups_of_partitions_in_current_batch = []

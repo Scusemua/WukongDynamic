@@ -11,6 +11,12 @@ import wukongdnc.server.DAG_infoBuffer_Monitor_for_Lambdas
 from .Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas
 logger = logging.getLogger(__name__)
 
+# We use a remote DAG_infobuffer_monitor(_for_lambdas) for real lambdas and processes.
+# We use a local DAG_infobuffer_monitor for worker threads and simulated lambdas.
+#
+# Note that the remote DAG_infobuffer_monitor(_for_lambdas) is creatws at the 
+# start of bfs().
+#
 # The DAG generator (BFS.py) calls deposit() on 
 # DAG_infobuffer_monitor to deposit a new DAG and clients
 # call (blocking) withdraw to get a new DAG.
