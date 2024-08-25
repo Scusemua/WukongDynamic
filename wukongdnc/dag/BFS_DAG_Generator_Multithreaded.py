@@ -150,7 +150,7 @@ class DAG_Generator_Multithreaded:
     # Called by the generator thread:
     #   DAG_info = DAG_generator_for_multithreaded_DAG_generation.generate_DAG_info_multithreaded_groups
     def generate_DAG_info_multithreaded_groups(self,current_partition_name,
-            current_partition_number, groups_of_current_partition,
+        current_partition_number, groups_of_current_partition,
         groups_of_partitions,
         to_be_continued,
 #brc: use of DAG_info:

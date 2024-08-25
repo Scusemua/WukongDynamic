@@ -67,6 +67,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         #self._in=0
         #logger.trace(kwargs)
         self.deallocation_start_index = 1
+        self.groups_of_partitions = []
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
@@ -565,6 +566,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # Note: cummulative_leaf_tasks gets cleared after we start the new leaf tasks.
         # For debugging - all leaf tasks started so far
         self.cummulative_leaf_tasks += new_leaf_tasks
+        if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+            groups_of_partitions_in_current_batch = kwargs['groups_of_partitions_in_current_batch']
+            self.groups_of_partitions.extend(groups_of_partitions_in_current_batch)
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: extended list:")
+            logger.info(self.groups_of_partitions)
 
         try:
             msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
@@ -641,10 +647,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # pass the state/task the thread is to execute at the start of its DFS path
                     start_state = start_tuple[0]
 
-                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
-                        self.deallocate_DAG_structures_partitions(requested_current_version_number)
-                    else:
-                        self.deallocate_DAG_structures_groups(self,requested_current_version_number)
+                    if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                            self.deallocate_DAG_structures_partitions(requested_current_version_number)
+                        else:
+                            self.deallocate_DAG_structures_groups(self,requested_current_version_number)
                     # Note: for incremental DAG generation, when we restart a lambda
                     # for a continued task, if the task is a group, we give it the output
                     # it generated previously (before terminating) and use the output
