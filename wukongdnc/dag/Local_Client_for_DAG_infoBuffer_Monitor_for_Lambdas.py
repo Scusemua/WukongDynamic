@@ -29,12 +29,14 @@ class Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas:
     def set_DAG_infoBuffer_Monitor(self,DAG_infobuffer_monitor_for_Lambdas):
         self.wrapped_DAG_infobuffer_monitor_for_Lambdas = DAG_infobuffer_monitor_for_Lambdas
 
-    def deposit(self,DAG_info, new_leaf_task_work_tuples,DAG_info_is_complete):
+    def deposit(self,DAG_info, new_leaf_task_work_tuples,DAG_info_is_complete,
+            groups_of_partitions_in_current_batch):
         # bounded buffer is blocking; using same interface as Manager.Queue
         keyword_arguments = {}
         keyword_arguments['new_current_version_DAG_info'] = DAG_info
         keyword_arguments['new_current_version_new_leaf_tasks'] = new_leaf_task_work_tuples
         keyword_arguments['DAG_info_is_complete'] = DAG_info_is_complete
+        keyword_arguments['groups_of_partitions_in_current_batch'] = groups_of_partitions_in_current_batch
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         # _restart return value begins with "_" so PyLint does not report it
         _return_value_ignored, _restart_value_ignored = self.wrapped_DAG_infobuffer_monitor_for_Lambdas.deposit(**keyword_arguments)

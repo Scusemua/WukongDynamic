@@ -29,7 +29,8 @@ class Local_Client_for_DAG_infoBuffer_Monitor:
     def set_DAG_infoBuffer_Monitor(self,DAG_infobuffer_monitor):
         self.wrapped_DAG_infobuffer_monitor = DAG_infobuffer_monitor
 
-    def deposit(self,DAG_info, new_leaf_task_work_tuples,DAG_info_is_complete):
+    def deposit(self,DAG_info, new_leaf_task_work_tuples,DAG_info_is_complete,
+            groups_of_partitions_in_current_batch):
         # bounded buffer is blocking; using same interface as Manager.Queue
         keyword_arguments = {}
         keyword_arguments['new_current_version_DAG_info'] = DAG_info

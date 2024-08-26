@@ -4157,9 +4157,9 @@ def bfs(visited, node):
                                 DAG_info_is_complete = True # based on above if-condition being True
 
 #brc: copy for deposit
+                                groups_of_partitions_in_current_batch = []
                                 if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
                                     global start_index_for_groups_of_partitions_copy
-                                    groups_of_partitions_in_current_batch = []
                                     end_index = len(groups_of_partitions)
                                     try:
                                         msg = "[Error]: BFS: len(groups_of_partitions) is not 1 when current_partition_number is 1."
@@ -4192,7 +4192,8 @@ def bfs(visited, node):
                                     start_index_for_groups_of_partitions_copy = end_index
 
                                 else:
-                                    DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete)
+                                    DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete,
+                                        groups_of_partitions_in_current_batch)
 
                                 # We just processed the first and only partition; so we can output the 
                                 # initial DAG_info and start the DAG_executor_driver. DAG_info
@@ -4679,9 +4680,9 @@ def bfs(visited, node):
 # for a monitor for lambdas. So we have a Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py
 # Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py. These are the deposits
 # used.
+                                    groups_of_partitions_in_current_batch = []
                                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
                                         #global start_index_for_groups_of_partitions_copy
-                                        groups_of_partitions_in_current_batch = []
                                         end_index = len(groups_of_partitions)
                                         # start_index_of_groups_of_partitions_copyis inclusive; end_index is exclusive
                                         for i in range(start_index_for_groups_of_partitions_copy,end_index):
@@ -4697,7 +4698,8 @@ def bfs(visited, node):
 
 #brc: use of DAG_info: if publish then pass DAG_info on deposit()
                                     else:
-                                        DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete)
+                                        DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete,
+                                            groups_of_partitions_in_current_batch)
 
                                     # deposit starts a lambda with empty input payload (like DAG_executor_driver)
                                     # when the leaf task becomes complete (the leaf task on this

@@ -647,7 +647,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # pass the state/task the thread is to execute at the start of its DFS path
                     start_state = start_tuple[0]
 
-                    if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+                    if False: # DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                             self.deallocate_DAG_structures_partitions(requested_current_version_number)
                         else:
