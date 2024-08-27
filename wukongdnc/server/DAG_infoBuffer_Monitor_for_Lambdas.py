@@ -22,7 +22,6 @@ from ..dag import DAG_executor
 #from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 from ..wukong.invoker import invoke_lambda_DAG_executor
 
-from ..dag import BFS_generate_DAG_info_incremental_partitions
 from ..dag import BFS
 
 import logging 
@@ -66,7 +65,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         #self._buffer= [None] * self._capacity
         #self._in=0
         #logger.trace(kwargs)
-        self.deallocation_start_index = 1
+        self.deallocation_start_index_groups = 1
+        self.deallocation_start_index_partitions = 1
         self.groups_of_partitions = []
 
     #def init(self, **kwargs):
@@ -152,7 +152,80 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         super().exit_monitor()
         return current_DAG_info, restart
     
-    def deallocate_DAG_structures_partitions(self,current_version_number_DAG_info):
+    def deallocate_DAG_structures_lambda(i):
+    # need to save the deallocated items? Since requested version numbers arw 
+    # mono increasing we only dealloc more as we restart waiting withdrawers.
+    # At that point, we have max deallocs. Then we can get a withdraw that doesn't
+    # wait and this might require putting some deallocs back. Or we can get a 
+    # withdraw that waits and its requested version will result in more deallocs.
+    # Or we can get a deposit for a larger version number - for this, there will be
+    # more deallocs poasible, but the requested versions may be less than the just 
+    # deposited version, so may need to put some back (from prev. version) or dealloc
+    # more.
+
+        #working on self.current_version_DAG_info
+        pass
+        """
+        #brc: deallocate DAG map-based structures
+        logger.info("deallocate_Partition_DAG_structures: partition_names: ")
+        for name in BFS.partition_names:
+            logger.info(name)
+        partition_name = BFS.partition_names[i-1]
+        # USE self.DAG_states
+        state = Partition_DAG_states[partition_name]
+        logger.info("deallocate_Partition_DAG_structures: partition_name: " + str(partition_name))
+        logger.info("deallocate_Partition_DAG_structures: state: " + str(state))
+
+        # We may be iterating through these data structures in, e.g., DAG_executor concurrently 
+        # with attempts to to the del on the data structure, which would be an error. We only 
+        # iterate when we are tracing the DAG for debugging so we could turn these iterations
+        # off when we set the deallocate option on. 
+        # Note: we can change Partition_DAG_tasks and Partition_DAG_states to maps instead of 
+        # lists and use del for the deallocation, which might be a lot faster (O(1)) than deleting
+        # from the lists (O(n))for large maps/lists. This would require that we dal with the 
+        # itertions as just mentioned and we would need atomic ops on the dictionary and 
+        # they should not requre the use of the GIL. Or we coould copy the DAG data structurs
+        # when we make a new incremental DAG but this would be time consuming.
+        # Currently, we set item referenced to None, which would save space sine None takes
+        # less space than the class state_info (see DFS_visit.py) objects in Partition_DAG_map.
+        # Also, None presumably takes less space than a pagerank function object. It is not clear
+        # how Noen compares to an integer object.
+        # Note: we can easily determine the pagerank function to call at excution time instead of 
+        # storing a function in the DAG for each task. (It's the same code that determines which 
+        # function to store in the DG) This would save space in the DAG representation.
+        # USE self.DAG_map 
+        #del Partition_DAG_map[state]
+        Partition_DAG_map[state] = None
+        # USE self.DAG_tasks
+        #del Partition_DAG_tasks[partition_name]
+        Partition_DAG_tasks[partition_name] = None
+        # USE self.DAG_states
+        #del Partition_DAG_states[partition_name]
+        Partition_DAG_states[partition_name] = None
+
+        # We are not doing deallocations for these collections; they are not 
+        # per-partition collectins, they are collections of fanin names, etc.
+
+        #Partition_all_fanout_task_names
+        #Partition_all_fanin_task_names
+        #Partition_all_faninNB_task_names
+        #Partition_all_collapse_task_names
+        #Partition_all_fanin_sizes
+        #Partition_all_faninNB_sizes
+        #Partition_DAG_leaf_tasks
+        #Partition_DAG_leaf_task_start_states
+        #Partition_DAG_leaf_task_inputs
+
+        # We are not doing deallocations for the non-collections
+        #Partition_DAG_version_number
+        #Partition_DAG_previous_partition_name
+        #Partition_DAG_number_of_tasks
+        #Partition_DAG_number_of_incomplete_tasks
+        #Partition_DAG_is_complete
+        #Partition_DAG_num_nodes_in_graph
+        """
+    
+    def deallocate_DAG_structures_partitions(self,requested_version_number_DAG_info):
         # current_partition_number is not currently used
         #
         # Version 1 of the incremental DAG is given to the DAG_executor_driver for execution
@@ -226,17 +299,17 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # the most recent version requested by the workers. This will be the initial value 1
         # since bfs() has not called deposit for the first time to deposit version 2 (which 
         # bfs will do next). bfs will pass 1 to deallocate_DAG_structures as the value
-        # of current_version_number_DAG_info so the value of 
-        # 2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+        # of requested_version_number_DAG_info so the value of 
+        # 2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
         # will be 2+((1-2) * 4)-2 = -4 so we will deallocate from 1 to -4 so no deallocations
         # as expected. (We cannot deallocate 1 or 2 yet as we are not done with them - in version
         # 2 partition 2 becomes not to-be-continued and partition 1 now has no collapse to a 
         # continued state, so we restart executing the DAG by accessing 1's state information
         # to get 1's collpase task 2, which we can now execute. We already excuted 1 and then
         # stopped execution when we saw 1's collapse was to a to-be-continued state 2)
-        # Note: Given the formula 2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2,
+        # Note: Given the formula 2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2,
         # the value given by this formula cannot become greater than 1 until workers request version 3. For
-        # version 2, current_version_number_DAG_info-2 is 2-2 = 0, so we get 2+0-2=0.
+        # version 2, requested_version_number_DAG_info-2 is 2-2 = 0, so we get 2+0-2=0.
         # Note: if the DAG interval is 2, then for requesting version 3, we get 2+((3-2)*2)-2 = 2. Version 2 
         # has partitions 1 2 3 4, which means we can deallocate partitions 1 up to the end partition which is 2.
         # We keep 3 and 4 from version 2 and add 5 and 6 to get a version 3 of 3 4 5 6 where 6 is to-be-continued
@@ -249,7 +322,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # we publish every 4 partitions (after the base DAG) So the next verson is version 2,
         # which will have partitions 1, 2, 3, 4, 5, 6 for a total of 2+4 partitions.
 
-        deallocation_end_index = (2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+        deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
         # we will use deallocation_end_index in a range so it needs to be one past the last partition
         # to be dealloctated. Example, to deallocate "1 to 1" use range(1,2), where 1 is inclusive 
@@ -268,7 +341,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         for i in range(self.deallocation_start_index, deallocation_end_index):
             logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
 #brc: ToDo: This shoud be the info in the current DAG, not structures which are not on the server
-            BFS_generate_DAG_info_incremental_partitions.deallocate_Partition_DAG_structures_lambda(i)
+            self.deallocate_DAG_structures_lambda(i)
         
         # set start to end if we did a deallocation, i.e., if start < end. 
         # Note that if start equals end, then we did not do a deallocation since 
@@ -279,9 +352,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         if self.deallocation_start_index < deallocation_end_index:
             self.deallocation_start_index = deallocation_end_index
 
-    def deallocate_DAG_structures_groups(self,current_version_number_DAG_info):
+    def deallocate_DAG_structures_groups(self,requested_version_number_DAG_info):
         # Version 1 of the incremental DAG is given to the DAG_executor_driver for execution
-        # (assuming thw DAG has more than 1 partition). So the first version workers can request 
+        # (assuming the DAG has more than 1 partition). So the first version workers can request 
         # is version 2. At that point, they will have executed partition 1, found that 
         # partition 2 was to-be-continued, saw that partition 1, which is not to-be-continued but has a collapse
         # to a continued partition 2, and that the DAG was not complete, and so requested version 2.
@@ -351,17 +424,17 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # the most recent version requested by the workers. This will be the initial value 1
         # since bfs() has not called deposit for the first time to deposit version 2 (which 
         # bfs will do next). bfs will pass 1 to deallocate_DAG_structures as the value
-        # of current_version_number_DAG_info so the value of 
-        # 2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+        # of requested_version_number_DAG_info so the value of 
+        # 2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
         # will be 2+((1-2) * 4)-2 = -4 so we will deallocate from 1 to -4 so no deallocations
         # as expected. (We cannot deallocate 1 or 2 yet as we are not done with them - in version
         # 2 partition 2 becomes not to-be-continued and partition 1 now has no collapse to a 
         # continued state, so we restart executing the DAG by accessing 1's state information
         # to get 1's collpase task 2, which we can now execute. We already excuted 1 and then
         # stopped execution when we saw 1's collapse was to a to-be-continued state 2)
-        # Note: Given the formula 2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2,
+        # Note: Given the formula 2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2,
         # the value given by this formula cannot become greater than 1 until workers request version 3. For
-        # version 2, current_version_number_DAG_info-2 is 2-2 = 0, so we get 2+0-2=0.
+        # version 2, requested_version_number_DAG_info-2 is 2-2 = 0, so we get 2+0-2=0.
         # Note: if the DAG interval is 2, then for requesting version 3, we get 2+((3-2)*2)-2 = 2. Version 2 
         # has partitions 1 2 3 4, which means we can deallocate partitions 1 up to the end partition which is 2.
         # We keep 3 and 4 from version 2 and add 5 and 6 to get a version 3 of 3 4 5 6 where 6 is to-be-continued
@@ -373,7 +446,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # the next DAG we generate has partitions 1, 2, and 3 but it is not published since
         # we publish every 4 partitions (after the base DAG) So the next verson is version 2,
         # which will have partitions 1, 2, 3, 4, 5, 6 for a total of 2+4 partitions.
-        deallocation_end_index_partitions = (2+((current_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+
+        deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
         # we will use deallocation_end_index in a range so it needs to be one past the last partition
         # to be dealloctated. Example, to deallocate "1 to 1" use range(1,2), where 1 is inclusive 
@@ -387,9 +461,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         if deallocation_end_index_partitions > 0:
             deallocation_end_index_partitions += 1
 
-        logger.info("deallocate_DAG_structures: self.deallocation_start_index: " + str(self.deallocation_start_index)
+        logger.info("deallocate_DAG_structures: self.deallocation_start_index: " + str(self.deallocation_start_index_partitions)
             + " deallocation_end_index_partitions: " + str(deallocation_end_index_partitions))
-        for i in range(self.deallocation_start_index, deallocation_end_index_partitions):
+        for i in range(self.deallocation_start_index_partitions, deallocation_end_index_partitions):
             logger.info("deallocate_DAG_structures: deallocate " + str(i))
     #brc: ToDo: get the size of the groups of partition i and deallocate those n groups
 
@@ -403,15 +477,15 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # range(1,4) and 1 is inclusive but 4 is exclusive.
             # After adding number_of_groups_of_partition_i to deallocation_end_index_groups, 
             # deallocation_start_index_groups < deallocation_end_index_groups.
-            global deallocation_start_index_groups
-            deallocation_end_index_groups = deallocation_start_index_groups+number_of_groups_of_partition_i
+
+            deallocation_end_index_groups = self.deallocation_start_index_groups+number_of_groups_of_partition_i
 
             try:
                 msg = "[Error]: deallocate_DAG_structures:" \
                     + " deallocation_start_index_groups is not less than deallocation_end_index_groups after add." \
-                    + " deallocation_start_index_groups: " + str(deallocation_start_index_groups) \
+                    + " deallocation_start_index_groups: " + str(self.deallocation_start_index_groups) \
                     + " deallocation_end_index_groups: "  + str(deallocation_end_index_groups)
-                assert deallocation_start_index_groups < deallocation_end_index_groups , msg
+                assert self.deallocation_start_index_groups < deallocation_end_index_groups , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -419,17 +493,17 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     os._exit(0)
 
             logger.info("deallocate_DAG_structures: "
-                + " number_of_groups_of_partition_i " + str(number_of_groups_of_partition_i)
-                + " deallocation_start_index_groups: " + str(deallocation_start_index_groups)
+                + " number_of_groups_of_partition_i: " + str(number_of_groups_of_partition_i)
+                + " deallocation_start_index_groups: " + str(self.deallocation_start_index_groups)
                 + " deallocation_end_index_groups: "  + str(deallocation_end_index_groups))
 
-            for j in range(deallocation_start_index_groups, deallocation_end_index_groups):
+            for j in range(self.deallocation_start_index_groups, deallocation_end_index_groups):
                 # Note: This deallocation uses group_name = BFS.partition_names[j-1]
                 # so deallocate_Group_DAG_structures deallocates group in position j-1
 #brc: ToDo: This shoud be the info in the current DAG, not structures which are not on the server
-                BFS_generate_DAG_info_incremental_partitions.deallocate_Group_DAG_structures_lambda(j)
+                self.deallocate_DAG_structures_lambda(j)
             # reset start to end to prepare for the the next deallocations
-            deallocation_start_index_groups = deallocation_end_index_groups
+            self.deallocation_start_index_groups = deallocation_end_index_groups
 
 #brc: Todo: Note: we do not dealloc groups_of_partitions incrementally? When could we
 # do it since we need it here?
@@ -449,15 +523,15 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # "1 to 1", with start = 1 and end = 1, was implemented as incrementing 
         # end to 2 and using range(1,2) so start < end for the deallocation "1 to 1"
         # Note that end was exclusive so we can set start to end instead of end+1.
-        if self.deallocation_start_index < deallocation_end_index_partitions:
-            self.deallocation_start_index = deallocation_end_index_partitions
+        if self.deallocation_start_index_partitions < deallocation_end_index_partitions:
+            self.deallocation_start_index_partitions = deallocation_end_index_partitions
 
         # Example. Suppose the publishing interval is 4, i.e., after publishing the
         # base DAG (version 1) with partitions 1 and 2, we publish version 2 with 
         # 1 2 3 4 5 6 (base DAG plus 4 partitions). Before bfs() calls depost()
         # to publish this DAG it gets the last requsted DAG version which is initializd
         # to 1 and passes 1 to deallocate_DAG_structures.
-        # For deallocation_end_index_partitions = (2+((current_version_number_DAG_info-2)
+        # For deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)
         #    * DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
         # we get end is -4. Thus the for loop for i in range() does not execute
         # and we do not do any deallocations. Also, since deallocation_start_index_partitions
@@ -468,7 +542,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # 2 and 3. bfs() generats DAG version 3 and before bfs()
         # calls deposit() to publish this new DAG version 3 it gets the last requsted 
         # DAG version which we assume is 2 and passes 2 to deallocate_DAG_structures.
-        # For deallocation_end_index_partitions = (2+((current_version_number_DAG_info-2)
+        # For deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)
         #    * DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
         # we get end is 0. Thus the for loop for i in range() does not execute
         # and we do not do any deallocations. Also, since deallocation_start_index_partitions
@@ -481,7 +555,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # 2 and 3. bfs() generates DAG version 3 and before bfs()
         # calls deposit() to publish this new DAG version 3 it gets the last requested 
         # DAG version which we assume is 3 and passes 3 to deallocate_DAG_structures.
-        # For deallocation_end_index_partitions = (2+((current_version_number_DAG_info-2)
+        # For deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)
         #    * DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
         # we get end is 2. Thus the for loop for i in range(1,3) will execute. We
         # describe the groups deallocations for partitions 1 and 2 below, Also,
@@ -647,11 +721,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # pass the state/task the thread is to execute at the start of its DFS path
                     start_state = start_tuple[0]
 
-                    if False: # DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+                    if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                             self.deallocate_DAG_structures_partitions(requested_current_version_number)
                         else:
-                            self.deallocate_DAG_structures_groups(self,requested_current_version_number)
+                            self.deallocate_DAG_structures_groups(requested_current_version_number)
                     # Note: for incremental DAG generation, when we restart a lambda
                     # for a continued task, if the task is a group, we give it the output
                     # it generated previously (before terminating) and use the output
@@ -822,7 +896,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     self.continue_queue += new_leaf_tasks
             except Exception:
                 logger.exception("[ERROR] DAG_infoBuffer_Monitor_for_Lambdas: Failed to start DAG_executor thread for state " + str(start_state))
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
         else:
