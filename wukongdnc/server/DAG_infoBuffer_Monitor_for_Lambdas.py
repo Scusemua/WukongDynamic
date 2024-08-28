@@ -65,9 +65,32 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         #self._buffer= [None] * self._capacity
         #self._in=0
         #logger.trace(kwargs)
+        # We need to remember the start indices, i.e., after we deallocaet a structure from start 
+        # to end, we will set start = end so that the next deallocation starts where we left off (end).
+        # We deallocate partition by partition, so we have start and end partition indices and 
+        # when we use groups we deallocate group by group (as we iterate partition by partition).
+        # So we get the partitions from start to end, and within the partitions, we get the groups
+        # from start to end. Partition names are stored in partition_names[] and likewise for
+        # group names and group_names[]. We are going sequentially through partition names 
+        # to dealloctate partition structures in DAG_info, and sequentially through partition names and 
+        # within each partition sequentially through group names to deallocate greup structures in DAG_info.
+        # For this we deallocate start to end and then set start = end so we can continue on the 
+        # next deallocation.
         self.deallocation_start_index_groups = 1
         self.deallocation_start_index_partitions = 1
+        # on each call ot deposit, we pass a list L of lists. These are 
+        # the lists identifie since the last pubication (call to deposit). We then do 
+        # self.groups_of_partitions.extend(L), which appends all the lists in 
+        # L to self.groups_of_partitions. We cannot access BFS.groups_of_partitions
+        # in the code in this file since this code is running on the server and BFS
+        # is not. Instead, we pass the lists of groups on deposit and so assemble
+        # groups_of_partitions incrementally on the serverdeposiy-by-deposit.
+        # We do the same for the group names, i.e., we assmble the group names by 
+        # appending to self.group_names the contents of the lists added to groups_of_partitions.
+        # Example: list 1 is "PR1_1" and list 2 is "PR2_1, PR2_2L, PR2_3" so the group names
+        # at this point will be "PR1_1, PR2_1, PR2_2L, PR2_3".
         self.groups_of_partitions = []
+        self.group_names = []
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
@@ -103,7 +126,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         for key, value in DAG_map.items():
             print(key)
             print(value)
-            print(str(hex(id(value)))) 
+            #print(str(hex(id(value)))) 
         print("  ")
         print("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:")         
         for key, value in DAG_states.items():
@@ -153,28 +176,31 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         return current_DAG_info, restart
     
     def deallocate_DAG_structures_lambda(self,i):
-    # need to save the deallocated items? Since requested version numbers arw 
-    # mono increasing we only dealloc more as we restart waiting withdrawers.
-    # At that point, we have max deallocs. Then we can get a withdraw that doesn't
-    # wait and this might require putting some deallocs back. Or we can get a 
-    # withdraw that waits and its requested version will result in more deallocs.
-    # Or we can get a deposit for a larger version number - for this, there will be
-    # more deallocs poasible, but the requested versions may be less than the just 
-    # deposited version, so may need to put some back (from prev. version) or dealloc
-    # more.
+        # need to save the deallocated items? Since requested version numbers arw 
+        # mono increasing we only dealloc more as we restart waiting withdrawers.
+        # At that point, we have max deallocs. Then we can get a withdraw that doesn't
+        # wait and this might require putting some deallocs back. Or we can get a 
+        # withdraw that waits and its requested version will result in more deallocs.
+        # Or we can get a deposit for a larger version number - for this, there will be
+        # more deallocs poasible, but the requested versions may be less than the just 
+        # deposited version, so may need to put some back (from prev. version) or dealloc
+        # more.
 
-        #working on self.current_version_DAG_info
-        pass
-
-#Use group_names when using groups
+        #Noet: Working on self.current_version_DAG_info
         #brc: deallocate DAG map-based structures
-        logger.info("deallocate_DAG_structures_lambda: partition_names: ")
-        for name in BFS.partition_names:
+        partition_or_group_names = []
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+#brc: use self.group_names
+            partition_or_group_names = BFS.partition_names
+        else:
+            partition_or_group_names = BFS.group_names
+        for name in partition_or_group_names:
             logger.info(name)
-        partition_name = BFS.partition_names[i-1]
+        name = partition_or_group_names[i-1]
+        logger.info("deallocate_DAG_structures_lambda: partition or group names: ")
         # USE self.DAG_states
-        state = self.current_version_DAG_info.DAG_states[partition_name]
-        logger.info("deallocate_DAG_structures_lambda: partition_name: " + str(partition_name))
+        state = self.current_version_DAG_info.DAG_states[name]
+        logger.info("deallocate_DAG_structures_lambda: partition or group name: " + str(name))
         logger.info("deallocate_DAG_structures_lambda: state: " + str(state))
 
         # We may be iterating through these data structures in, e.g., DAG_executor concurrently 
@@ -199,10 +225,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.current_version_DAG_info.DAG_map[state] = None
         # USE self.DAG_tasks
         #self.current_version_DAG_info.DAG_tasks[partition_name]
-        self.current_version_DAG_info.DAG_tasks[partition_name] = None
+        self.current_version_DAG_info.DAG_tasks[name] = None
         # USE self.DAG_states
         #del Partition_DAG_states[partition_name]
-        self.current_version_DAG_info.DAG_states[partition_name] = None
+        self.current_version_DAG_info.DAG_states[name] = None
 
         # We are not doing deallocations for these collections; they are not 
         # per-partition collections, they are collections of fanin names, etc.
@@ -224,7 +250,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         #DAG_num_nodes_in_graph
         #DAG_number_of_groups_of_previous_partition_that_cannot_be_executed
 
-    
     def deallocate_DAG_structures_partitions(self,requested_version_number_DAG_info):
         # current_partition_number is not currently used
         #
@@ -340,7 +365,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             + " deallocation_end_index: " + str(deallocation_end_index))
         for i in range(self.deallocation_start_index, deallocation_end_index):
             logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
-#brc: ToDo: This shoud be the info in the current DAG, not structures which are not on the server
             self.deallocate_DAG_structures_lambda(i)
         
         # set start to end if we did a deallocation, i.e., if start < end. 
@@ -465,10 +489,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             + " deallocation_end_index_partitions: " + str(deallocation_end_index_partitions))
         for i in range(self.deallocation_start_index_partitions, deallocation_end_index_partitions):
             logger.info("deallocate_DAG_structures: deallocate " + str(i))
-    #brc: ToDo: get the size of the groups of partition i and deallocate those n groups
 
 # Nbrc: ToDo: eed to pass as a parm since this monitor is on the server
-            groups_of_partition_i = BFS.groups_of_partitions[i-1]
+            groups_of_partition_i = self.groups_of_partitions[i-1]
             # number of groups >= 1
             number_of_groups_of_partition_i = len(groups_of_partition_i)
             # end index is now 1 past the last group to be deallocated, e.g., 
@@ -641,10 +664,16 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # For debugging - all leaf tasks started so far
         self.cummulative_leaf_tasks += new_leaf_tasks
         if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+            # this is a list of lists
             groups_of_partitions_in_current_batch = kwargs['groups_of_partitions_in_current_batch']
+            # each of the lists in groups_of_partitions_in_current_batch is appended to self.groups_of_partitions
             self.groups_of_partitions.extend(groups_of_partitions_in_current_batch)
             logger.info("DAG_infoBuffer_Monitor_for_Lambdas: extended list:")
             logger.info(self.groups_of_partitions)
+            for list_of_group_names in groups_of_partitions_in_current_batch:
+                self.group_names.extend(list_of_group_names)
+#brc: Use this list in the deallocate routine
+#brc: only do this for groups? or if groups_of_partitions_in_current_batch is [] then it's okay/
 
         try:
             msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
@@ -726,6 +755,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                             self.deallocate_DAG_structures_partitions(requested_current_version_number)
                         else:
                             self.deallocate_DAG_structures_groups(requested_current_version_number)
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited after deallocation: ")
+                    self.print_DAG_info(self.current_version_DAG_info)
                     # Note: for incremental DAG generation, when we restart a lambda
                     # for a continued task, if the task is a group, we give it the output
                     # it generated previously (before terminating) and use the output
