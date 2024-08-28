@@ -152,7 +152,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         super().exit_monitor()
         return current_DAG_info, restart
     
-    def deallocate_DAG_structures_lambda(i):
+    def deallocate_DAG_structures_lambda(self,i):
     # need to save the deallocated items? Since requested version numbers arw 
     # mono increasing we only dealloc more as we restart waiting withdrawers.
     # At that point, we have max deallocs. Then we can get a withdraw that doesn't
@@ -165,16 +165,17 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
         #working on self.current_version_DAG_info
         pass
-        """
+
+#Use group_names when using groups
         #brc: deallocate DAG map-based structures
-        logger.info("deallocate_Partition_DAG_structures: partition_names: ")
+        logger.info("deallocate_DAG_structures_lambda: partition_names: ")
         for name in BFS.partition_names:
             logger.info(name)
         partition_name = BFS.partition_names[i-1]
         # USE self.DAG_states
-        state = Partition_DAG_states[partition_name]
-        logger.info("deallocate_Partition_DAG_structures: partition_name: " + str(partition_name))
-        logger.info("deallocate_Partition_DAG_structures: state: " + str(state))
+        state = self.current_version_DAG_info.DAG_states[partition_name]
+        logger.info("deallocate_DAG_structures_lambda: partition_name: " + str(partition_name))
+        logger.info("deallocate_DAG_structures_lambda: state: " + str(state))
 
         # We may be iterating through these data structures in, e.g., DAG_executor concurrently 
         # with attempts to to the del on the data structure, which would be an error. We only 
@@ -194,36 +195,35 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # storing a function in the DAG for each task. (It's the same code that determines which 
         # function to store in the DG) This would save space in the DAG representation.
         # USE self.DAG_map 
-        #del Partition_DAG_map[state]
-        Partition_DAG_map[state] = None
+        #self.current_version_DAG_info.DAG_map[state]
+        self.current_version_DAG_info.DAG_map[state] = None
         # USE self.DAG_tasks
-        #del Partition_DAG_tasks[partition_name]
-        Partition_DAG_tasks[partition_name] = None
+        #self.current_version_DAG_info.DAG_tasks[partition_name]
+        self.current_version_DAG_info.DAG_tasks[partition_name] = None
         # USE self.DAG_states
         #del Partition_DAG_states[partition_name]
-        Partition_DAG_states[partition_name] = None
+        self.current_version_DAG_info.DAG_states[partition_name] = None
 
         # We are not doing deallocations for these collections; they are not 
-        # per-partition collectins, they are collections of fanin names, etc.
-
-        #Partition_all_fanout_task_names
-        #Partition_all_fanin_task_names
-        #Partition_all_faninNB_task_names
-        #Partition_all_collapse_task_names
-        #Partition_all_fanin_sizes
-        #Partition_all_faninNB_sizes
-        #Partition_DAG_leaf_tasks
-        #Partition_DAG_leaf_task_start_states
-        #Partition_DAG_leaf_task_inputs
+        # per-partition collections, they are collections of fanin names, etc.
+        #all_fanin_task_names 
+        #all_fanin_sizes
+        #all_faninNB_task_names
+        #all_faninNB_sizes
+        #all_fanout_task_names
+        #all_collapse_task_names
+        #DAG_leaf_tasks
+        #DAG_leaf_task_start_states
+        #DAG_leaf_task_inputs
 
         # We are not doing deallocations for the non-collections
-        #Partition_DAG_version_number
-        #Partition_DAG_previous_partition_name
-        #Partition_DAG_number_of_tasks
-        #Partition_DAG_number_of_incomplete_tasks
-        #Partition_DAG_is_complete
-        #Partition_DAG_num_nodes_in_graph
-        """
+        #DAG_version_number
+        #DAG_is_complete
+        #DAG_number_of_tasks
+        #DAG_number_of_incomplete_tasks
+        #DAG_num_nodes_in_graph
+        #DAG_number_of_groups_of_previous_partition_that_cannot_be_executed
+
     
     def deallocate_DAG_structures_partitions(self,requested_version_number_DAG_info):
         # current_partition_number is not currently used
