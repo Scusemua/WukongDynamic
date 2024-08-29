@@ -4159,37 +4159,36 @@ def bfs(visited, node):
 #brc: copy for deposit
                                 groups_of_partitions_in_current_batch = []
                                 if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
-                                    global start_index_for_groups_of_partitions_copy
-                                    end_index = len(groups_of_partitions)
-                                    try:
-                                        msg = "[Error]: BFS: len(groups_of_partitions) is not 1 when current_partition_number is 1."
-                                        assert end_index == 1 , msg
-                                    except AssertionError:
-                                        logger.exception("[Error]: assertion failed")
-                                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
-                                            logging.shutdown()
-                                            os._exit(0)
-                                    try:
-                                        msg = "[Error]: BFS: start_index_for_groups_of_partitions_copy is not 0 when current_partition_number is 1."
-                                        assert start_index_for_groups_of_partitions_copy == 0 , msg
-                                    except AssertionError:
-                                        logger.exception("[Error]: assertion failed")
-                                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
-                                            logging.shutdown()
-                                            os._exit(0)
-
-                                
-                                    # start_index_of_groups_of_partitions_copyis inclusive; end_index is exclusive
-                                    for i in range(start_index_for_groups_of_partitions_copy,end_index):
-                                        groups_of_partitions_in_current_batch.append(groups_of_partitions[i])
-                                    logger.info("BFS: groups_of_partitions_in_current_batch:")
-                                    for list_of_groups in groups_of_partitions_in_current_batch:
-                                        logger.info(list_of_groups)
+                                    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                        global start_index_for_groups_of_partitions_copy
+                                        end_index = len(groups_of_partitions)
+                                        try:
+                                            msg = "[Error]: BFS: len(groups_of_partitions) is not 1 when current_partition_number is 1."
+                                            assert end_index == 1 , msg
+                                        except AssertionError:
+                                            logger.exception("[Error]: assertion failed")
+                                            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                                logging.shutdown()
+                                                os._exit(0)
+                                        try:
+                                            msg = "[Error]: BFS: start_index_for_groups_of_partitions_copy is not 0 when current_partition_number is 1."
+                                            assert start_index_for_groups_of_partitions_copy == 0 , msg
+                                        except AssertionError:
+                                            logger.exception("[Error]: assertion failed")
+                                            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                                logging.shutdown()
+                                                os._exit(0)
+                                    
+                                        # start_index_of_groups_of_partitions_copyis inclusive; end_index is exclusive
+                                        for i in range(start_index_for_groups_of_partitions_copy,end_index):
+                                            groups_of_partitions_in_current_batch.append(groups_of_partitions[i])
+                                        logger.info("BFS: groups_of_partitions_in_current_batch:")
+                                        for list_of_groups in groups_of_partitions_in_current_batch:
+                                            logger.info(list_of_groups)
+                                        start_index_for_groups_of_partitions_copy = end_index
                 
                                     DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete,
                                         groups_of_partitions_in_current_batch)
-
-                                    start_index_for_groups_of_partitions_copy = end_index
 
                                 else:
                                     DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete,
@@ -4682,20 +4681,20 @@ def bfs(visited, node):
 # used.
                                     groups_of_partitions_in_current_batch = []
                                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
-                                        #global start_index_for_groups_of_partitions_copy
-                                        end_index = len(groups_of_partitions)
-                                        # start_index_of_groups_of_partitions_copyis inclusive; end_index is exclusive
-                                        for i in range(start_index_for_groups_of_partitions_copy,end_index):
-                                            groups_of_partitions_in_current_batch.append(groups_of_partitions[i])
-                                        logger.info("BFS: groups_of_partitions_in_current_batch:")
-                                        for list_of_groups in groups_of_partitions_in_current_batch:
-                                            logger.info(list_of_groups)
+                                        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                            #global start_index_for_groups_of_partitions_copy
+                                            end_index = len(groups_of_partitions)
+                                            # start_index_of_groups_of_partitions_copyis inclusive; end_index is exclusive
+                                            for i in range(start_index_for_groups_of_partitions_copy,end_index):
+                                                groups_of_partitions_in_current_batch.append(groups_of_partitions[i])
+                                            logger.info("BFS: groups_of_partitions_in_current_batch:")
+                                            for list_of_groups in groups_of_partitions_in_current_batch:
+                                                logger.info(list_of_groups)
+                                            start_index_for_groups_of_partitions_copy = end_index
 
                                         DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete,
                                             groups_of_partitions_in_current_batch)
                                         
-                                        start_index_for_groups_of_partitions_copy = end_index
-
 #brc: use of DAG_info: if publish then pass DAG_info on deposit()
                                     else:
                                         DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete,
