@@ -843,6 +843,7 @@ groups_of_current_partition = [] # groups in current partition
 groups_of_partitions = []       # list of groups of partitions.
 
 start_index_for_groups_of_partitions_copy = 0
+start_index_for_partition_names_copy = 0
 
 # map a node to its partition number, partition index, group number and group index.
 # A "global map"for nodes. May supercede nodeIndex_to_partitionIndex_map. 
@@ -4067,6 +4068,12 @@ def bfs(visited, node):
                                 + str(groups_of_current_partition)
                                 + ", groups_of_partitions: " + str(groups_of_partitions))
 
+                        # When DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS this is 
+                        # the starting index or the next deallocation. We deallocate from start to end
+                        # then set start = end so we will pickup where we left off.
+                        global start_index_for_groups_of_partitions_copy
+                        global start_index_for_partition_names_copy
+
                         # A DAG with a single partition, and hence a single group is a special case.
                         if current_partition_number == 1:
 #brc: incremental groups
@@ -4158,9 +4165,20 @@ def bfs(visited, node):
 
 #brc: copy for deposit
                                 groups_of_partitions_in_current_batch = []
+                                partition_names_in_current_batch = []
                                 if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
                                     if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
-                                        global start_index_for_groups_of_partitions_copy
+                                        # Need to generate the groups_of_partitions_in_current_batch
+                                        # which is for each new partition added to the incremental
+                                        # partition added to the DAG, a list of the group names
+                                        # in that partition. We accumulate these lists on 
+                                        # the server, which is where the DAG_infobuffer_monitor lives
+                                        # when we are using lambdas. (We have this list here but
+                                        # we need it on the tcp_server when we are using lambas
+                                        # so we send this list but by bit to the server, where we
+                                        # only need to access the lists that we have seen so)
+                                        #                                         
+
                                         end_index = len(groups_of_partitions)
                                         try:
                                             msg = "[Error]: BFS: len(groups_of_partitions) is not 1 when current_partition_number is 1."
@@ -4179,20 +4197,47 @@ def bfs(visited, node):
                                                 logging.shutdown()
                                                 os._exit(0)
                                     
-                                        # start_index_of_groups_of_partitions_copyis inclusive; end_index is exclusive
+                                        # start_index_of_groups_of_partitions_copy is inclusive; end_index is exclusive
                                         for i in range(start_index_for_groups_of_partitions_copy,end_index):
                                             groups_of_partitions_in_current_batch.append(groups_of_partitions[i])
                                         logger.info("BFS: groups_of_partitions_in_current_batch:")
                                         for list_of_groups in groups_of_partitions_in_current_batch:
                                             logger.info(list_of_groups)
                                         start_index_for_groups_of_partitions_copy = end_index
+                                    else:
+                                        end_index = len(partition_names)
+                                        try:
+                                            msg = "[Error]: BFS: len(partition_names) is not 1 when current_partition_number is 1."
+                                            assert end_index == 1 , msg
+                                        except AssertionError:
+                                            logger.exception("[Error]: assertion failed")
+                                            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                                logging.shutdown()
+                                                os._exit(0)
+                                        try:
+                                            msg = "[Error]: BFS: start_index_for_partition_names_copy is not 0 when current_partition_number is 1."
+                                            assert start_index_for_partition_names_copy == 0 , msg
+                                        except AssertionError:
+                                            logger.exception("[Error]: assertion failed")
+                                            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                                logging.shutdown()
+                                                os._exit(0)
+                                    
+                                        # start_index_of_groups_of_partitions_copy is inclusive; end_index is exclusive
+                                        for i in range(start_index_for_partition_names_copy,end_index):
+                                            partition_names_in_current_batch.append(partition_names[i])
+                                        logger.info("BFS: partition_names_in_current_batch:")
+                                        for name in partition_names_in_current_batch:
+                                            logger.info(name)
+                                        start_index_for_partition_names_copy = end_index
                 
                                     DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete,
-                                        groups_of_partitions_in_current_batch)
+                                        groups_of_partitions_in_current_batch,partition_names_in_current_batch)
+
 
                                 else:
                                     DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete,
-                                        groups_of_partitions_in_current_batch)
+                                        groups_of_partitions_in_current_batch,partition_names_in_current_batch)
 
                                 # We just processed the first and only partition; so we can output the 
                                 # initial DAG_info and start the DAG_executor_driver. DAG_info
@@ -4680,8 +4725,19 @@ def bfs(visited, node):
 # Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py. These are the deposits
 # used.
                                     groups_of_partitions_in_current_batch = []
+                                    partition_names_in_current_batch = []
                                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
                                         if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                            # Need to generate the groups_of_partitions_in_current_batch
+                                            # which is for each new partition added to the incremental
+                                            # partition added to the DAG, a list of the group names
+                                            # in that partition. We accumulate these lists on 
+                                            # the server, which is where the DAG_infobuffer_monitor lives
+                                            # when we are using lambdas. (We have this list here but
+                                            # we need it on the tcp_server when we are using lambas
+                                            # so we send this list but by bit to the server, where we
+                                            # only need to access the lists that we have seen so far.)
+                                            #
                                             #global start_index_for_groups_of_partitions_copy
                                             end_index = len(groups_of_partitions)
                                             # start_index_of_groups_of_partitions_copyis inclusive; end_index is exclusive
@@ -4691,14 +4747,23 @@ def bfs(visited, node):
                                             for list_of_groups in groups_of_partitions_in_current_batch:
                                                 logger.info(list_of_groups)
                                             start_index_for_groups_of_partitions_copy = end_index
+                                        else:
+                                            end_index = len(partition_names)
+                                            # start_index_of_groups_of_partitions_copy is inclusive; end_index is exclusive
+                                            for i in range(start_index_for_partition_names_copy,end_index):
+                                                partition_names_in_current_batch.append(partition_names[i])
+                                            logger.info("BFS: partition_names_in_current_batch:")
+                                            for name in partition_names_in_current_batch:
+                                                logger.info(name)
+                                            start_index_for_partition_names_copy = end_index
 
                                         DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete,
-                                            groups_of_partitions_in_current_batch)
+                                            groups_of_partitions_in_current_batch,partition_names_in_current_batch)
                                         
 #brc: use of DAG_info: if publish then pass DAG_info on deposit()
                                     else:
                                         DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete,
-                                            groups_of_partitions_in_current_batch)
+                                            groups_of_partitions_in_current_batch,partition_names_in_current_batch)
 
                                     # deposit starts a lambda with empty input payload (like DAG_executor_driver)
                                     # when the leaf task becomes complete (the leaf task on this

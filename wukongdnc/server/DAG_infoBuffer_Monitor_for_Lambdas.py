@@ -22,7 +22,7 @@ from ..dag import DAG_executor
 #from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 from ..wukong.invoker import invoke_lambda_DAG_executor
 
-from ..dag import BFS
+#from ..dag import BFS
 
 import logging 
 
@@ -91,6 +91,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # at this point will be "PR1_1, PR2_1, PR2_2L, PR2_3".
         self.groups_of_partitions = []
         self.group_names = []
+        self.partition_names = []
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
@@ -185,20 +186,19 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # more deallocs poasible, but the requested versions may be less than the just 
         # deposited version, so may need to put some back (from prev. version) or dealloc
         # more.
-
         #Noet: Working on self.current_version_DAG_info
         #brc: deallocate DAG map-based structures
+
         partition_or_group_names = []
         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
-#brc: use self.group_names
-            partition_or_group_names = BFS.partition_names
+#brc: ToDo: we need partition names too?
+            partition_or_group_names = self.partition_names
         else:
-            partition_or_group_names = BFS.group_names
-        for name in partition_or_group_names:
-            logger.info(name)
+            partition_or_group_names = self.group_names # BFS.group_names
+        logger.info("deallocate_DAG_structures_lambda: partition or group namesXXX: ")
+        for n in partition_or_group_names:
+            logger.info(n)
         name = partition_or_group_names[i-1]
-        logger.info("deallocate_DAG_structures_lambda: partition or group names: ")
-        # USE self.DAG_states
         state = self.current_version_DAG_info.DAG_states[name]
         logger.info("deallocate_DAG_structures_lambda: partition or group name: " + str(name))
         logger.info("deallocate_DAG_structures_lambda: state: " + str(state))
@@ -361,10 +361,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         if deallocation_end_index > 0:
             deallocation_end_index += 1
 
-        logger.info("deallocate_DAG_structures: self.deallocation_start_index: " + str(self.deallocation_start_index)
+        logger.info("deallocate_DAG_structures_partitions: self.deallocation_start_index_partitions: " + str(self.deallocation_start_index_partitions)
             + " deallocation_end_index: " + str(deallocation_end_index))
-        for i in range(self.deallocation_start_index, deallocation_end_index):
-            logger.info("generate_DAG_info_incremental_partitions: deallocate " + str(i))
+        for i in range(self.deallocation_start_index_partitions, deallocation_end_index):
+            logger.info("deallocate_DAG_structures_partitions: generate_DAG_info_incremental_partitions: deallocate " + str(i))
             self.deallocate_DAG_structures_lambda(i)
         
         # set start to end if we did a deallocation, i.e., if start < end. 
@@ -373,8 +373,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # "1 to 1", with start = 1 and end = 1, was implemented as incrementing 
         # end to 2 and using range(1,2) so start < end for the deallocation "1 to 1"
         # Note that end was exclusive so we can set start to end instead of end+1.
-        if self.deallocation_start_index < deallocation_end_index:
-            self.deallocation_start_index = deallocation_end_index
+        if self.deallocation_start_index_partitions < deallocation_end_index:
+            self.deallocation_start_index_partitions = deallocation_end_index
 
     def deallocate_DAG_structures_groups(self,requested_version_number_DAG_info):
         # Version 1 of the incremental DAG is given to the DAG_executor_driver for execution
@@ -485,12 +485,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         if deallocation_end_index_partitions > 0:
             deallocation_end_index_partitions += 1
 
-        logger.info("deallocate_DAG_structures: self.deallocation_start_index: " + str(self.deallocation_start_index_partitions)
+        logger.info("deallocate_DAG_structures_groups: self.deallocation_start_index: " + str(self.deallocation_start_index_partitions)
             + " deallocation_end_index_partitions: " + str(deallocation_end_index_partitions))
         for i in range(self.deallocation_start_index_partitions, deallocation_end_index_partitions):
-            logger.info("deallocate_DAG_structures: deallocate " + str(i))
-
-# Nbrc: ToDo: eed to pass as a parm since this monitor is on the server
+            logger.info("deallocate_DAG_structures_groups: deallocate " + str(i))
             groups_of_partition_i = self.groups_of_partitions[i-1]
             # number of groups >= 1
             number_of_groups_of_partition_i = len(groups_of_partition_i)
@@ -504,7 +502,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             deallocation_end_index_groups = self.deallocation_start_index_groups+number_of_groups_of_partition_i
 
             try:
-                msg = "[Error]: deallocate_DAG_structures:" \
+                msg = "[Error]: deallocate_DAG_structures_groups:" \
                     + " deallocation_start_index_groups is not less than deallocation_end_index_groups after add." \
                     + " deallocation_start_index_groups: " + str(self.deallocation_start_index_groups) \
                     + " deallocation_end_index_groups: "  + str(deallocation_end_index_groups)
@@ -515,7 +513,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     logging.shutdown()
                     os._exit(0)
 
-            logger.info("deallocate_DAG_structures: "
+            logger.info("deallocate_DAG_structures_groups: "
                 + " number_of_groups_of_partition_i: " + str(number_of_groups_of_partition_i)
                 + " deallocation_start_index_groups: " + str(self.deallocation_start_index_groups)
                 + " deallocation_end_index_groups: "  + str(deallocation_end_index_groups))
@@ -523,7 +521,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             for j in range(self.deallocation_start_index_groups, deallocation_end_index_groups):
                 # Note: This deallocation uses group_name = BFS.partition_names[j-1]
                 # so deallocate_Group_DAG_structures deallocates group in position j-1
-#brc: ToDo: This shoud be the info in the current DAG, not structures which are not on the server
+                # This deallocates structures in the DAG_info, which we presumably do 
+                # when we have very large DAGs that we do not wanr to pass to each lambda.
                 self.deallocate_DAG_structures_lambda(j)
             # reset start to end to prepare for the the next deallocations
             self.deallocation_start_index_groups = deallocation_end_index_groups
@@ -664,16 +663,25 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # For debugging - all leaf tasks started so far
         self.cummulative_leaf_tasks += new_leaf_tasks
         if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
-            # this is a list of lists
-            groups_of_partitions_in_current_batch = kwargs['groups_of_partitions_in_current_batch']
-            # each of the lists in groups_of_partitions_in_current_batch is appended to self.groups_of_partitions
-            self.groups_of_partitions.extend(groups_of_partitions_in_current_batch)
-            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: extended list:")
-            logger.info(self.groups_of_partitions)
-            for list_of_group_names in groups_of_partitions_in_current_batch:
-                self.group_names.extend(list_of_group_names)
-#brc: Use this list in the deallocate routine
-#brc: only do this for groups? or if groups_of_partitions_in_current_batch is [] then it's okay/
+            if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                # Note: if we are not using groups then groups_of_partitions_in_current_batch is []
+                # and nothing is added to self.groups_of_partitions on the extend, which works too
+                #
+                # this is a list of lists
+                groups_of_partitions_in_current_batch = kwargs['groups_of_partitions_in_current_batch']
+                # each of the lists in groups_of_partitions_in_current_batch is appended to list self.groups_of_partitions
+                self.groups_of_partitions.extend(groups_of_partitions_in_current_batch)
+                logger.info("DAG_infoBuffer_Monitor_for_Lambdas: extended list of groups_of_partitions:")
+                logger.info(self.groups_of_partitions)
+                for list_of_group_names in groups_of_partitions_in_current_batch:
+                    self.group_names.extend(list_of_group_names)
+            else:
+                # this is a list of lists
+                partition_names_in_current_batch = kwargs['partition_names_in_current_batch']
+                # each of the lists in groups_of_partitions_in_current_batch is appended to list self.groups_of_partitions
+                self.partition_names.extend(partition_names_in_current_batch)
+                logger.info("DAG_infoBuffer_Monitor_for_Lambdas: extended list of partition names:")
+                logger.info(self.partition_names)
 
         try:
             msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
@@ -847,20 +855,19 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # a leaf task currently in the continue queue that will also be 
                 # started in this deposit().
 
-#brc: ToDo: If the DAG_info is complete then we can start the leaf task 
-# as it is also complete. We can also start a leaf task if we know it 
-# is the last group/partition of a component even if the DAG_nfo is 
-# not complete. For a partition (and the groups therein) we can track
-# whether any nodes in this partition (and grooups therein) have any
-# children. If not, then this partition (and the groups therein) is the 
-# last partition in the current connected component and we can start 
-# a lambda for the leaf task now.
-
-
                 if DAG_info_is_complete:
+                    # If the DAG_info is complete then we can start the leaf task 
+                    # as it is also complete. 
                     self.continue_queue += new_leaf_tasks
                 else:
-                    # leaf task is unexecutable now. Execute it on next deposit()
+                    # leaf task is unexecutable now. Execute it on next deposit().
+                    # Note: # We can also start a leaf task if we know it 
+                    # is the last group/partition of a component even if the DAG_ifo is 
+                    # not complete. For a partition (and the groups therein) bfs can track
+                    # whether any nodes in this partition (and grooups therein) have any
+                    # children. If not, then this partition (and the groups therein) is the 
+                    # last partition in the current connected component and we can start 
+                    # a lambda for the leaf task now. But this is a lot of work.
                     pass
                 
                 # start a lambda to excute the leaf task found on the previous deposit()
