@@ -1889,6 +1889,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             #work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
 
 #brc: continue
+
+            # Note: real lambda always use a remote client for a monitor for lambdas, 
+            # simulated lambdas uses local client for lambda 
+            # for a monitor for lambdas. Threads use a local client, processes use 
+            # a remote client that is different from the remote client used by lambdas,
+            # So we have a Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py
+            # Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py, and 
+            # Remote_Client_for_DAG_infoBuffer_Monitor for processes.
+
             # we are only using incremental_DAG_generation when we
             # are computing pagerank, so far. Pagerank DAGS are the
             # only DAGS we generate ourselves, so far.

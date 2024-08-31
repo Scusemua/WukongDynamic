@@ -2216,8 +2216,24 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 
         logger.info("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
-    
-    return DAG_info
+
+    # If we aew are doing incemental DAG generation and we are using simulated lambas
+    # and we are deallocating pats of the DAG_info before we send the DAG_info
+    # to a lambda then we need to make a deep copy of the DAG_info.
+    # This is because it is possible that the deallocations for/to DAG_info will be
+    # done concurrently with the simulated lambda referecing the ADG_info. Thus
+    # we give the simulated lambda a (seperate) copy of the DAG_info. When we use
+    # real lambdas, the deallocations to DAG_info are done on the tcp_server and
+    # then a serialized copy of DAG_info is sent to the lambdas, so the real lambdas 
+    # have a seperate copy of the DAG_info.
+    if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and not DAG_executor_constants.USING_WORKERS \
+            and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION \
+            and DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+            and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+        DAG_info_copy = copy.deepcopy(DAG_info)
+        return DAG_info_copy
+    else:
+        return DAG_info
 
 def deallocate_DAG_structures(current_version_number_DAG_info):
     # Version 1 of the incremental DAG is given to the DAG_executor_driver for execution

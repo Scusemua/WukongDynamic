@@ -659,10 +659,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # will be no more deposits.
         DAG_info_is_complete = kwargs['DAG_info_is_complete']
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
+        num_nodes = kwargs['num_nodes']
         # Note: cummulative_leaf_tasks gets cleared after we start the new leaf tasks.
         # For debugging - all leaf tasks started so far
         self.cummulative_leaf_tasks += new_leaf_tasks
-        if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+        if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+            and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
             if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                 # Note: if we are not using groups then groups_of_partitions_in_current_batch is []
                 # and nothing is added to self.groups_of_partitions on the extend, which works too
@@ -758,7 +760,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # pass the state/task the thread is to execute at the start of its DFS path
                     start_state = start_tuple[0]
 
-                    if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+                    if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                        and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                             self.deallocate_DAG_structures_partitions(requested_current_version_number)
                         else:
@@ -1115,6 +1118,18 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             DAG_info = self.current_version_DAG_info
             logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw return current Lambda"
                 " with version " + str(self.current_version_number_DAG_info))
+
+#brc: ToDo: do deallocation here. But if next call is also to withdraw(), then requested version may
+# be out of order i.e., this version is less than that of the previous dealloc. (Note: by 
+# definition requested_current_version_number <= self.current_version_number_DAG_info.) In that
+# case, we need to restore at least part of the old DAG_info states. Note also that if the next
+# call is to deposit then we have a new DAG_info to work with so whatever we did in withdraw
+# is gone.
+# Note: Can we carry over some of the withdraw stuff? Or soem of the previous eposits stuff?
+# otherwise we have to start over since we do not prune the Partition/Group structures.
+# And there is a good chance that version numbers are getting higher. 
+# Note: If the version number is a lot lower we can do the prunes on the new DAG instead of 
+# restoring from the saved DAG states.
             
 #brc: dealloc: here too 
 #brc leaf tasks

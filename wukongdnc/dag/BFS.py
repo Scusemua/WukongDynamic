@@ -1901,10 +1901,11 @@ def dfs_parent(visited, node):  #function for dfs
                         # to indicate it is a shadow node. For example, noed 20 has a parent of 2
                         # so the shadow node for node 20 has ID "2-s"
                         logger.trace("dfs_parent: add shadow node: " + str(visited_parent_node.ID) + "-s")
-#brc: ToDo:
+
                         # If parent and child nodes are in different group but same partition 
-                        # then no shadow node is needed in he partition as no need to send 
-                        # parent's pagerank value. Thus we only do the group append here.
+                        # then no shadow node is needed in the partition as no need to send 
+                        # parent's pagerank value. Thus we only do the group append here,
+                        # i.e., not the current_partition.
 
                         current_group.append(shadow_node)
 
@@ -2315,16 +2316,11 @@ def dfs_parent(visited, node):  #function for dfs
 # brc: ******* Group
                 logger.trace ("num_frontier_groups: " + str(num_frontier_groups) + ", child_index_in_current_group: " + str(child_index_in_current_group))
 
-# STOP
-
-# brc: ToDo: if we are using partition then we just need partition number and index
-# but we won't use group number? That is, the names aer PR1, PR2, etc, so we ignore'
-# the group number when we form partition name for target funtion with shadow nodes?
-# Actually, we use the name of the partition instead of the partition and group numbers
-# since the name might have an "L" in it so partition and group numbers are not enough 
-# to generate the name - we need to know if there's an L so we use the compete name.
-# We currently ignore the partition number and group number in the frontier tuple.
-# They are here for debugging.
+                # We use the name of the partition instead of the partition and group numbers
+                # since the name might have an "L" in it so partition and group numbers are not enough 
+                # to generate the name - we need to know if there's an L so we use the compete name.
+                # We currently ignore the partition number and group number in the frontier tuple.
+                # They are here for debugging.
 
                 # Note : For partitions, the child_index is the index relatve to the 
                 # start of the partition. child_index is len(current_partition).
@@ -4166,7 +4162,9 @@ def bfs(visited, node):
 #brc: copy for deposit
                                 groups_of_partitions_in_current_batch = []
                                 partition_names_in_current_batch = []
-                                if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+
+                                if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                                    and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                                     if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                                         # Need to generate the groups_of_partitions_in_current_batch
                                         # which is for each new partition added to the incremental
@@ -4231,13 +4229,9 @@ def bfs(visited, node):
                                             logger.info(name)
                                         start_index_for_partition_names_copy = end_index
                 
-                                    DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete,
-                                        groups_of_partitions_in_current_batch,partition_names_in_current_batch)
-
-
-                                else:
-                                    DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete,
-                                        groups_of_partitions_in_current_batch,partition_names_in_current_batch)
+                                DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete,
+                                    groups_of_partitions_in_current_batch,partition_names_in_current_batch,
+                                    num_nodes)
 
                                 # We just processed the first and only partition; so we can output the 
                                 # initial DAG_info and start the DAG_executor_driver. DAG_info
@@ -4720,13 +4714,18 @@ def bfs(visited, node):
                                         new_leaf_task_work_tuples = []
 
 #brc: copy for deposit
-# ToDo: real lambda always use a remote client for a monitor for lambdas, simulated lambdas uses local client for lambda 
-# for a monitor for lambdas. So we have a Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py
-# Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py. These are the deposits
-# used.
+                                    # Note: real lambda always use a remote client for a monitor for lambdas, 
+                                    # simulated lambdas uses local client for lambda 
+                                    # for a monitor for lambdas. Threads use a local client, processes use 
+                                    # a remote client that is different from the remote client used by lambdas,
+                                    # So we have a Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py
+                                    # Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py, and 
+                                    # Remote_Client_for_DAG_infoBuffer_Monitor for processes.
+
                                     groups_of_partitions_in_current_batch = []
                                     partition_names_in_current_batch = []
-                                    if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS:
+                                    if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                                        and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                                         if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                                             # Need to generate the groups_of_partitions_in_current_batch
                                             # which is for each new partition added to the incremental
@@ -4756,14 +4755,11 @@ def bfs(visited, node):
                                             for name in partition_names_in_current_batch:
                                                 logger.info(name)
                                             start_index_for_partition_names_copy = end_index
-
-                                        DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete,
-                                            groups_of_partitions_in_current_batch,partition_names_in_current_batch)
-                                        
 #brc: use of DAG_info: if publish then pass DAG_info on deposit()
-                                    else:
-                                        DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete,
-                                            groups_of_partitions_in_current_batch,partition_names_in_current_batch)
+
+                                    DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete,
+                                        groups_of_partitions_in_current_batch,partition_names_in_current_batch,
+                                        num_nodes)
 
                                     # deposit starts a lambda with empty input payload (like DAG_executor_driver)
                                     # when the leaf task becomes complete (the leaf task on this
@@ -6468,6 +6464,14 @@ def main():
         DAG_generator_for_multithreaded_DAG_generation = DAG_Generator_Multithreaded(num_nodes)
         DAG_generator_for_multithreaded_DAG_generation.start_thread()
     
+    # Note: real lambda always use a remote client for a monitor for lambdas, 
+    # simulated lambdas uses local client for lambda 
+    # for a monitor for lambdas. Threads use a local client, processes use 
+    # a remote client that is different from the remote client used by lambdas,
+    # So we have a Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py
+    # Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py, and 
+    # Remote_Client_for_DAG_infoBuffer_Monitor for processes.
+
     # we are only using incremental_DAG_generation when we
     # are computing pagerank, so far. Pagerank DAGS are the
     # only DAGS we generate ourselves, so far.

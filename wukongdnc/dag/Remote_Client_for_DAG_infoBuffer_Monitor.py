@@ -36,7 +36,8 @@ class Remote_Client_for_DAG_infoBuffer_Monitor:
     def deposit(self,DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete,
             # used for deallocation of DAG_info structures during incremental 
             # DAG generation. Otheriwise it is [].
-            groups_of_partitions_in_current_batch,partition_names_in_current_batch):
+            groups_of_partitions_in_current_batch,partition_names_in_current_batch,
+            num_nodes):
         # bounded buffer is blocking; using same interface as Manager.Queue
         dummy_state = DAG_executor_State()
         dummy_state.keyword_arguments['new_current_version_DAG_info'] = DAG_info
@@ -45,6 +46,7 @@ class Remote_Client_for_DAG_infoBuffer_Monitor:
         dummy_state.keyword_arguments['DAG_info_is_complete'] = DAG_info_is_complete
         dummy_state.keyword_arguments['groups_of_partitions_in_current_batch'] = groups_of_partitions_in_current_batch
         dummy_state.keyword_arguments['partition_names_in_current_batch'] = partition_names_in_current_batch
+        dummy_state.keyword_arguments['num_nodes'] = num_nodes
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         synchronize_async(self.websocket,"synchronize_async", "process_DAG_infoBuffer_Monitor", "deposit", dummy_state)
  
