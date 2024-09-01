@@ -7,9 +7,15 @@ import os
 
 #print("DAG_executor_constants XXX")
 
+# Note: currentframe is only used to print who imported this DAG_executor_constants.
+# multiprocessing and thread are only used to get the process and thread name for 
+# debugging and are only used with currentframe in the next code segment.
+# os is used for os._exit(0) on exceptions.
+
 proc_name = multiprocessing.current_process().name
 thread_name = threading.current_thread().name
 
+# https://stackoverflow.com/questions/40945752/inspect-who-imported-me
 frame = currentframe().f_back
 while frame.f_code.co_filename.startswith('<frozen'):
     frame = frame.f_back

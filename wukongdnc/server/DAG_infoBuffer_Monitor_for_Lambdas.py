@@ -92,6 +92,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.groups_of_partitions = []
         self.group_names = []
         self.partition_names = []
+        
+        self.current_version_DAG_info_DAG_map_save = {}
+        self.current_version_DAG_info_DAG_tasks_save = {}
+        self.current_version_DAG_info_DAG_states_save = {}
+
+        self.num_nodes = 0
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
@@ -222,12 +228,19 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # function to store in the DG) This would save space in the DAG representation.
         # USE self.DAG_map 
         #self.current_version_DAG_info.DAG_map[state]
+        # save the deallocated infoormation in case we need to restore it
+        self.current_version_DAG_info_DAG_map_save[state] = self.current_version_DAG_info.DAG_map[state]
         self.current_version_DAG_info.DAG_map[state] = None
+
         # USE self.DAG_tasks
         #self.current_version_DAG_info.DAG_tasks[partition_name]
+        # save the deallocated infoormation in case we need to restore it
+        self.current_version_DAG_info_DAG_tasks_save[name] = self.current_version_DAG_info.DAG_tasks[name]
         self.current_version_DAG_info.DAG_tasks[name] = None
         # USE self.DAG_states
         #del Partition_DAG_states[partition_name]
+        # save the deallocated infoormation in case we need to restore it
+        self.current_version_DAG_info_DAG_states_save[name] = self.current_version_DAG_info.DAG_states[name]
         self.current_version_DAG_info.DAG_states[name] = None
 
         # We are not doing deallocations for these collections; they are not 
@@ -659,12 +672,13 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # will be no more deposits.
         DAG_info_is_complete = kwargs['DAG_info_is_complete']
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
-        num_nodes = kwargs['num_nodes']
+        self.num_nodes = kwargs['num_nodes']
+
         # Note: cummulative_leaf_tasks gets cleared after we start the new leaf tasks.
         # For debugging - all leaf tasks started so far
         self.cummulative_leaf_tasks += new_leaf_tasks
         if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
-            and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+            and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
             if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                 # Note: if we are not using groups then groups_of_partitions_in_current_batch is []
                 # and nothing is added to self.groups_of_partitions on the extend, which works too
@@ -753,6 +767,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 # Note: For real lambdas, the monitor is on the server so dag info is seperate from
 # partition/group internal info. Not so for simuated lambdas. For the latter 
 # make a copy so the yare seperate.
+
                     requested_current_version_number = withdraw_tuple[0]
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: deposit: "
                         + "requested_current_version_number: " +  str(requested_current_version_number))
@@ -761,12 +776,29 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     start_state = start_tuple[0]
 
                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
-                        and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                        and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                             self.deallocate_DAG_structures_partitions(requested_current_version_number)
                         else:
                             self.deallocate_DAG_structures_groups(requested_current_version_number)
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited after deallocation: ")
+ 
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved deallocations:")
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG_map:")
+                    for key, value in self.current_version_DAG_info_DAG_map_save.items():
+                        logger.info(key)
+                        logger.info(value)
+                    logger.info(" ")
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG states:")         
+                    for key, value in self.current_version_DAG_info_DAG_states_save.items():
+                        logger.info(key)
+                        logger.info(value)
+                    logger.info(" ")
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:")
+                    for key, value in  self.current_version_DAG_info_DAG_tasks_save.items():
+                        logger.info(key, ' : ', value)
+                    logger.info(" ")
+
                     self.print_DAG_info(self.current_version_DAG_info)
                     # Note: for incremental DAG generation, when we restart a lambda
                     # for a continued task, if the task is a group, we give it the output
@@ -1124,12 +1156,34 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 # definition requested_current_version_number <= self.current_version_number_DAG_info.) In that
 # case, we need to restore at least part of the old DAG_info states. Note also that if the next
 # call is to deposit then we have a new DAG_info to work with so whatever we did in withdraw
-# is gone.
+# is gone, perhas unless we deposit just the new art and go from there.
 # Note: Can we carry over some of the withdraw stuff? Or soem of the previous eposits stuff?
 # otherwise we have to start over since we do not prune the Partition/Group structures.
 # And there is a good chance that version numbers are getting higher. 
 # Note: If the version number is a lot lower we can do the prunes on the new DAG instead of 
-# restoring from the saved DAG states.
+# restoring from the saved DAG states. (but we may just deposit the new stuff)
+#
+# Note, we pass the entire new DAg from bfs to deposit() which could be a lot, just like
+# passing the entire DAG to the lamdas.
+
+            # Note: We cannot get here until after the first deposit() and deposit()
+            # saves the num_nodes parameter value passed to it in self.num_nodes.
+
+#brc: ToDo: Possibly need to restore deallocs from prev deposit, i.e., if requsted version
+# number for this withdraw is less than the requested version number for last deposit or
+# last non-blocking withdraw, then restore deallocs at the end.
+
+            if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+
+                if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                    self.deallocate_DAG_structures_partitions(requested_current_version_number)
+                else:
+                    self.deallocate_DAG_structures_groups(requested_current_version_number)
+ 
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited after deallocation: ")
+            self.print_DAG_info(self.current_version_DAG_info)
+
             
 #brc: dealloc: here too 
 #brc leaf tasks

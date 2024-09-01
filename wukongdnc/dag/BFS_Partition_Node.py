@@ -1,6 +1,7 @@
 import logging 
 import os
-#from .BFS import nodes
+
+# Note: os is used for os_exit(0) on exceptions.
 
 logger = None
 logger = logging.getLogger(__name__)
@@ -14,7 +15,6 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 """
-
 
 debug_pagerank = False
 

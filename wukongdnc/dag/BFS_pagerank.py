@@ -1,8 +1,12 @@
 import logging
 import cloudpickle
-import os
+import os   # used for os_exit(0) on excptions
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
+# This is used in method PageRank_Function_Shared(), which is not a method that is 
+# used when we are using (serverless) lambdas. For lambdas (with Azsr) we aer using
+# PageRank_Function_Driver_ASzr and Pagerank_Function. So it looks like Azsr depends
+# only on BFS_Partition_Node.py and AG_executor_constants.py
 from . import BFS_Shared
 #from .BFS import num_nodes
 #from .DAG_executor_constants import USE_PAGERANK_GROUPS_PARTITIONS, USING_THREADS_NOT_PROCESSES
