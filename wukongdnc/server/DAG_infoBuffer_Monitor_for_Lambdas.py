@@ -1156,7 +1156,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 # definition requested_current_version_number <= self.current_version_number_DAG_info.) In that
 # case, we need to restore at least part of the old DAG_info states. Note also that if the next
 # call is to deposit then we have a new DAG_info to work with so whatever we did in withdraw
-# is gone, perhas unless we deposit just the new art and go from there.
+# is gone, perhaps unless we deposit just the new art and go from there.
 # Note: Can we carry over some of the withdraw stuff? Or soem of the previous eposits stuff?
 # otherwise we have to start over since we do not prune the Partition/Group structures.
 # And there is a good chance that version numbers are getting higher. 
@@ -1172,6 +1172,38 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 #brc: ToDo: Possibly need to restore deallocs from prev deposit, i.e., if requsted version
 # number for this withdraw is less than the requested version number for last deposit or
 # last non-blocking withdraw, then restore deallocs at the end.
+            """
+             if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                    and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                # we know this is true: requested_current_version_number <= self.current_version_number_DAG_info:
+                # The requested_current_version_number is either:
+                # - less than version_number_for_most_recent_deallocation: need to restore a suffix
+                #      of deallocation 
+                # - equal to version_number_for_most_recent_deallocation: nothing to do
+                # - greater than version_number_for_most_recent_deallocation: Can deallocate a suffix
+                #
+                # Note: If requested version is 2, we may need to restore if we have done 
+                # some deallocations?
+                if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                    if requested_current_version_number < version_number_for_most_recent_deallocation:
+                        self.restore_DAG_structures_partitions(requested_current_version_number)
+                        version_number_for_most_recent_deallocation = requested_current_version_number
+                    elif requested_current_version_number < version_number_for_most_recent_deallocation:
+                        self.deallocate_DAG_structures_partitions(requested_current_version_number)
+                        version_number_for_most_recent_deallocation = requested_current_version_number
+                    else:
+                        pass
+                else:
+                    if requested_current_version_number < version_number_for_most_recent_deallocation:
+                        self.restore_DAG_structures_groups(requested_current_version_number)
+                        version_number_for_most_recent_deallocation = requested_current_version_number
+                    elif requested_current_version_number < version_number_for_most_recent_deallocation:
+                        self.deallocate_DAG_structures_groups(requested_current_version_number)
+                        version_number_for_most_recent_deallocation = requested_current_version_number
+                    else:
+                        pass                      
+
+            """
 
             if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                 and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
