@@ -98,6 +98,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.current_version_DAG_info_DAG_states_save = {}
 
         self.num_nodes = 0
+        self.version_number_for_most_recent_deallocation = 0
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
@@ -262,6 +263,74 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         #DAG_number_of_incomplete_tasks
         #DAG_num_nodes_in_graph
         #DAG_number_of_groups_of_previous_partition_that_cannot_be_executed
+
+    def restore_item(self,i):
+
+        partition_or_group_names = []
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+#brc: ToDo: we need partition names too?
+            partition_or_group_names = self.partition_names
+        else:
+            partition_or_group_names = self.group_names # BFS.group_names
+        logger.info("restore_DAG_structures_lambda: partition or group namesXXX: ")
+        for n in partition_or_group_names:
+            logger.info(n)
+        name = partition_or_group_names[i-1]
+        state = self.current_version_DAG_info.DAG_states[name]
+        logger.info("restore_DAG_structures_lambda: partition or group name: " + str(name))
+        logger.info("restore_DAG_structures_lambda: state: " + str(state))
+        self.current_version_DAG_info.DAG_map[state] = self.current_version_DAG_info_DAG_map_save[state]
+
+
+    def restore_DAG_structures_partitions(requested_current_version_number):
+        pass
+        """
+        We have:
+        requested_current_version_number < self.version_number_for_most_recent_deallocation:
+        so we have deallocated too many items given the next requested_current_version_number.
+        This means we need to restore some of these items. We have saved every item that\
+        we have deallocaed so we can out them back.
+        The last deallocation was from the saved start to the computed end.
+        For partitions, this is:
+            deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+        which means we have deallocated from 1 to end, though we may not have started
+        at 1, i.e., if we did a sequence of deallocations in deposit(). Still, we
+        have deallocated and saved the items from 1 to end.
+        For groups, we iterate through the partitions from start to end and for each
+        partition we deallocate its n groups. In this case we also end up at an
+        end index for the deallocated groups, and we have deallocated from 
+        1 to the group end index.
+        Tehe restoration is always a suffx of the deallocated items. That is,
+        for the new requested_current_version_number which we know is less than 
+        the version_number_for_most_recent_deallocation, we still want to 
+        deallocate all the items starting at 1, but we need to stop deallovating
+        items that are passed the end index that is computed by 
+        requested_current_version_number. Note that for partitions, we can get ths
+        end index from the "deallocation_end_index =" formula. For groups, this
+        end index depends on the number of groups in each of the partitions to be 
+        deallocated. We can compte this based on the partitions to be deallocated,
+        i.e., this number is computed with the same code that we used to deallocate
+        groups but with taking the sum of the lengths instead of actually doing
+        the deallocations. Is there a shortcut?
+
+        # This is where deallocation should end
+        deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+        #Q: Can this be false? Yes, if trying to restore version 2?
+        if deallocation_end_index > 0:
+            deallocation_end_index += 1
+
+        most_recent_deallocation_end_index = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+        #Q: Can this be false? No.
+        if self.most_recent_deallocation_end_index > 0:
+            self.most_recent_deallocation_end_index += 1
+
+        logger.info("restore_DAG_structures_partitions: deallocation_end_index: " + str(deallocation_end_index)
+            + " self.most_recent_deallocation_end_index: " + str(self.most_recent_deallocation_end_index))
+        for i in range(deallocation_end_index, self.most_recent_deallocation_end_index):
+            logger.info("restore_DAG_structures_partitions: restore " + str(i))
+            self.restore_item(i)
+
+        """
 
     def deallocate_DAG_structures_partitions(self,requested_version_number_DAG_info):
         # current_partition_number is not currently used
@@ -1182,25 +1251,32 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # - equal to version_number_for_most_recent_deallocation: nothing to do
                 # - greater than version_number_for_most_recent_deallocation: Can deallocate a suffix
                 #
-                # Note: If requested version is 2, we may need to restore if we have done 
-                # some deallocations?
+                # Note: First request is for version number 2. This will be greater than
+                # version for last deallocation, which was inited to 0, so try to deallocate
+                # but nothing deallocated. We have above that 
+                # requested_current_version_number <= self.current_version_number_DAG_info
+                # so we will get version 2 or greater. If we get version 2, we will 
+                # request version 3, and we can do the first deallocation, setting
+                # version for last deallocation to n, where n >=3. At that point, some
+                # lambda can request 2, which will be less then n, so we will do a restore
+                # and s
                 if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
-                    if requested_current_version_number < version_number_for_most_recent_deallocation:
+                    if requested_current_version_number < self.version_number_for_most_recent_deallocation:
                         self.restore_DAG_structures_partitions(requested_current_version_number)
-                        version_number_for_most_recent_deallocation = requested_current_version_number
-                    elif requested_current_version_number < version_number_for_most_recent_deallocation:
+                        self.version_number_for_most_recent_deallocation = requested_current_version_number
+                    elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
                         self.deallocate_DAG_structures_partitions(requested_current_version_number)
-                        version_number_for_most_recent_deallocation = requested_current_version_number
-                    else:
+                        self.version_number_for_most_recent_deallocation = requested_current_version_number
+                    else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
                         pass
                 else:
-                    if requested_current_version_number < version_number_for_most_recent_deallocation:
+                    if requested_current_version_number < self.version_number_for_most_recent_deallocation:
                         self.restore_DAG_structures_groups(requested_current_version_number)
-                        version_number_for_most_recent_deallocation = requested_current_version_number
-                    elif requested_current_version_number < version_number_for_most_recent_deallocation:
+                        self.version_number_for_most_recent_deallocation = requested_current_version_number
+                    elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
                         self.deallocate_DAG_structures_groups(requested_current_version_number)
-                        version_number_for_most_recent_deallocation = requested_current_version_number
-                    else:
+                        self.version_number_for_most_recent_deallocation = requested_current_version_number
+                    else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
                         pass                      
 
             """
