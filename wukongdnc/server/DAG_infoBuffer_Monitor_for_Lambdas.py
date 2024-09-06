@@ -315,7 +315,15 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
         # This is where deallocation should end
         deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-        #Q: Can this be false? Yes, if trying to restore version 2?
+        #Q: Can this be false? Yes, if trying to restore version 2? For verstion 2, 
+        # end index is 2+0-2=0 since you can't dealloc until you get to version 3.
+        # If most recent is, e.g., 3, then we did some dellocs for 3 and we need
+        # to restore these for 2 whose end index is 0.
+        #Q: "if deallocation_end_index == 0" since it is 0 fr 2 and we need to retore.
+        # so for 3 with interval 2, end index is 2+2-2=2, so dealloc 1..2 (as for 
+        # 3 we have: 1, 2, 3, 4, 5, 6 and we can dealloc 1 and 2 of version 1; so
+        # we resore 1 and 2 of version 1 if we dealloc for 3 and get a request for 2.
+        # So we ant to inc end index 0 to 1 and restore from 1 to 2, which is range(1,3)
         if deallocation_end_index > 0:
             deallocation_end_index += 1
 
