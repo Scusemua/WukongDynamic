@@ -315,6 +315,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
         # This is where deallocation should end
         deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+
         #Q: Can this be false? Yes, if trying to restore version 2? For verstion 2, 
         # end index is 2+0-2=0 since you can't dealloc until you get to version 3.
         # If most recent is, e.g., 3, then we did some dellocs for 3 and we need
@@ -323,12 +324,28 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # so for 3 with interval 2, end index is 2+2-2=2, so dealloc 1..2 (as for 
         # 3 we have: 1, 2, 3, 4, 5, 6 and we can dealloc 1 and 2 of version 1; so
         # we resore 1 and 2 of version 1 if we dealloc for 3 and get a request for 2.
-        # So we ant to inc end index 0 to 1 and restore from 1 to 2, which is range(1,3)
-        if deallocation_end_index > 0:
+        # So we want to inc end index 0 to 1 and restore from 1 to 2, which is range(1,3)
+        #
+        # For restore we use >= 0. For deallocation, we use > 0. For deallocation, 
+        # we do not want to do a dealloc if end index is 0, which is the case for 
+        # requested version 2, as start will be 1 (the initial value) and if end is 
+        # 0 the range is from 1 to 0 so no dealloations will be done. For restore,
+        # when the version requsted is less than the most recent deallocation end index 
+        # we need to restore. If the most recent is version 3 and the end index (for 
+        # the ust requested) is version 2, hen we need to restore the deallocs that were
+        # done for 3. These deallocs were states 1 and 2. Thus, the end index for 2 is 
+        # 0 and we increment it to 1, where the end ndex for 3, the most recent, is 2
+        # which we also increment getting 3, giving a range of (1,3), where 3 is exclusive
+        # so we restore states 1 and 2. States 3, 4, 5, 6 were never deallocated so a
+        # this point no deallocations have bee done. (Note the request is for 2 and 
+        # the version available is 3 so we will return 3 but without any deallocations.)
+        #if deallocation_end_index > 0:
+        if deallocation_end_index >0 0:
             deallocation_end_index += 1
 
         most_recent_deallocation_end_index = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-        #Q: Can this be false? No.
+        
+        #Q: Can this be false? No, since we know we did a dealloation (for most recent)
         if self.most_recent_deallocation_end_index > 0:
             self.most_recent_deallocation_end_index += 1
 
