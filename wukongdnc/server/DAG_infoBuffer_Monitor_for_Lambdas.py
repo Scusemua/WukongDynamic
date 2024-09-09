@@ -282,7 +282,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.current_version_DAG_info.DAG_map[state] = self.current_version_DAG_info_DAG_map_save[state]
 
 
-    def restore_DAG_structures_partitions(requested_current_version_number):
+    def restore_DAG_structures_partitions(self,requested_version_number_DAG_info):
         pass
         """
         We have:
@@ -312,7 +312,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         i.e., this number is computed with the same code that we used to deallocate
         groups but with taking the sum of the lengths instead of actually doing
         the deallocations. Is there a shortcut?
-
+        """
         # This is where deallocation should end
         deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
@@ -341,10 +341,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # this point no deallocations have bee done. (Note the request is for 2 and 
         # the version available is 3 so we will return 3 but without any deallocations.)
         #if deallocation_end_index > 0:
-        if deallocation_end_index >0 0:
+        if deallocation_end_index > 0:
             deallocation_end_index += 1
 
-        most_recent_deallocation_end_index = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+        self.version_number_for_most_recent_deallocation = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
         
         #Q: Can this be false? No, since we know we did a dealloation (for most recent)
         # assertt self.most_recent_deallocation_end_index > 0 True
@@ -353,16 +353,15 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
         logger.info("restore_DAG_structures_partitions: deallocation_end_index: " + str(deallocation_end_index)
             + " self.most_recent_deallocation_end_index: " + str(self.most_recent_deallocation_end_index))
-        for i in range(deallocation_end_index, self.most_recent_deallocation_end_index):
+        for i in range(deallocation_end_index, self.version_number_for_most_recent_deallocation):
             logger.info("restore_DAG_structures_partitions: restore " + str(i))
             self.restore_item(i)
         
-        if deallocation_end_index <= self.most_recent_deallocation_end_index
+        if deallocation_end_index <= self.most_recent_deallocation_end_index:
             # remember that this is the most recent version number for which we did
             # a deallocation
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
 
-        """
 
     def deallocate_DAG_structures_partitions(self,requested_version_number_DAG_info):
         # current_partition_number is not currently used
