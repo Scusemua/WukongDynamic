@@ -283,7 +283,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
 
     def restore_DAG_structures_partitions(self,requested_version_number_DAG_info):
-        pass
         """
         We have:
         requested_current_version_number < self.version_number_for_most_recent_deallocation:
@@ -361,7 +360,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # remember that this is the most recent version number for which we did
             # a deallocation
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
-
 
     def deallocate_DAG_structures_partitions(self,requested_version_number_DAG_info):
         # current_partition_number is not currently used

@@ -3974,7 +3974,11 @@ def bfs(visited, node):
                     # calculation if current_partition_number > 2 since it gets incremented before the
                     # calculation below when current_partition_number > 2.
 
+
                     if DAG_executor_constants.USING_WORKERS or not DAG_executor_constants.USING_WORKERS:
+                        # This will either be a DAG of partition tasks or a DAG of group tasks, which is 
+                        # set next.
+                        DAG_info = None
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                             logger.info("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
@@ -3987,6 +3991,8 @@ def bfs(visited, node):
                                 # deallocat fewer values than we could deallocate with the new (higher) value for the version number.
                                 logger.info("BFS: current_version_number_DAG_info for call to deallocate partitions: "
                                     + str(most_recent_version_number))
+                                # For workers, we do deallocations here. When we are using lambdas, deallocations
+                                # are done in the deposit/withdraw methosd of the DAG_infoBufffer_monitorfor_lambdas.
                                 BFS_generate_DAG_info_incremental_partitions.deallocate_DAG_structures(most_recent_version_number)
                             else:
                                 logger.info("DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: "
@@ -4030,6 +4036,8 @@ def bfs(visited, node):
                                 # deallocat fewer values than we could deallocate with the new (higher) value for the version number.
                                 logger.info("BFS: current_version_number_DAG_info for call to deallocate groups: "
                                     + str(most_recent_version_number))
+                                # For workers, we do deallocations here. When we are using lambdas, deallocations
+                                # are done in the deposit/withdraw methosd of the DAG_infoBufffer_monitorfor_lambdas.
                                 BFS_generate_DAG_info_incremental_groups.deallocate_DAG_structures(most_recent_version_number)
                             else:
                                 logger.info("DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: "
@@ -4828,20 +4836,18 @@ def bfs(visited, node):
                                         with open(file_name, 'wb') as handle:
                                             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                                    if current_partition_number == 4:
-                                        logger.info("here: current_partition_number is " 
-                                            + str(current_partition_number))
-                                        #logging.shutdown()
-                                        #os._exit(0)
-                                    else:
-                                        logger.info("here: current_partition_number is " 
-                                            + str(current_partition_number))
-
-                            
+                                    #if current_partition_number == 4:
+                                    #    logger.info("here: current_partition_number is " 
+                                    #        + str(current_partition_number))
+                                    #    #logging.shutdown()
+                                    #    #os._exit(0)
+                                    #else:
+                                    #    logger.info("here: current_partition_number is " 
+                                    #        + str(current_partition_number))
                             else:
                                 pass 
                                 # this helps document that we are using same code for partitions
-                                # and groups so this else is never exwcuted (ee if-condition)
+                                # and groups so this else is never executed (see if-condition)
                         # end else #current_partition_number >=2
                     else:
                         pass # code for workers and lambdas is the same
