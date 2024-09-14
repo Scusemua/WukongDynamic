@@ -3747,10 +3747,21 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #
                     # See the general comments about continued tasks where continue_queue is defined
                     if state_info.task_name == DAG_executor_constants.NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG or (state_info.task_name not in DAG_info.get_DAG_leaf_tasks()):
-                        # task is a leaf task but its the first leaf task in the ADG (PR1_1) or it is not a leaf task.
-                        # Process its fanins/fanouts/collapse by grabbing the collapse as there are no fanins/fanouts.
-                        # Next we will execute the collapse task, which we now was added to the new incremental DAG.
+                        # task is a leaf task but its the first leaf task in the DAG (PR1_1) or it is not a leaf task.
+                        # Process its fanins/fanouts/collapse by grabbing here the collapse task as there are no fanins/fanouts.
+                        # Below we will execute the collapse task, which we know has been added to the new incremental DAG.
+                        # That is, the collapse task was tobecontinued in the old DAG but the new DAG that 
+                        # was in the lambda's payload has the completed collapse task. Note that when bfs()
+                        # generated the new DAG and called deposit(), lambdas were restarted with the new DAG.
+                        # What lambdas weer restarted - the lambdas that had previousy called withdraw() to get 
+                        # a new DAG but found that a new DAG was not yet available. For these lambda a 
+                        # tuple is added to a queue with the state of the task to be restarted and the task's output.
                         DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
+                        # Recall that the lambda had a payload with the state of the restarted (contnued)
+                        # task T and T's output. We saved this output in state_info, which is part of
+                        # DAG_info, so we could grab it here and use it either as the input of T's
+                        # collapse task when we are using partitions, or as T's output from which 
+                        # we ca grab the individual inputs for T's fanouts/fanins.
                         state_info = DAG_map[DAG_executor_state.state]
                         logger.trace("DAG_executor_work_loop: got state and state_info of continued, collapsed partition for collapsed task " + state_info.task_name)
                     else:
@@ -5775,9 +5786,13 @@ def DAG_executor_lambda(payload):
     #if this is a continued task, then in the DAG the state info for
     # the task will show that state_info.ToBeContinued is false, i.e., 
     # we completed the task information in the DAG and we are now
-    # restarting the continud task so we can do its fanout/fanins/collpases.
-    # The fact that we are restarting a continued task is given by
-    # DAG_executor_state.state.
+    # restarting the task so we can execute its fanout/fanins/collpases.
+    # The task that we are restarting is given by DAG_executor_state.state,
+    # e.g., state is 1. We have already executed this task and saved its
+    # output in th payload. For partitions, we will execute this task's
+    # collapse task (a special type of fanout). For groups we will execute
+    # this task's fanouts/fanins which will enable the execution of the 
+    # fanout taaks and eventually the fanin task.
     continued_task =  DAG_exec_state.continued_task
 
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
@@ -5802,19 +5817,22 @@ def DAG_executor_lambda(payload):
     # it is complete but its fanins/fanouts are to incomplete
     # partition 2 or the groups in incomplete partition 2. IF we 
     # are executing groups, the real lamba that executes this first
-    # task/grup, will stop after saving the task's output (to
+    # task/group, will try to get a new incremental DAG by calling withdraw()
+    # If no DAG is available, it will stop after saving the task's output (to
     # the DAG_infoBuffer_monitor_for_Lambdas on the tcp_server.)
-    # When re restart a real lmabda to continue processing the 
+    # When we restart a real lambda to continue processing the 
     # task by excuting its fanouts/fanins, this first group will 
     # be a continued_task that is a leaf task. So even though it is
     # leaf task, it is also a continued task (so it has been executed
-    # before) so the payload's "input" is the output of this task from 
+    # before) so the payload's "input" is the output of this leaf task from 
     # its previous execution and we need to add the input/ouput
     # to the data_dict using qualified names. (For example, if we
     # execute "PR1_1" and it has a fanout to "PR2_1" with output X,
     # Then we add ("PR1_1-PR2_1",X) to the data_dict; lkewise, when 
     # we do the fanout for "PR2_1", we retrieve its input (which was 
     # an output of "PR1_1") using the key "PR1_1-PR2_1" for the data_dict.
+    # Recall that each fanout has a unique input, unlike for Dask which 
+    # uses the same task output as the input for all fanouts.
     if not is_leaf_task or (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION and continued_task):
         # Real lambdas are invoked with inputs. We do not add leaf task inputs to the data
         # dictionary, we use them directly when we execute the leaf task.
@@ -5825,10 +5843,12 @@ def DAG_executor_lambda(payload):
             dict_of_results = payload['input']
         # If this is a continued task then input is actually the output
         # of a task that was executed previously and that then stopped
-        # because it was a group with TBC fanouts/fanins.
+        # because it was a group/partition with TBC fanouts/fanins/collapse and it was 
+        # unsuccessful in getting a new incremental DAG (by callng withdraw())
 
         logger.info("DAG_executor_lambda(): " + state_info.task_name + " dict_of_results: " + str(dict_of_results))
         if not continued_task:
+            # put inputs in data dictionary
             for key, value in dict_of_results.items():
                 data_dict[key] = value
         else: 
@@ -5843,11 +5863,12 @@ def DAG_executor_lambda(payload):
                 # value of a parent node of the node in position 4 of 
                 # PR2_3's partition. We set the shadow nodes's value before
                 # we start the pagerank calculation. There is a trick used
-                # to make sure the hadow node's pageran value is not changed 
+                # to make sure the shadow node's pagerank value is not changed 
                 # by the pagerank calculation. (We compute the shadow node's 
                 # new pagerank but we hardcode the shadow node's (dummy) parent
-                # pagerank vaue so that the new shadow node pagerank is he same 
-                # as the old value.)
+                # pagerank value so that the new shadow node pagerank is the same 
+                # as the old value. We did this to get rid of an "if shadownode"
+                # and it's potential for a wrong branch prediction.
                 data_dict_value = v
                 data_dict[data_dict_key] = data_dict_value
 
@@ -5856,19 +5877,28 @@ def DAG_executor_lambda(payload):
 #brc:  input output
         # The code for task execution will get the input for the 
         # execution from state_info.task_inputs, so we put the 
-        # payload "input" there.
+        # payload "input" there. Again, we do not execute the restarted task T,
+        # we execute T's collapse task (if we aer using partitions) or T's fanouts/fanins
+        # if we are using groups and the input for these fanout/fanin/collpase tasks
+        # is the output of T whcih was in the payload and retrievedin dict_of_results.
         if continued_task:
+            # above we did state_info = DAG_map[DAG_exec_state.state] where DAG_mp is part
+            # of DAG_info, so when we do this assignment we are adding dict_of_results to
+            # DAG_info, which gets passed to the work_loop. We can retrieve the inputs in 
+            # work loop by grabbibg state_info from the DAG_info parameter of work loop.
             state_info.task_inputs = dict_of_results
             logger.info("DAG_executor_lambda(): " + state_info.task_name + " set state_info.task_inputs: "
                 + str(state_info.task_inputs))
     else:
-        # Passing leaf task input as state_info.task_inputs in DAG_info; 
+        # This is a leaf task and it is not a continued task.
+        #
+        # Passing leaf task input as state_info.task_inputs as part of the DAG_info; 
         # We don't want to add a leaf task input parameter to DAG_executor_work_loop(); 
         # i.e., we could get the inputs from the payload and pass then to the
         # work loop as a parameter, but this parameter would only be used by the Lambdas 
         # and we have a place already in state_info.task_inputs for these inputs.
-        # Thus we read the payload inputs here n the work loop and put the
-        # nputs in state_info.task_inputs from which we read the inputs for 
+        # Thus we read the payload inputs here in the work loop and put the
+        # inputs in state_info.task_inputs from which we read the inputs for 
         # leaf and non-leaf tasks when we execuet the tasks. 
         # Note: We null out state_info.task_inputs for leaf tasks in the DAG_executor_driver
         # after we start the leaf lambdas, in order to save space, i.e., there is no need to 
@@ -5881,7 +5911,13 @@ def DAG_executor_lambda(payload):
             inp = payload['input']
         # The code for task execution will get the input for the 
         # execution from state_info.task_inputs, so we put the 
-        # payload "input" there.
+        # payload "input" there. That is, above we did state_info = DAG_map[DAG_exec_state.state] 
+        # where DAG_mp is part of DAG_info, so when we do this assignment we are adding dict_of_results to
+        # DAG_info, which gets passed to the work_loop. We can retrieve the inputs in work
+        # loop by grabbibg state_info from the DAG_info parameter of work loop.
+        # Work loop code for grabbing state_info:
+        # DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
+        # state_info = DAG_map[DAG_executor_state.state]
         state_info.task_inputs = inp
 
     # lambdas do not use work_queues, for now.
