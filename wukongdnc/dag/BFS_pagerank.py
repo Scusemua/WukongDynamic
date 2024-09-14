@@ -9,7 +9,7 @@ from .BFS_Partition_Node import Partition_Node
 # only on BFS_Partition_Node.py and AG_executor_constants.py
 from . import BFS_Shared
 #from .BFS import num_nodes
-#from .DAG_executor_constants import USE_PAGERANK_GROUPS_PARTITIONS, USING_THREADS_NOT_PROCESSES
+#from .DAG_executor_constants import USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS, USING_THREADS_NOT_PROCESSES
 #from .DAG_executor_constants import NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 #from .DAG_executor_constants import INPUT_ALL_GROUPS_PARTITIONS_AT_START
@@ -196,7 +196,7 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
         # we will call the task with: task(task_name,resultDictionary)
         output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
     else:
-        if USE_PAGERANK_GROUPS_PARTITIONS:
+        if USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
         else: # use the partition partitions
             output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
@@ -1465,7 +1465,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
         # NEW:
         logger.trace("Copy frontier values:")
-        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
         else:
             shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map

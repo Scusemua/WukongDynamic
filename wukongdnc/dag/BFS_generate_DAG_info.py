@@ -162,7 +162,7 @@ from .DAG_info import DAG_Info
 from .DFS_visit import state_info
 from .BFS_pagerank import PageRank_Function_Driver, PageRank_Function_Driver_Shared
 from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
-#from .DAG_executor_constants import USE_SHARED_PARTITIONS_GROUPS, USE_PAGERANK_GROUPS_PARTITIONS
+#from .DAG_executor_constants import USE_SHARED_PARTITIONS_GROUPS, USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS
 #from .DAG_executor_constants import USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
 #from .DAG_executor_constants import ENABLE_RUNTIME_TASK_CLUSTERING
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
@@ -249,7 +249,7 @@ def destructor():
     global partitions_num_shadow_nodes_map
 
     # Trace Senders and Recivers before deallocation
-    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+    if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
         logger.trace("bfs: deallocate Partition Senders and Receivers.")
         logger.trace("generate_DAG_info_incremental_partitions: Partition senders and receivers before deallocation:")
         logger.trace("generate_DAG_info_incremental_partitions: Partition_senders:")
@@ -284,7 +284,7 @@ def destructor():
     Group_receivers = {}
 
     # Trace Senders and Recivers after deallocation
-    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+    if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
         logger.trace("generate_DAG_info_incremental_partitions: Partition senders and receivers after deallocation:")
         logger.trace("generate_DAG_info_incremental_partitions: Partition_senders:")
         for sender_name,receiver_name_set in Partition_senders.items():
@@ -340,7 +340,7 @@ def generate_DAG_info():
     #Given Partition_senders, Partition_receivers, Group_senders, Group_receievers
 
     # if building DAG of partitions instead of groups
-    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+    if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
         # initialize Partition information.
         # bfs.dfs_parent() built the Seners and Receivers maps, which represent the 
         # nodes and edges in the graph. We use the Sender and Receivers to 
@@ -862,7 +862,7 @@ def generate_DAG_info():
         with open(file_name, 'wb') as handle:
             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             file_name = "./DAG_info.pickle"
             with open(file_name, 'wb') as handle:
                 cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -1432,7 +1432,7 @@ def generate_DAG_info():
         with open(file_name, 'wb') as handle:
             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             file_name = "./DAG_info.pickle"
             with open(file_name, 'wb') as handle:
                 cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -1638,7 +1638,7 @@ def generate_DAG_info():
             driver = "PageRank_Function_Driver_Shared"
         header_line = "\t" + "dsk = {"
 
-        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             dsk_lines = []
             dsk_lines.append(header_line)
             for leaf_task in Partition_DAG_leaf_tasks:
@@ -1729,7 +1729,7 @@ def generate_DAG_info():
         # Create the output directory 
         os.makedirs(output_directory, exist_ok = True)
 
-        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             for name, partition in zip(BFS.partition_names, BFS.partitions):
                 filename:str = f"{name}.pickle"
                 output_file:str = os.path.join(output_directory, filename)
@@ -1950,7 +1950,7 @@ def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partitio
 
 #brc: Do this? We only read at start.
 
-    if not USE_PAGERANK_GROUPS_PARTITIONS:
+    if not USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
         file_name = "./DAG_info.pickle"
         with open(file_name, 'wb') as handle:
             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  

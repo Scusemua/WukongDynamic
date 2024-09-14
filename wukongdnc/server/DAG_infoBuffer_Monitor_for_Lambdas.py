@@ -197,7 +197,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         #brc: deallocate DAG map-based structures
 
         partition_or_group_names = []
-        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
 #brc: ToDo: we need partition names too?
             partition_or_group_names = self.partition_names
         else:
@@ -267,7 +267,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
     def restore_item(self,i):
 
         partition_or_group_names = []
-        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
 #brc: ToDo: we need partition names too?
             partition_or_group_names = self.partition_names
         else:
@@ -783,7 +783,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.cummulative_leaf_tasks += new_leaf_tasks
         if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
             and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
-            if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+            if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                 # Note: if we are not using groups then groups_of_partitions_in_current_batch is []
                 # and nothing is added to self.groups_of_partitions on the extend, which works too
                 #
@@ -846,6 +846,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # start simulated lambdas that with the new DAG_info
                 #for start_tuple in self._buffer:
                 first = True
+                logger.info("DAG_infoBuffer_Monitor_for_Lambdas: number of withdraw tuples: " + str(len(self._buffer)))
                 for withdraw_tuple in self._buffer:
 #brc: dealloc: get requested_current_version_number and get start_tuple from _buffer tuple
 # for withdraw_tuple in self._buffer:
@@ -908,11 +909,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # request version 3, and we can do the first deallocation, setting
                     # version for last deallocation to n, where n >=3. At that point, some
                     # lambda can request 2, which will be less then n, so we will do a restore.
-                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                         if requested_current_version_number < self.version_number_for_most_recent_deallocation:
                             try:
                                 msg = "[Error]: deposit:" \
-                                    + " equested_current_version_number < self.version_number_for_most_recent_deallocation:" \
+                                    + " requested_current_version_number < self.version_number_for_most_recent_deallocation:" \
                                     + " but first is False."
                                 assert first , msg
                             except AssertionError:
@@ -931,13 +932,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
                             pass
                     else:
-                        if requested_current_version_number < self.version_number_for_most_recent_deallocation:
-                            
+                        if requested_current_version_number < self.version_number_for_most_recent_deallocation:     
                             try:
                                 msg = "[Error]: deposit:" \
-                                    + " equested_current_version_number < self.version_number_for_most_recent_deallocation:" \
+                                    + " requested_current_version_number < self.version_number_for_most_recent_deallocation:" \
                                     + " but first is False."
-                                assert first , msg
+                                assert first, msg
                             except AssertionError:
                                 logger.exception("[Error]: assertion failed")
                                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -949,7 +949,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                             self.restore_DAG_structures_groups(requested_current_version_number)
                         elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
                             # We will set self.version_number_for_most_recent_deallocation in restore
-                            # if we do restores
+                            # if we do restore
                             self.deallocate_DAG_structures_groups(requested_current_version_number)
                         else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
                             pass  
@@ -970,7 +970,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited after deallocation: ")
  
-                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved deallocations:")
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: all saved deallocations:")
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG_map:")
                     for key, value in self.current_version_DAG_info_DAG_map_save.items():
                         logger.info(key)
@@ -981,7 +981,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         logger.info(key)
                         logger.info(value)
                     logger.info(" ")
-                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:")
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG tasks:")
                     for key, value in  self.current_version_DAG_info_DAG_tasks_save.items():
                         logger.info(key, ' : ', value)
                     logger.info(" ")
@@ -1377,7 +1377,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # request version 3, and we can do the first deallocation, setting
                 # version for last deallocation to n, where n >=3. At that point, some
                 # lambda can request 2, which will be less then n, so we will do a restore.
-                if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                     if requested_current_version_number < self.version_number_for_most_recent_deallocation:
                         # We will set self.version_number_for_most_recent_deallocation in restore
                         # if we do restores

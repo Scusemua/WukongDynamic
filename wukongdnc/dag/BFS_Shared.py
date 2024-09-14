@@ -3,7 +3,7 @@ import numpy as np
 #import os
 from multiprocessing import shared_memory
 
-#from .DAG_executor_constants import USE_PAGERANK_GROUPS_PARTITIONS, USING_THREADS_NOT_PROCESSES
+#from .DAG_executor_constants import USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS, USING_THREADS_NOT_PROCESSES
 from . import DAG_executor_constants
 
 #from .BFS import num_nodes
@@ -662,7 +662,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         if debug_pagerank:
             logger.trace("Copy frontier values:")
 
-        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             shared_frontier_map = shared_groups_frontier_parents_map
         else:
             shared_frontier_map = shared_partition_frontier_parents_map

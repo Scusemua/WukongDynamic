@@ -5,7 +5,7 @@ import queue
 
 from . import BFS_generate_DAG_info_incremental_partitions
 from . import BFS_generate_DAG_info_incremental_groups
-#from .DAG_executor_constants import USE_PAGERANK_GROUPS_PARTITIONS
+#from .DAG_executor_constants import USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS
 from . import DAG_executor_constants
 
 logger = logging.getLogger(__name__)
@@ -75,9 +75,9 @@ def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
         # See the comment on deposit() below.
         next_partition_or_group = buffer.get()
         logger.info(thread_name + "generator_thread: called get."
-            + " USE_PAGERANK_GROUPS_PARTITIONS: " + str(DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS))
+            + " USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS: " + str(DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS))
 
-        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             # tuple was created as:
             # group_tuple = (partition_name,current_partition_number,
             # copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued)

@@ -723,7 +723,7 @@ except AttributeError:
     >>> logging.TRACE
 """
 
-#from .DAG_executor_constants import USE_SHARED_PARTITIONS_GROUPS, USE_PAGERANK_GROUPS_PARTITIONS
+#from .DAG_executor_constants import USE_SHARED_PARTITIONS_GROUPS, USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS
 #from .DAG_executor_constants import USE_STRUCT_OF_ARRAYS_FOR_PAGERANK, COMPUTE_PAGERANK
 #from .DAG_executor_constants import USE_INCREMENTAL_DAG_GENERATION, USING_WORKERS
 #from .DAG_executor_constants import RUN_ALL_TASKS_LOCALLY, USING_THREADS_NOT_PROCESSES
@@ -2525,7 +2525,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # the sending partition and N is a partition that receives
                 # from P. 
 # brc: ******* Partition
-                if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
 
                     """ Here is sample output for the Group_senders and Group_receivers. This is for 
                     the extended white board example, which adds a fanins from PR3_2 to PR3_3 along
@@ -3462,7 +3462,7 @@ def bfs(visited, node):
                 # Q: Here we also dump the groups of current partition? We have their names
                 # in groups_of_partitions[] and the groups are in groups[].
                 if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
-                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                         num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
                         to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
                         logger.info("bfs: num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
@@ -3979,10 +3979,11 @@ def bfs(visited, node):
                         # This will either be a DAG of partition tasks or a DAG of group tasks, which is 
                         # set next.
                         DAG_info = None
-                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                             logger.info("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
-                            if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                            if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS \
+                                    and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                                 most_recent_version_number, _restart = DAG_infobuffer_monitor.get_most_recent_version_number()
                                 # We have the current_version_number_DAG_info returned by the call to get_most_recent_version_number()
                                 # but immediately after we make this call (all) the workers can theoretically call withdraw() again and 
@@ -4027,7 +4028,8 @@ def bfs(visited, node):
                             # Note: We use num_nodes when we are deallocating on-the-fly - we only deallocate
                             # when the input graph is large.
 
-                            if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS and (BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                            if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS \
+                                    and (BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                                 most_recent_version_number, _restart = DAG_infobuffer_monitor.get_most_recent_version_number()
                                 # We have the current_version_number_DAG_info returned by the call to get_most_recent_version_number()
                                 # but immediately after we make this call (all) the workers can theoretically call withdraw() again and 
@@ -4081,7 +4083,7 @@ def bfs(visited, node):
                         # A DAG with a single partition, and hence a single group is a special case.
                         if current_partition_number == 1:
 #brc: incremental groups
-                            if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                            if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                                 try:
                                     msg = "[Error]: BFS: partition " + partition_name + " is the first partition" \
                                         + " but it is not in leaf_tasks_of_partitions_incemental."
@@ -4128,7 +4130,7 @@ def bfs(visited, node):
                                 # the DAG_executor woudld just wait for another incremental DAG. Hard to say
                                 # what n should be until we experiment with it.
                         
-                                if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                                     # output partition 1, which is complete
                                     with open('./'+partition_name + '.pickle', 'wb') as handle:
                                         # partition indices in partitions[] start with 0, so current partition i
@@ -4173,7 +4175,7 @@ def bfs(visited, node):
 
                                 if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                                     and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
-                                    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                    if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                                         # Need to generate the groups_of_partitions_in_current_batch
                                         # which is for each new partition added to the incremental
                                         # partition added to the DAG, a list of the group names
@@ -4291,7 +4293,7 @@ def bfs(visited, node):
                             #
                             # Note: For groups, we may still key off partitions, i.e., when 
                             # we complete a partition, we generate the groups in this partition.
-                            if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS or DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                            if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS or DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                                 #previous_partition_name = "PR"+str(current_partition_number-1)+"_1"
                             
                                 # Previous partition is complete so save partition to a file
@@ -4308,7 +4310,7 @@ def bfs(visited, node):
                                 # e.g., name for the partition 2 that is previous to current partition
                                 # 3 is position 1, which is 3-2.
 
-                                if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                                     # always output the previous partition of nodes
                                     with open('./'+partition_names[current_partition_number-2] + '.pickle', 'wb') as handle:
                                         # partition indices in partitions[] start with 0, so current partition i
@@ -4479,7 +4481,7 @@ def bfs(visited, node):
 #brc: leaf tasks
                                     new_leaf_task_work_tuples = []           
 #brc: incremental groups
-                                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                                         # using partitions
                                         if len(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental) > 0:
                                             # New leaf task partitions have been generated. Since no task
@@ -4734,7 +4736,7 @@ def bfs(visited, node):
                                     partition_names_in_current_batch = []
                                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                                         and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
-                                        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                        if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                                             # Need to generate the groups_of_partitions_in_current_batch
                                             # which is for each new partition added to the incremental
                                             # partition added to the DAG, a list of the group names
@@ -4871,7 +4873,7 @@ def bfs(visited, node):
                         + " num_nodes: " + str(num_nodes) + " to_be_continued: "
                         + str(to_be_continued))
                     if DAG_executor_constants.USING_WORKERS or not DAG_executor_constants.USING_WORKERS:
-                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                             #logger.trace("BFS: calling deposit for"
                             #    + " partition " + str(partition_name) + " using workers.")
                             # All of these parameters are immutable: string, int, boolean
@@ -4934,7 +4936,7 @@ def bfs(visited, node):
                     # at the end of groups[] and the number of groups in the previous
                     # partition.
                     if current_partition_number > 1:
-                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                             # partition numbers start with 1 not 0. But the first 
                             # partition in partitions[] is in position 0.
                             # Finding the previous_partiton in partitions[] is easy since 
@@ -4994,7 +4996,7 @@ def bfs(visited, node):
                 # we are computing pagerank and using incremental DAG generation 
                 if DAG_executor_constants.DEALLOCATE_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                     if current_partition_number > 1:
-                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                             # partition numbers start with 1 not 0. But the first 
                             # partition in partitions[] is in position 0.
                             previous_partition_number = current_partition_number - 1
@@ -5582,7 +5584,7 @@ def input_graph():
         logger.info("input_graph: set BFS_generate_DAG_info.num_nodes_in_graph to "
             + str(BFS_generate_DAG_info.num_nodes_in_graph))
     else:
-        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph = num_nodes
             logger.info("input_graph: set BFS_generate_DAG_info_incemental_groups.num_nodes_in_graph to "
                 + str(BFS_generate_DAG_info.num_nodes_in_graph))
@@ -5797,7 +5799,7 @@ def input_graph():
         """ 
 
 def output_partitions_groups():
-    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+    if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
         for name, group in zip(group_names, groups):
             with open('./'+name + '.pickle', 'wb') as handle:
                 cloudpickle.dump(group, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -5808,7 +5810,7 @@ def output_partitions_groups():
 
 # currently not used
 def input_partitions():
-    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+    if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
         group_inputs = []
         for name in group_names:
             with open('./'+name+'.pickle', 'rb') as handle:
@@ -5955,7 +5957,7 @@ def print_BFS_stats():
         #    logger.error("[Error]: print_BFS_stats: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
         #        + " but num_nodes is " + str(num_nodes))
     else: # USE_SHARED_PARTITIONS_GROUPS so computing PageRank
-        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             if not DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
                 shared_partition_length = len(BFS_Shared.shared_partition)
                 # added shadow nodes and their parents
@@ -6013,7 +6015,7 @@ def print_BFS_stats():
             #    logger.error("[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
             #        + " but num_nodes is " + str(num_nodes))
     else: # USE_SHARED_PARTITIONS_GROUPS so computing PageRank
-        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             if not DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
                 shared_groups_length = len(BFS_Shared.shared_groups)
                 logger.trace("shared_groups_length first value: " + str(shared_groups_length))
@@ -6417,7 +6419,7 @@ def print_BFS_stats():
 def check_pagerank_outputs(number_of_groups_or_partitions):
     # True when: comuting pagerank and using thread workers/lambdas
     # COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and (USING_WORKERS or not USING_WORKERS) and USING_THREADS_NOT_PROCESSES
-    #if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+    #if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
     #    number_of_groups_or_partitions = len(groups)
     #else:
     #    number_of_groups_or_partitions = len(partitions) 
@@ -6430,7 +6432,7 @@ def check_pagerank_outputs(number_of_groups_or_partitions):
     output_keys = list(pr_outputs.keys())
     output_keys.sort()
     sorted_pagerank_outputs = {i: pr_outputs[i] for i in output_keys}
-    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+    if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
         for (k,v) in sorted_pagerank_outputs.items():
             #logger.info(str(k) + ":" + group_names[k-1] + ":" +str(v))
             logger.info(k + ":" +str(v))
@@ -6446,7 +6448,7 @@ def check_pagerank_outputs(number_of_groups_or_partitions):
 
 def main():
 
-    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+    if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
         logger.info("BFS: using groups")
     else:
         logger.info("BFS: using partitions.")
@@ -6626,7 +6628,7 @@ def main():
                     start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
                 if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
-                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                         num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
                         to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
                         logger.info("bfs: num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
@@ -6866,7 +6868,7 @@ def main():
 
         # get number_of_groups_or_partitions before we deallocate 
         # because we need this value if we check the pagerank outputs below
-        #if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        #if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
         #    #number_of_groups_or_partitions = len(groups)
         #    number_of_groups_or_partitions = number_of_groups
         #else:
@@ -6896,7 +6898,7 @@ def main():
 
         ##################### check results ####################
         if DAG_executor_constants.CHECK_PAGERANK_OUTPUT:
-            if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+            if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                 #number_of_groups_or_partitions = len(groups)
                 number_of_groups_or_partitions = number_of_groups
             else:
@@ -6938,7 +6940,7 @@ def main():
         logger.trace("\nBFS:join after join, print BFS stats")
 
         if DAG_executor_constants.CHECK_PAGERANK_OUTPUT:
-            if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+            if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                 #number_of_groups_or_partitions = len(groups)
                 number_of_groups_or_partitions = number_of_groups
             else:

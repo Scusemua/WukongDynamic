@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 from . import BFS_Shared
-#from .DAG_executor_constants import USE_SHARED_PARTITIONS_GROUPS, USE_PAGERANK_GROUPS_PARTITIONS
+#from .DAG_executor_constants import USE_SHARED_PARTITIONS_GROUPS, USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS
 #from .DAG_executor_constants import USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
 #from .DAG_executor_constants import USING_THREADS_NOT_PROCESSES
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
@@ -35,13 +35,13 @@ if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
 #
 # if not USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
 #   #generating single array 
-#   if not USE_PAGERANK_GROUPS_PARTITIONS:
+#   if not USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
 #       generate shared partitions
 #   else:
 #       generate shared groups
 # else:
 #   #generating struct of arrays
-#   if not USE_PAGERANK_GROUPS_PARTITIONS:
+#   if not USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
 #       # generating partitions
 #       if USING_THREADS_NOT_PROCESSES:
 #          threads access global shared partitions as struct of arrays
@@ -77,7 +77,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
     # num_children values, array of num_parents values, etc.
     if not DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
         #brc: shared
-        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             next = 0
             for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
                 partition_position = next
@@ -208,7 +208,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
         global parents
         """
         #brc: shared
-        #if not USE_PAGERANK_GROUPS_PARTITIONS:
+        #if not USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
         next = 0
         next_parent_index = 0
         # 64 byte padding : w/ 32 bit ints
@@ -220,7 +220,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
         # will be random.
         int_padding = np.array([-4,-4,-4,-4, -4,-4,-4,-4, -4,-4,-4,-4, -4,-4,-4,-4])
         logger.trace("int padding: " + str(int_padding))
-        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             # size of pagerank and previos is n floats, where n is the number of 
             # nodes in the input graph + the number of shadow nodes and their 
             # parent nodes (2*num_shadow_nodes_added_to_partitions) plus 

@@ -331,7 +331,7 @@ import cloudpickle
 #from .DAG_executor_constants import NUM_WORKERS,USING_THREADS_NOT_PROCESSES
 #from .DAG_executor_constants import FANIN_TYPE, FANINNB_TYPE, PROCESS_WORK_QUEUE_TYPE
 #from .DAG_executor_constants import STORE_SYNC_OBJECTS_IN_LAMBDAS, SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
-#from .DAG_executor_constants #import USE_SHARED_PARTITIONS_GROUPS,USE_PAGERANK_GROUPS_PARTITIONS
+#from .DAG_executor_constants #import USE_SHARED_PARTITIONS_GROUPS,USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS
 #from .DAG_executor_constants import USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
 #from .DAG_executor_constants import COMPUTE_PAGERANK
 #from .DAG_executor_constants import INPUT_ALL_GROUPS_PARTITIONS_AT_START
@@ -2276,7 +2276,7 @@ def run():
                                 else: 
                                     #Note: In DAG_executor_constants, we use: USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and True
                                     # So if USE_SHARED_PARTITIONS_GROUPS is True then COMPUTE_PAGERANK is True
-                                    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                    if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                                         shared_nodes = BFS_Shared.shared_groups
                                         shared_map = BFS_Shared.shared_groups_map
                                         shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
@@ -2439,7 +2439,7 @@ def run():
                                     proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                                         None,None,None,None,None,None,None,None,None,None))
                                 else:
-                                    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                                    if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                                         shared_nodes = BFS_Shared.shared_groups
                                         shared_map = BFS_Shared.shared_groups_map
                                         shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map

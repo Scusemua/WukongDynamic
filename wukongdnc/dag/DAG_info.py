@@ -95,7 +95,7 @@ class DAG_Info(object):
         if not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
             self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed = 0
         else:
-            if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+            if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                 self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed = DAG_info_dictionary["DAG_number_of_groups_of_previous_partition_that_cannot_be_executed"]
 
 #brc: num_nodes
@@ -120,7 +120,7 @@ class DAG_Info(object):
         DAG_info_dictionary["DAG_number_of_tasks"] = self.DAG_number_of_tasks
         DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = self.DAG_number_of_incomplete_tasks
 #brc: bug fix:
-        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
             DAG_info_dictionary["DAG_number_of_groups_of_previous_partition_that_cannot_be_executed"] = self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed
         else:
             DAG_info_dictionary["DAG_number_of_groups_of_previous_partition_that_cannot_be_executed"] = None
