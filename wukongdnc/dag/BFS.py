@@ -3980,8 +3980,7 @@ def bfs(visited, node):
                         # set next.
                         DAG_info = None
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
-                            logger.info("BFS: calling generate_DAG_info_incremental_partitions for"
-                                + " partition " + str(partition_name) + " using workers.")
+
                             if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS \
                                     and (BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                                 most_recent_version_number, _restart = DAG_infobuffer_monitor.get_most_recent_version_number()
@@ -3996,11 +3995,14 @@ def bfs(visited, node):
                                 # are done in the deposit/withdraw methosd of the DAG_infoBufffer_monitorfor_lambdas.
                                 BFS_generate_DAG_info_incremental_partitions.deallocate_DAG_structures(most_recent_version_number)
                             else:
-                                logger.info("DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: "
+                                logger.info("Not using workers or not deallocating: "
+                                    + " DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: "
                                     + str(DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS)
                                     + " BFS_generate_DAG_info.num_nodes_in_graph: "
                                     + str(BFS_generate_DAG_info.num_nodes_in_graph))
 #brc: use of DAG_info:      
+                            logger.info("BFS: calling generate_DAG_info_incremental_partitions for"
+                                + " partition " + str(partition_name))
 
                             DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued,
                                 num_incremental_DAGs_generated_since_base_DAG)

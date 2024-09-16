@@ -360,6 +360,15 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # remember that this is the most recent version number for which we did
             # a deallocation
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
+#brc: ??
+            self.deallocation_start_index_partitions = deallocation_end_index
+
+#brc: ToDo: where to set start index after restore? Given that each deposit currently
+# sets a new DAG, then deposit should set start index to 1 so start over, and 
+# if we do:
+# - restore in withdraw, we could have another withdraw so set start = deallocation_end_index?
+# - restore in deposit: not urrently possible since we start over?
+# when switch to deposit an incrment then we can keep going with start index set appropriately
 
     def deallocate_DAG_structures_partitions(self,requested_version_number_DAG_info):
         # current_partition_number is not currently used
@@ -847,6 +856,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 #for start_tuple in self._buffer:
                 first = True
                 logger.info("DAG_infoBuffer_Monitor_for_Lambdas: number of withdraw tuples: " + str(len(self._buffer)))
+                if len(self._buffer) == 0:
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: no withdraw tuples so no lambdas started.")
                 for withdraw_tuple in self._buffer:
 #brc: dealloc: get requested_current_version_number and get start_tuple from _buffer tuple
 # for withdraw_tuple in self._buffer:
@@ -909,6 +920,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # request version 3, and we can do the first deallocation, setting
                     # version for last deallocation to n, where n >=3. At that point, some
                     # lambda can request 2, which will be less then n, so we will do a restore.
+
+#brc:??
+                    self.deallocation_start_index_groups = 1
+                    self.deallocation_start_index_partitions = 1
                     if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                         if requested_current_version_number < self.version_number_for_most_recent_deallocation:
                             try:
@@ -983,7 +998,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     logger.info(" ")
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG tasks:")
                     for key, value in  self.current_version_DAG_info_DAG_tasks_save.items():
-                        logger.info(key, ' : ', value)
+                        logger.info(str(key) + ' : ' + str(value))
                     logger.info(" ")
 
                     self.print_DAG_info(self.current_version_DAG_info)
