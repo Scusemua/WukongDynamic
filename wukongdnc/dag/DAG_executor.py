@@ -4190,8 +4190,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         data_dict_value = v
                         data_dict[data_dict_key] = data_dict_value
 
-                logger.trace("data_dict: " + str(data_dict))
-                logger.trace("output: " + str(output))
+                logger.info("data_dict: " + str(data_dict))
+                logger.info("output: " + str(output))
 
                 # Can use this sleep to make a thread last to call FaninNB - adjust the state in which you want
                 # the call to fan_in to be last. Last caller can get the faninNB task work, if it has 
@@ -4571,6 +4571,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 # so the lambda can terminate.) A new lambda will be 
                                 # (re)started to execute this collapsed state/task after a 
                                 # new incremental DAG is generated and deposited().
+                                logger.info("DAG_executor_work_loop: withdraw() does not return a DAG and since we are a lambda not a worker, we return.")
                                 return
                     else:
 #hc: cluster:
@@ -5443,7 +5444,7 @@ def DAG_executor(payload):
 # is in the payload as "input", but we do not actually need this 
 # input since simulated lambdas are threads that share a global
 # data_dict so the output was added to the data_dict and is still
-# there; thus we do not need the output in the payloa and we do 
+# there; thus we do not need the output in the payload and we do 
 # need to add the output to the data_dict, which is something we
 # do for real lambdas (in DAG_executor_lambda).
     #The payload "input" should be in the shared global data_dict
@@ -5463,33 +5464,39 @@ def DAG_executor(payload):
 
         if not is_leaf_task:
 
-            def DD(dict_of_results,data_dict):
+            def DD(dict_of_results,data_dict,task_name):
                 # used in assertion below
                 logger.info("DAG_executor(): DD: verify inputs are in data_dict: ")
                 logger.info("DAG_executor(): DD: dict_of_results: " + str(dict_of_results))
                 logger.info("DAG_executor(): DD: type of dict_of_results: " + str(type(dict_of_results)))
-                #for i in range ( len(dict_of_results) ):
-                #    print( str(type(dict_of_results [i])) )
-                #for i in range ( len(dict_of_results) ):
-                #    print( dict_of_results [i] )
                 for key, _value in dict_of_results.items():
                     #data_dict[key] = _value
-                    value_in_dict = data_dict.get(key,None)
+                    # When a lambda calls withdraw() and does not get a new incremental DAG, its
+                    # task output will be saved, e.g.,
+                    # {'PR3_1': [(0, 0.02999697142976938), (3, 0.01921660770620617), (7, 0.0062499999999999995), (5, 0.00890625)]}
+                    # and when the lambda is (re)started as a continued task, its saved output will be in
+                    # its payload. We check whether the output is in the data_dict, but since the outputs
+                    # were saved in the data_dict using qualified names, e.g., "PR2_1L-PR3_1", we need to
+                    # check using the qualified name. Note: if the output is {'PR3_1': [...], 'PR4_1': [..]}
+                    # then we will get qualifid names "PR2_1L-PR3_1" and "PR2_1L-PR3_1"
+                    # where PR2_1 and PR3_1 are the fanout/fanin tasks names of PR2_1.
+                    qualified_name = task_name + "-" + key
+                    value_in_dict = data_dict.get(qualified_name,None)
                     if value_in_dict is None:
-                        logger.error("[Error]:(part of Asssertionrror: starting DAG_executor for simulated lambda"
-                            + " data_dict missing value for input key " + str(key))
+                        logger.error("[Error]:(part of AsssertionErrror: starting DAG_executor for simulated lambda"
+                            + " data_dict missing value for input key " + str(qualified_name))
                         #logging.shutdown()
                         #os._exit(0)
                         return False
                     else:
-                        logger.trace("DAG_executor:verified: " + str(key))
+                        logger.info("DAG_executor: DD: verified: " + str(qualified_name))
                 return True
 
             try:
                 dict_of_results = payload['input']
                 msg = "[Error]: starting DAG_executor for simulated lambda" + " data_dict missing value for input key."
                 logger.info("DAG_executor(): before call to DD for " + state_info.task_name + " : dict_of_results: " + str(dict_of_results)) 
-                assert DD(dict_of_results,data_dict), msg
+                assert DD(dict_of_results,data_dict,state_info.task_name), msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:

@@ -1,0 +1,541 @@
+C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic>python -m wukongdnc.dag.TestAll -t 35
+MainProcess:MainThread:C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\TestAll.py
+[2024-09-17 08:01:23,316][TestAll][MainProcess][MainThread]: TestAll: set_test_number: 35
+test35
+Already did addLoggingLevel in TestAll so skip it here.
+DAG_executor_driver
+[2024-09-17 08:01:26,530][BFS][MainProcess][MainThread]: BFS: using partitions.
+[2024-09-17 08:01:26,530][BFS][MainProcess][MainThread]: input_graph: set BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph to 0
+[2024-09-17 08:01:26,530][BFS][MainProcess][MainThread]: dfs_parent from node 1
+[2024-09-17 08:01:26,530][BFS][MainProcess][MainThread]: dfs_parent from node 17
+[2024-09-17 08:01:26,530][BFS][MainProcess][MainThread]: dfs_parent from node 5
+[2024-09-17 08:01:26,530][BFS][MainProcess][MainThread]: BFS: add PR1_1 to groups_of_current_partition: ['PR1_1']
+[2024-09-17 08:01:26,530][BFS][MainProcess][MainThread]: Not using workers or not deallocating:  DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: False BFS_generate_DAG_info.num_nodes_in_graph: 0
+[2024-09-17 08:01:26,530][BFS][MainProcess][MainThread]: BFS: calling generate_DAG_info_incremental_partitions for partition PR1_1
+[2024-09-17 08:01:26,530][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: current_partition_name: PR1_1
+
+generate_DAG_info_incremental_partitions: Partition_senders:
+
+
+generate_DAG_info_incremental_partitions: Partition_receivers:
+
+
+generate_DAG_info_incremental_partitions: Leaf nodes of partitions (incremental):
+PR1_1
+
+[2024-09-17 08:01:26,530][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: generate_partial_DAG_for_partitions: partial DAG:
+[2024-09-17 08:01:26,530][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: DAG_version_number (which was not incemented for partial DAG):
+[2024-09-17 08:01:26,530][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: 0P
+[2024-09-17 08:01:26,530][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]:
+[2024-09-17 08:01:26,530][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: DAG_is_complete:
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: False
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]:
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: DAG_number_of_tasks:
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: 1
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]:
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: DAG_number_of_incomplete_tasks:
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: 1
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]:
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: DAG_num_nodes_in_graph:
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: 24
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]:
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for partition PR1_1
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 16
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 10
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 2
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: process already_visited_parents of 16
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 19
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 3
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 11
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 8
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 20
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: process already_visited_parents of 20
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 2, current_partition_number:2, parent ID: 19
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 19
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 2, current_partition_number:2, parent ID: 19
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent: parent in same group: parent_group_number: 2, current_group_number: 2, parent ID: 19
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: ('PR2_1', 'PR2_2L')
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: order: Add 2 PR2_1 to Group_senders with receiving group PR2_2L
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: process already_visited_parents of 19
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 12
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 14
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 6
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: dfs_parent from node 4
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: process already_visited_parents of 12
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: Not using workers or not deallocating:  DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: False BFS_generate_DAG_info.num_nodes_in_graph: 0
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: BFS: calling generate_DAG_info_incremental_partitions for partition PR2_1L
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: current_partition_name: PR2_1L
+
+generate_DAG_info_incremental_partitions: Partition_senders:
+sender:PR1_1
+receiver_name_set:{'PR2_1L'}
+
+
+generate_DAG_info_incremental_partitions: Partition_receivers:
+receiver:PR2_1L
+sender_name_set:{'PR1_1'}
+
+
+generate_DAG_info_incremental_partitions: Leaf nodes of partitions (incremental):
+
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: for current partition PR2_1L the previous_state_info after update collpase and TBC:  task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: generate_DAG_info_incremental_partitions for partition PR2_1L
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: Partition_DAG_map[current_state]:  task: PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:None, ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: generate_full_DAG_for_partitions: Full DAG:
+[2024-09-17 08:01:26,546][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for partition PR2_1L
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: BFS: deposit next DAG with num_incremental_DAGs_generated_since_base_DAG:0 current_partition_number: 2
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: BFS: partition_names_in_current_batch:
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: PR1_1
+[2024-09-17 08:01:26,546][BFS][MainProcess][MainThread]: PR2_1L
+[2024-09-17 08:01:26,546][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: deposit() entered monitor
+[2024-09-17 08:01:26,546][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: extended list of partition names:
+[2024-09-17 08:01:26,546][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: ['PR1_1', 'PR2_1L']
+[2024-09-17 08:01:26,546][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited:
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_map:
+1
+ task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+2
+ task: PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:None, ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:
+PR1_1
+1
+PR2_1L
+2
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG leaf task start states
+1
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:
+PR1_1  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+PR2_1L  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_tasks:
+PR1_1
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_task_inputs:
+()
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_version_number:
+1
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_info_is_complete:
+False
+
+[2024-09-17 08:01:26,561][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: number of withdraw tuples: 0
+[2024-09-17 08:01:26,561][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: no withdraw tuples so no lambdas started.
+[2024-09-17 08:01:26,561][BFS][MainProcess][MainThread]: BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.
+[2024-09-17 08:01:26,561][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver: dask version: 2023.9.1
+[2024-09-17 08:01:26,561][BFS][MainProcess][MainThread]: dfs_parent from node 13
+[2024-09-17 08:01:26,561][DAG_info][MainProcess][DAG_executor_driver_Invoker]: Reading DAG info from file: "./DAG_info.pickle"
+[2024-09-17 08:01:26,561][BFS][MainProcess][MainThread]: process already_visited_parents of 13
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: dfs_parent from node 15
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver: sucessfully read DAG_info
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: dfs_parent from node 7
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver at start: Output DAG:
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: process already_visited_parents of 7
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver at start: DAG_map[1]:  task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True address DAG_map[1]: 0x1b6e27d86d0
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 13
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver: DAG_map:
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 1, current_group_number: 2, parent ID: 13
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: 1
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]:  task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: ('PR3_1', 'PR3_2')
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: 2
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: order: Add 2 PR3_1 to Group_senders with receiving group PR3_2
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]:  task: PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:None, ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: process already_visited_parents of 15
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]:
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: dfs_parent from node 18
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver: DAG states:
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: dfs_parent from node 9
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: PR1_1
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: process already_visited_parents of 9
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: 1
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: dfs_parent: parent in same partition: parent_partition_number: 3, current_partition_number:3, parent ID: 15
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: PR2_1L
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: dfs_parent: parent in different group: parent_group_number: 2, current_group_number: 3, parent ID: 15
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: 2
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: order: sending_group_receiving_group_tuple for add to Group_senders:
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]:
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: ('PR3_2', 'PR3_3')
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver: DAG leaf task start states
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: order: Add 2 PR3_2 to Group_senders with receiving group PR3_3
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: 1
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: process already_visited_parents of 18
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]:
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: Not using workers or not deallocating:  DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: False BFS_generate_DAG_info.num_nodes_in_graph: 0
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver: DAG_tasks:
+[2024-09-17 08:01:26,577][BFS][MainProcess][MainThread]: BFS: calling generate_DAG_info_incremental_partitions for partition PR3_1
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: PR1_1
+[2024-09-17 08:01:26,577][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: current_partition_name: PR3_1
+
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: PR2_1L
+generate_DAG_info_incremental_partitions: Partition_senders:
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]:
+sender:PR1_1
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver: DAG_leaf_tasks:
+receiver_name_set:{'PR2_1L'}
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: PR1_1
+sender:PR2_1L
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]:
+receiver_name_set:{'PR3_1'}
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver: DAG_leaf_task_inputs:
+
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: ()
+
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: '
+generate_DAG_info_incremental_partitions: Partition_receivers:
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_version: 1
+receiver:PR2_1L
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]:
+sender_name_set:{'PR1_1'}
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_is_complete: False
+receiver:PR3_1
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]:
+sender_name_set:{'PR2_1L'}
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_number_of_tasks: 2
+
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]:
+
+generate_DAG_info_incremental_partitions: Leaf nodes of partitions (incremental):
+
+[2024-09-17 08:01:26,577][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: for current partition PR3_1 the previous_state_info after update collpase and TBC:  task: PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:['PR3_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+[2024-09-17 08:01:26,577][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: XXXXXXXXXX generate_DAG_info_incremental_partitions: for current partition PR3_1 the previous_previous_state_info after update collpase and TBC:  task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False address of state_info_of_previous_previous_partition: 0x1b6e27865d0
+[2024-09-17 08:01:26,577][DAG_executor][MainProcess][Thread_leaf_ss1]: DAG_executor: simulated lambda (thread) starting for PR1_1
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver: num_threads/processes_created: 1
+[2024-09-17 08:01:26,577][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: generate_DAG_info_incremental_partitions for partition PR3_1
+[2024-09-17 08:01:26,577][DAG_executor][MainProcess][Thread_leaf_ss1]: DAG_executor: state_info.task_name: PR1_1 continued_task: False
+[2024-09-17 08:01:26,577][DAG_executor_driver][MainProcess][DAG_executor_driver_Invoker]: DAG_executor_driver: Sleeping 3.0 seconds...
+[2024-09-17 08:01:26,577][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: Partition_DAG_map[current_state]:  task: PR3_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR2_1L-PR3_1',), fanout_partition_group_sizes:None, ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+[2024-09-17 08:01:26,577][DAG_executor][MainProcess][Thread_leaf_ss1]: DAG_executor: state_info.task_name: PR1_1 is_leaf_task: True
+[2024-09-17 08:01:26,577][DAG_executor][MainProcess][Thread_leaf_ss1]: DAG_executor_work_loop: at start: lambda executes a continued task: False for state 1
+[2024-09-17 08:01:26,577][DAG_executor][MainProcess][Thread_leaf_ss1]: DAG_executor: length of DAG_tasks: 2 number of tasks in DAG to execute: 2
+[2024-09-17 08:01:26,593][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: generate_full_DAG_for_partitions: Full DAG:
+[2024-09-17 08:01:26,594][DAG_executor][MainProcess][Thread_leaf_ss1]: DAG_executor_work_loop: proc MainProcess  thread Thread_leaf_ss1: started.
+[2024-09-17 08:01:26,601][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for partition PR3_1
+[2024-09-17 08:01:26,601][DAG_executor][MainProcess][Thread_leaf_ss1]: DAG_executor_work_loop: simulated or real lambda: cluster_queue contains work: got state 1 for task name PR1_1
+[2024-09-17 08:01:26,601][DAG_executor][MainProcess][Thread_leaf_ss1]: execute task: PR1_1
+[2024-09-17 08:01:26,601][DAG_executor][MainProcess][Thread_leaf_ss1]:
+[2024-09-17 08:01:26,601][DAG_executor][MainProcess][Thread_leaf_ss1]: groups, len: 0:
+[2024-09-17 08:01:26,601][DAG_executor][MainProcess][Thread_leaf_ss1]:
+[2024-09-17 08:01:26,601][BFS_pagerank][MainProcess][Thread_leaf_ss1]: PageRank_Function_Driver: length of input_tuples for PR1_1:0
+[2024-09-17 08:01:26,601][BFS][MainProcess][MainThread]: BFS: deposit next DAG with num_incremental_DAGs_generated_since_base_DAG:1 current_partition_number: 3
+[2024-09-17 08:01:26,601][BFS][MainProcess][MainThread]: BFS: partition_names_in_current_batch:
+[2024-09-17 08:01:26,601][BFS][MainProcess][MainThread]: PR3_1
+[2024-09-17 08:01:26,601][BFS_pagerank][MainProcess][Thread_leaf_ss1]: PageRank_Function: partition_or_group: length: 3
+[2024-09-17 08:01:26,601][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: deposit() entered monitor
+[2024-09-17 08:01:26,601][BFS_pagerank][MainProcess][Thread_leaf_ss1]: -- (3): 5 17 1
+[2024-09-17 08:01:26,601][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: extended list of partition names:
+[2024-09-17 08:01:26,601][BFS_pagerank][MainProcess][Thread_leaf_ss1]:
+XXPageRank output tuples for PR1_1:
+[2024-09-17 08:01:26,601][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: ['PR1_1', 'PR2_1L', 'PR3_1']
+('PR2_1L', [(2, 0.0062499999999999995), (8, 0.00890625), (13, 0.01003515625)])
+[2024-09-17 08:01:26,601][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited:
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_map:
+
+rhc: excute PR1_1
+
+XXPageRank result for PR1_1: 5:0.0062499999999999995 17:0.00890625 1:0.01003515625
+
+
+[2024-09-17 08:01:26,601][DAG_executor][MainProcess][Thread_leaf_ss1]: DAG_executor_work_loop: check TBC of collapsed task state info:  task: PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:None, ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+1
+ task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+2
+ task: PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:['PR3_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+3
+ task: PR3_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR2_1L-PR3_1',), fanout_partition_group_sizes:None, ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:
+PR1_1
+1
+PR2_1L
+2
+PR3_1
+3
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG leaf task start states
+1
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:
+PR1_1  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+PR2_1L  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+PR3_1  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_tasks:
+PR1_1
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_task_inputs:
+()
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_version_number:
+2
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_info_is_complete:
+False
+
+[2024-09-17 08:01:26,601][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: number of withdraw tuples: 0
+[2024-09-17 08:01:26,601][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: no withdraw tuples so no lambdas started.
+called bfs()
+[2024-09-17 08:01:26,601][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][Thread_leaf_ss1]: DAG_infoBuffer_Monitor_for_Lambdas: withdraw() entered monitor, requested_current_version_number = 2
+partition_names:
+['PR1_1', 'PR2_1L', 'PR3_1']
+
+rhc: lambda that excutd 1 gets new DAG version 2 with 1 2 3 
+
+[2024-09-17 08:01:26,614][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][Thread_leaf_ss1]: DAG_infoBuffer_Monitor_for_Lambdas: withdraw will return current Lambda with version 2
+number_of_partitions:
+[2024-09-17 08:01:26,628][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][Thread_leaf_ss1]: deallocate_DAG_structures_partitions: self.deallocation_start_index_partitions: 1 deallocation_end_index: 0
+3
+[2024-09-17 08:01:26,628][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][Thread_leaf_ss1]: DAG_infoBuffer_Monitor_for_Lambdas: DAG_info withdrawn after deallocation:
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_map:
+[2024-09-17 08:01:26,628][BFS][MainProcess][MainThread]: dfs_parent from node 21
+1
+[2024-09-17 08:01:26,628][BFS][MainProcess][MainThread]: BFS: add PR4_1 to groups_of_current_partition: ['PR4_1']
+ task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+[2024-09-17 08:01:26,629][BFS][MainProcess][MainThread]: Not using workers or not deallocating:  DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: False BFS_generate_DAG_info.num_nodes_in_graph: 0
+2
+[2024-09-17 08:01:26,629][BFS][MainProcess][MainThread]: BFS: calling generate_DAG_info_incremental_partitions for partition PR4_1
+ task: PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:['PR3_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+[2024-09-17 08:01:26,629][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: current_partition_name: PR4_1
+3
+
+generate_DAG_info_incremental_partitions: Partition_senders:
+sender:PR1_1
+ task: PR3_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR2_1L-PR3_1',), fanout_partition_group_sizes:None, ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+
+receiver_name_set:{'PR2_1L'}
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:
+sender:PR2_1L
+PR1_1
+receiver_name_set:{'PR3_1'}
+1
+
+PR2_1L
+
+2
+generate_DAG_info_incremental_partitions: Partition_receivers:
+PR3_1
+3
+receiver:PR2_1L
+
+sender_name_set:{'PR1_1'}
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG leaf task start states
+receiver:PR3_1
+1
+sender_name_set:{'PR2_1L'}
+
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:
+
+PR1_1  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+generate_DAG_info_incremental_partitions: Leaf nodes of partitions (incremental):
+PR2_1L  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+PR4_1
+PR3_1  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+
+[2024-09-17 08:01:26,636][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: new connected component for current partition 4, the previous_state_info for previous state 3 after update TBC (no collapse) is:  task: PR3_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR2_1L-PR3_1',), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_tasks:
+PR1_1
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_task_inputs:
+()
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_version_number:
+2
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_info_is_complete:
+False
+
+[2024-09-17 08:01:26,638][DAG_executor][MainProcess][Thread_leaf_ss1]: DAG_executor_work_loop: simulated or real lambda: cluster_queue contains work: got state 2 for task name PR2_1L
+[2024-09-17 08:01:26,638][DAG_executor][MainProcess][Thread_leaf_ss1]: execute task: PR2_1L
+[2024-09-17 08:01:26,639][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: generate_full_DAG_for_partitions: Full DAG:
+[2024-09-17 08:01:26,639][DAG_executor][MainProcess][Thread_leaf_ss1]:
+[2024-09-17 08:01:26,640][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for partition PR4_1
+[2024-09-17 08:01:26,640][DAG_executor][MainProcess][Thread_leaf_ss1]: groups, len: 0:
+[2024-09-17 08:01:26,640][DAG_executor][MainProcess][Thread_leaf_ss1]:
+[2024-09-17 08:01:26,641][BFS_pagerank][MainProcess][Thread_leaf_ss1]: PageRank_Function_Driver: length of input_tuples for PR2_1L:3
+[2024-09-17 08:01:26,641][BFS_pagerank][MainProcess][Thread_leaf_ss1]: PageRank_Function: partition_or_group: length: 15
+[2024-09-17 08:01:26,641][BFS_pagerank][MainProcess][Thread_leaf_ss1]: -- (15): 2 10 5-s 16 20 8 11 3 17-s 19 4 6 14 1-s 12
+[2024-09-17 08:01:26,642][BFS_pagerank][MainProcess][Thread_leaf_ss1]:
+XXPageRank output tuples for PR2_1L:
+[2024-09-17 08:01:26,643][BFS][MainProcess][MainThread]: BFS: new leaf tasks (some may be for partition/group 2):['PR4_1']
+('PR3_1', [(0, 0.02999697142976938), (3, 0.01921660770620617), (7, 0.0062499999999999995), (5, 0.00890625)])
+[2024-09-17 08:01:26,643][BFS][MainProcess][MainThread]: BFS: add leaf task to new_leaf_task_work_tuples: PR4_1
+
+[2024-09-17 08:01:26,643][BFS][MainProcess][MainThread]: BFS: leaf tasks after clear: []
+
+rhc: execute PR2_1L
+
+XXPageRank result for PR2_1L: 2:0.0062499999999999995 10:0.00890625 16:0.016476562499999996 20:0.02793761344678751 8:0.02999697142976938 11:0.01921660770620617 3:0.01463495312369181 19:0.02264618622981376 4:0.0062499999999999995 6:0.00890625 14:0.01003515625 12:0.023309765625
+[2024-09-17 08:01:26,644][BFS][MainProcess][MainThread]: BFS: deposit next DAG with num_incremental_DAGs_generated_since_base_DAG:2 current_partition_number: 4
+
+[2024-09-17 08:01:26,644][BFS][MainProcess][MainThread]: BFS: partition_names_in_current_batch:
+[2024-09-17 08:01:26,644][DAG_executor][MainProcess][Thread_leaf_ss1]: DAG_executor_work_loop: check TBC of collapsed task state info:  task: PR3_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR2_1L-PR3_1',), fanout_partition_group_sizes:None, ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+[2024-09-17 08:01:26,644][BFS][MainProcess][MainThread]: PR4_1
+[2024-09-17 08:01:26,645][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][Thread_leaf_ss1]: DAG_infoBuffer_Monitor_for_Lambdas: withdraw() entered monitor, requested_current_version_number = 3
+[2024-09-17 08:01:26,645][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][Thread_leaf_ss1]: DAG_infoBuffer_Monitor_for_Lambdas: withdraw: value to deposit: (2, {'PR3_1': [(0, 0.02999697142976938), (3, 0.01921660770620617), (7, 0.0062499999999999995), (5, 0.00890625)]})
+[2024-09-17 08:01:26,645][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][Thread_leaf_ss1]: DAG_infoBuffer_Monitor_for_Lambdas: withdraw return None
+[2024-09-17 08:01:26,645][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: deposit() entered monitor
+[2024-09-17 08:01:26,645][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: extended list of partition names:
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: ['PR1_1', 'PR2_1L', 'PR3_1', 'PR4_1']
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited:
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_map:
+1
+ task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+2
+ task: PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:['PR3_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+3
+ task: PR3_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR2_1L-PR3_1',), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+4
+ task: PR4_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:
+PR1_1
+1
+PR2_1L
+2
+PR3_1
+3
+PR4_1
+4
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG leaf task start states
+1
+4
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:
+PR1_1  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+PR2_1L  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+PR3_1  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+PR4_1  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_tasks:
+PR1_1
+PR4_1
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_task_inputs:
+()
+()
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_version_number:
+3
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_info_is_complete:
+False
+
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: new leaf task states deposited:
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: 4
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: new cumulative leaf task states:
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: 4
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: number of withdraw tuples: 1
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: deposit: requested_current_version_number: 3
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: deallocate_DAG_structures_partitions: self.deallocation_start_index_partitions: 1 deallocation_end_index: 2
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: deallocate_DAG_structures_partitions: generate_DAG_info_incremental_partitions: deallocate 1
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: deallocate_DAG_structures_lambda: partition or group namesXXX:
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: PR1_1
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: PR2_1L
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: PR3_1
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: PR4_1
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: deallocate_DAG_structures_lambda: partition or group name: PR1_1
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: deallocate_DAG_structures_lambda: state: 1
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited after deallocation:
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: all saved deallocations:
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: saved DAG_map:
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: 1
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]:  task: PR1_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR2_1L'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]:
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: saved DAG states:
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: PR1_1
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: 1
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]:
+[2024-09-17 08:01:26,648][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: saved DAG tasks:
+[2024-09-17 08:01:26,664][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: PR1_1 : <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+[2024-09-17 08:01:26,664][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]:
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_map:
+1
+None
+2
+ task: PR2_1L, fanouts:[], fanins:[], faninsNB:[], collapse:['PR3_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1L',), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+3
+ task: PR3_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR2_1L-PR3_1',), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+4
+ task: PR4_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:
+PR1_1
+None
+PR2_1L
+2
+PR3_1
+3
+PR4_1
+4
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG leaf task start states
+1
+4
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:
+PR1_1  :  None
+PR2_1L  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+PR3_1  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+PR4_1  :  <function PageRank_Function_Driver at 0x000001B6E1A0E0C0>
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_tasks:
+PR1_1
+PR4_1
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_task_inputs:
+()
+()
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_version_number:
+3
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_info_is_complete:
+False
+
+[2024-09-17 08:01:26,664][DAG_infoBuffer_Monitor_for_Lambdas][MainProcess][MainThread]: DAG_infoBuffer_Monitor_for_Lambdas: (re)starting lambda with DAG_executor_state.state: 2 continued task: True
+[2024-09-17 08:01:26,664][DAG_executor][MainProcess][Thread_leaf_ss2]: DAG_executor: simulated lambda (thread) starting for PR2_1L
+[2024-09-17 08:01:26,664][BFS][MainProcess][MainThread]: dfs_parent from node 22
+[2024-09-17 08:01:26,664][DAG_executor][MainProcess][Thread_leaf_ss2]: DAG_executor: state_info.task_name: PR2_1L continued_task: True
+[2024-09-17 08:01:26,664][BFS][MainProcess][MainThread]: process already_visited_parents of 22
+[2024-09-17 08:01:26,664][DAG_executor][MainProcess][Thread_leaf_ss2]: DAG_executor: state_info.task_name: PR2_1L is_leaf_task: False
+[2024-09-17 08:01:26,664][BFS][MainProcess][MainThread]: Not using workers or not deallocating:  DAG_executor_constants.DEALLOCATE_PARTITION_GROUP_DAG_STRUCTURES_FOR_WORKERS: False BFS_generate_DAG_info.num_nodes_in_graph: 0
+[2024-09-17 08:01:26,664][DAG_executor][MainProcess][Thread_leaf_ss2]: DAG_executor(): before call to DD for PR2_1L : dict_of_results: {'PR3_1': [(0, 0.02999697142976938), (3, 0.01921660770620617), (7, 0.0062499999999999995), (5, 0.00890625)]}
+[2024-09-17 08:01:26,664][BFS][MainProcess][MainThread]: BFS: calling generate_DAG_info_incremental_partitions for partition PR5_1
+[2024-09-17 08:01:26,664][DAG_executor][MainProcess][Thread_leaf_ss2]: DAG_executor(): DD: verify inputs are in data_dict:
+[2024-09-17 08:01:26,664][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: current_partition_name: PR5_1
+
+[2024-09-17 08:01:26,664][DAG_executor][MainProcess][Thread_leaf_ss2]: DAG_executor(): DD: dict_of_results: {'PR3_1': [(0, 0.02999697142976938), (3, 0.01921660770620617), (7, 0.0062499999999999995), (5, 0.00890625)]}
+generate_DAG_info_incremental_partitions: Partition_senders:
+[2024-09-17 08:01:26,664][DAG_executor][MainProcess][Thread_leaf_ss2]: DAG_executor(): DD: type of dict_of_results: <class 'dict'>
+sender:PR1_1
+[2024-09-17 08:01:26,664][DAG_executor][MainProcess][Thread_leaf_ss2]: [Error]:(part of Asssertionrror: starting DAG_executor for simulated lambda data_dict missing value for input key PR3_1
+receiver_name_set:{'PR2_1L'}
+sender:PR2_1L
+receiver_name_set:{'PR3_1'}
+sender:PR4_1
+receiver_name_set:{'PR5_1'}
+
+
+generate_DAG_info_incremental_partitions: Partition_receivers:
+receiver:PR2_1L
+sender_name_set:{'PR1_1'}
+receiver:PR3_1
+sender_name_set:{'PR2_1L'}
+receiver:PR5_1
+sender_name_set:{'PR4_1'}
+
+
+generate_DAG_info_incremental_partitions: Leaf nodes of partitions (incremental):
+
+[2024-09-17 08:01:26,664][DAG_executor][MainProcess][Thread_leaf_ss2]: [Error]: assertion failed
+Traceback (most recent call last):
+  File "C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor.py", line 5492, in DAG_executor
+    assert DD(dict_of_results,data_dict), msg
+AssertionError: [Error]: starting DAG_executor for simulated lambda data_dict missing value for input key.
+[2024-09-17 08:01:26,664][BFS_generate_DAG_info_incremental_partitions][MainProcess][MainThread]: generate_DAG_info_incremental_partitions: for current partition PR5_1 the previous_state_info after update collpase and TBC:  task: PR4_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR5_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), fanout_partition_group_sizes:None, ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+
+C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic>

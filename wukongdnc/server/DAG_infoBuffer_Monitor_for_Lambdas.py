@@ -1350,7 +1350,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         restart = False
         if requested_current_version_number <= self.current_version_number_DAG_info:
             DAG_info = self.current_version_DAG_info
-            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw return current Lambda"
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw will return current Lambda"
                 " with version " + str(self.current_version_number_DAG_info))
 
 #brc: ToDo: do deallocation here. But if next call is also to withdraw(), then requested version may
@@ -1426,7 +1426,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 else:
                     self.deallocate_DAG_structures_groups(requested_current_version_number)
             """
-            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited after deallocation: ")
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info withdrawn after deallocation: ")
             self.print_DAG_info(self.current_version_DAG_info)
 
             
