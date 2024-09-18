@@ -2098,7 +2098,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 continue_tuple = (DAG_executor_state.state,True)
                 #continue_queue.put(DAG_executor_state.state)
                 continue_queue.put(continue_tuple)
-                logger.trace("DAG_executor_work_loop: start of simulated or real lambda:"
+                logger.info("DAG_executor_work_loop: start of simulated or real lambda:"
                     + " put state " + str(DAG_executor_state.state) + " in continue_queue"
                     + " with first_iteration_of_work_loop_for_lambda " 
                     + str(first_iteration_of_work_loop_for_lambda))
@@ -3480,7 +3480,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #if not continued_due_to_TBC:
                     #    logger.error("[Error]: For lambda, continued_task is True"
                     #        + " but continued_due_to_TBC is False.")
-
+#brc: ToDo:         only continued_task if continued_due_to_TBC; otherwise it is a leaf
+# task to be executed for the first time, i.e., if not continued_due_to_TBC 
+# and state is 4 we execute 4, but if continued_due_to_TBC and state is 4 we execute 5.
+# See 3760
                     continued_task = continued_due_to_TBC
                     logger.info("lambda continued task is true")
 
@@ -3564,7 +3567,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
             #commented out for MM
             #logger.trace("state_info: " + str(state_info))
-            logger.trace(thread_name + ": DAG_executor_work_loop: task to execute: " + state_info.task_name 
+            logger.info(thread_name + ": DAG_executor_work_loop: task to execute: " + state_info.task_name 
                 + " (though this task may be a continued task that was already executed.)")
 
             # This task may or may not be a continued task. In either
@@ -3746,8 +3749,16 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # i.ee., we aer not really continuing it.
                     #
                     # See the general comments about continued tasks where continue_queue is defined
+#brc: See 3486. If continud_task and state is 4 we should execut 5 regardless of whether
+# 4 is a leaf. In this case we have state_info.task_name in DAG_info.get_DAG_leaf_tasks()
+# so we do not do this.
                     if state_info.task_name == DAG_executor_constants.NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG or (state_info.task_name not in DAG_info.get_DAG_leaf_tasks()):
                         # task is a leaf task but its the first leaf task in the DAG (PR1_1) or it is not a leaf task.
+#brc (cont) but PR4_1 is a leaf task that is not PR1_1 and that has already been executed so we want to execute its
+# collapse task. Why do we use NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG? If this is a leaf task but it is continued
+# and we are not using workers ? which is when we have to execute leaf tasks as we find them then we want to 
+# grab the collapse task.
+# Note: we do not check wheher or not we are using lambdas, so maybe this condition works for workers?
                         # Process its fanins/fanouts/collapse by grabbing here the collapse task as there are no fanins/fanouts.
                         # Below we will execute the collapse task, which we know has been added to the new incremental DAG.
                         # That is, the collapse task was tobecontinued in the old DAG but the new DAG that 
@@ -3763,17 +3774,19 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # collapse task when we are using partitions, or as T's output from which 
                         # we ca grab the individual inputs for T's fanouts/fanins.
                         state_info = DAG_map[DAG_executor_state.state]
-                        logger.trace("DAG_executor_work_loop: got state and state_info of continued, collapsed partition for collapsed task " + state_info.task_name)
+                        logger.info("DAG_executor_work_loop: got state and state_info of continued, collapsed partition for collapsed task " + state_info.task_name)
                     else:
+#brc (cont): a leaf task that is not the first but is continued, like PR4_1 should have its colllapse task executed when 
+# we are using lambdas.
                         # task is a leaf task that is not the first
                         # partition PR1_1 in the DAG. (Leaf tasks start a new connected component.)
-                        logger.trace("DAG_executor_work_loop: continued partition  " 
+                        logger.info("DAG_executor_work_loop: continued partition  " 
                             + state_info.task_name + " is a leaf task so do not get its collapse task"
                             + " instead, execute the leaf task.")
                 else:
                     try:
                         msg = "[Error]: continued_task is true for a leaf task that" \
-                            + " is not the first leaf task/partition/group in the DAG (PR!_1)."
+                            + " is not the first leaf task/partition/group in the DAG (PR1_1)."
                         assert not continued_task , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
