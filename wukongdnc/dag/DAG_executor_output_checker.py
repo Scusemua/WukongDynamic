@@ -19,10 +19,11 @@ logger.addHandler(ch)
 pagerank_outputs = {}
 
 def set_pagerank_output(state,name,output):
-    multiple_output = pagerank_outputs.get(state)
+    multiple_output = pagerank_outputs.get(name)
+    logger.info("set_pagerank_output: multiple_output is " +str(multiple_output))
     try:
         msg = "[Error]: set_pagerank_output:" \
-            + " more than one pagerank output for state " + str(state)
+            + " more than one pagerank output for name " + str(name)
         assert multiple_output is None , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
