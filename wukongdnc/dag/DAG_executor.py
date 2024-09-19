@@ -3128,7 +3128,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         continue_tuple = continue_queue.get()
                                         DAG_executor_state.state = continue_tuple[0]
                                         continued_due_to_TBC = continue_tuple[1]
-                                        # indicate whether we are rexecuting a continued_task
+                                        # indicate whether we are rexecuting a continued_task or if continue is not due to 
+                                        # TBC then we are executing a leaf task (for the first time). For a continued task
+                                        # we will not execute it since it has already been executed; instead, we execute
+                                        # its collapse task, for partitions, or its fanins/fanouts, for groups.
                                         continued_task = continued_due_to_TBC
                                         #continued_task = True
                                         if continued_task:
@@ -4270,9 +4273,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             ):
                 # This task now becomes a continued task. We are not using workers, i.e., we are using 
                 # lamdas, so we do not put T in the continue queue. Instead we try to get a new 
-                # incremental DAG. If T is in the new DAG then T's fanouts/fanins/collpase are complete
-                # and we can process them. Otherwise, this lambda will save T and its output to a 
-                # tcp_server object and terminate.
+                # incremental DAG. If we get a new DAG, then T's fanouts/fanins/collpase are complete
+                # in the new DAG and we can process them. Otherwise, this lambda will save T and its output to a 
+                # tcp_server object and terminate. When a new DAG is deposited a new lambda will be
+                # restarted to continue processin T's fanins/fanouts/collapses.
                 
 #brc: lambda inc:
                 logger.info("DAG_executor: work loop: after task execution, lambda"
@@ -4282,11 +4286,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 # Try to get a new incremental DAG. if we do not get one, we will 
                 # terminate. When a new DAG is generated a lambda will be 
-                # (re)started to excute the fanins/fanouts/collpases of this
-                # group G. Otherwise, we got a new DAG in which G is a
-                # completed group so we can finish processing G by executing
-                # below its fanins/fanouts/collases. 
-                # Note: we need to get this new DAG before we excute the 
+                # (re)started to exceute the fanins/fanouts/collpases of this
+                # group G. 
+                # Note: we need to try to get this new DAG before we excute the 
                 # next if-statement. This if-statement is the one that 
                 # executes G's fanins/fanouts/collpases.
 #brc: lambda inc:     
@@ -4338,7 +4340,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             
             #logger.info("output3: " + str(output))
             if (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION and (
-                    DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued)
+                    DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS \
+                        and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued)
                 ):
                 # See the general comments about continued tasks where continue_queue is defined.
                 # Group has fanouts/fanins/faninNBs/collapses that are TBC
@@ -4346,12 +4349,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # will terminate. 
                 # (Note that the lambda called withdraw() above and passed 
                 # the task sate and output in case no new DAG was available in which case 
-                # the (state,output) will have been saved by withdraw().)
+                # the (state,output) will have been saved by withdraw() so a lambda
+                # can be (re)started with the same state and output.
                 # 
-                # When we get a new DAG we will get this state from the continue queue. We have already
-                # executed this state, so we will skip task execution and do 
+                # When we get a new DAG we will get this state from the continue queue. 
+                # We have already executed this state, so we will skip task execution and do 
                 # the continued fanouts/fanins/faninNBs/collapses. Note that when
-                # we get a new DAG that this group that had continued 
+                # we get a new DAG, this group that had continued 
                 # fanouts/fanins/faninNBs/collapses now is complete, i.e., it has
                 # no continued fanouts/fanins/faninNBs/collapses.
                 # Note: we save the output in the tuple so we'll have it
@@ -4377,24 +4381,24 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             
             # Notes on cluster queue and clustering:
             # Note: if this just executed task T has a (non to be continued) collapse task then T has no
-            # fanouts/fanins/faninNBs, so next we will execute the clustered task
+            # fanouts/fanins/faninNBs, so next we will actually execute the clustered task
             # with the result/output just placed in the data_dict.
             # Note: if the just executed task T has multiple fanouts and it clusters them
             # then the fanouts will be added to the cluster queue, i.e., their state
             # returned by DAG_info.get_DAG_states() will be added to the cluster queue.
-            # We were going to add the fanouts to the work queue (minus the become
-            # task) or start real lambdas to execute them, but clustered them instad. 
-            # We add the becomre task's state to the cluster queue, just like a collapsed task. 
-            # Notice that the input for the become task (a fanout task) will be retieved from the data_dict, i.e., 
-            # after T was excuted, we saved its output in the data dict so we know it
-            # is there (in our local data dict if we are a process or lambda or the 
+            # We would have added the fanouts to the work queue (minus the become
+            # task) or started real lambdas to execute them, but we clustered them instad. 
+            # We add the become task's state to the cluster queue, just like a collapsed task. 
+            # Notice that the input for the become task (which is a fanout task) will be retieved 
+            # from the data_dict, i.e., after T was excuted, we saved its output in the data dict so we 
+            # know it is there (in our local data dict if we are a process or lambda or the 
             # global data dict if we are a thread.) So we only put the state in the 
             # cluster queue, not the output of T since the output of T is in the data dict.
             # For clustered fanouts, we can also only put the state in the cluster queue 
             # since the output we need to execute them is T's output and it is in our
             # data dict.
-            # Note: A fanin task can also be a become task. So we  add
-            # such become tasks to the cluster queue, in the same way. Note that 
+            # Note: A fanin task can also be a become task. So we add such fanin
+            # become tasks to the cluster queue, in the same way. Note that 
             # a fanin op returns all the results that were sent to the fanin and we 
             # put them in the data dict when the fanin op returns. So they will be
             # there when we execute the fanin task. That is, when we add the fanin 
@@ -4408,7 +4412,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # ------------------------------------------------------------------
 
             elif len(state_info.collapse) > 0:
-
                 try:
                     msg = "[Error]: DAG_executor_work_loop:" \
                         + " state has a collapse but also fanins/fanouts."
@@ -4433,7 +4436,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # We will execute collapsed task next (i.e., put it in the cluster queue and on the 
                 # next itertation of the work loop since the cluster queue is not empty, get the 
                 # collpased task from the cluster queue, unless there are clustered (fanout) tasks 
-                # at the front of the queue in which case we will excute them first.)
+                # at the front of the queue in which case we will execute them first.)
                 # collapse is a list [] so get task name of the collapsed task which is collapse[0],
                 # the only name in this collapse list. Note: DAG_states() is a map from 
                 # task name to an int that can be used as a key in DAG_map to get the task's state_info, 
@@ -4441,14 +4444,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # about the task - it's fanins/fanouts/collapses, python function, whether it is
                 # complete or not (for incremental DAG generation), etc.
                 
-                # DAG_executor_state.state is an int representing the the (current) state/task that has a 
-                # collapsed partition/group. state_info is the state info
-                # of the state with the collapse task.
+                # DAG_executor_state.state is an int representing the (current) state/task that has a 
+                # collapsed partition/group. state_info is the state info of the state with the collapse task.
 #brc: continue 
 #brc: lambda inc:               
-                # The above if before the current elif if True if we are using groups and the current group/task
+                # The above if before the current elif is True if we are using groups and the current group/task
                 # has to-be-continued fanins/fanouts/collapse. In that case, the worker put the task/group in the 
-                # continue queue or the lambda returned? So since we got past that if, the curren task is a group 
+                # continue queue or the lambda returned (since it did not get a new DAG from withdraw().) 
+                # So since we got past that if, the current task is a group 
                 # that has has no TBC or we are using partitions or we are not doing incremental DAG generation.
 
                 # Determine whch case we have: if this if is true then either we are not doing incremental
@@ -4457,13 +4460,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # is False, then we are using partitions and the current partition/task may or may not 
                 # be complete. If it is complete, we can process the collapse task; otherwise, we put the 
                 # *current* partition/task in the continue queue, not the collapse task. When we get the
-                # current task out of the continue_queue, we process is fanouts/fanins/collapse by 
-                # grabbing its collapse (partitions have no fanins/fanouts). We will execute the collapsed
-                # task using the output of the current task as the input to the collapse task.
+                # current task out of the continue_queue (after getting a new DAG), we process is fanouts/fanins/collapse
+                # by grabbing its collapse (partitions have no fanins/fanouts). We will execute the collapsed
+                # task using the output of the current task (which was saved in the tuple added to the continue queue)
+                # as the input to the collapse task.
                 if not(DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION) or (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION and DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS):
 #brc: cluster:
-                    # get the state of the collapsed partition/group (task)
-                    # and put the collapsed task in the cluster_queue for execution.
+                    # get the state of the collapsed partition/group (task) and put the collapsed task in 
+                    # the cluster_queue for execution.
                     DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                     cluster_queue.put(DAG_executor_state.state)
                     logger.trace("DAG_executor_work_loop: put collapsed work in cluster_queue:"
@@ -4493,8 +4497,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         + str(state_info_of_collapse_task))
                     if state_info_of_collapse_task.ToBeContinued:
                         try:
-                            msg = "[Error]: P has a collapse task that is TBC but" + " P does not thnk it has a TBC collapse task based on" \
-                                + " fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued."
+                            msg = "[Error]: P has a collapse task that is TBC but" + " P does not think it has a TBC collapse task based on" \
+                                + " P's fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued."
                             assert state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
@@ -4508,9 +4512,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #        + " P does not thnk it has a TBC collapse task based on"
                         #        + " fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued.")
                             
-                        # put current state in the continue_queue. Noet, we have excuted the current
-                        # state/task, which is a partition. We put this state in the coninue queue, not the 
-                        # state of the collapse task. when we get this state S from the continue queue we will 
+                        # put current state in the continue_queue. Note, we have executed the current
+                        # state/task, which is a partition. We put this already excuted state in the coninue queue, not the 
+                        # state of the collapse task. When we get this state S from the continue queue we will 
                         # process its collapse task C, which means we will set the current state to the 
                         # collapse task C. We will then execute the current state as usual, which will be 
                         # collapse task C.
@@ -4525,10 +4529,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # of this state and excute it.
                             #
                             # The difference between incremental DAG generation with partitions
-                            # vs groups: If we excute partition i we know that i only has a collapse
+                            # vs groups: If we execute partition i we know that i only has a collapse
                             # task to partition i+1. If partition i+1 is incomplete, then we 
-                            # cannot execute i so we put i and i's just collectd output in the continue
-                            # queue. When we get a new DAG, we get (i,output) rom the continue
+                            # cannot execute i so we put i and i's just collectd output (i,output) in the continue
+                            # queue. When we get a new DAG, we get (i,output) from the continue
                             # queue. Since there is only a collapse task for i, we can go ahead
                             # and execute the collapse task i+1 using the output of i as the 
                             # input of i+1. That is, we do not get (i,output) and then "execute
@@ -4546,6 +4550,18 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # collapse of i and then immediately execute this collapse task.
 #brc: lambda inc: cq.put        
                             # True ==> Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
+                            # False is used for leaf tasks that are being executed for the first time, i.e.,
+                            # the leaf task L is not "continued" in the normal sense; instead, L was detected
+                            # during incremental DAG generation and L needs to be executed. For lambdas, we sart 
+                            # a lambda to execute L. For workers, we put L in the work_queue. But when we
+                            # get L from the work_queue, L may not be in the current DAG, i.e., L may first
+                            # appear in the next DAG that we withdraw. If we  get L from the work queue and it
+                            # is not in the current ADG, we put L in the continue queue. When we get a new
+                            # DAG L will be in the new DAG and we will process the tasks in the continue 
+                            # queue. Some will be normal contiued tasks with True in the tuple, some will 
+                            # be leaf tasks with False in the tuple. (IF we see False then we will execute
+                            # L next. If we see True, we will treat the task like a continued task that 
+                            # has alerady been executed and process its fanins/fanout/collapse.)
                             continue_tuple = (DAG_executor_state.state,True,output)
                             #continue_queue.put(DAG_executor_state.state)
                             continue_queue.put(continue_tuple)
@@ -4553,7 +4569,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 + " state is " + str(DAG_executor_state.state))
 #brc: continue
 #brc: lambda inc:
-                        else:
+                        else: # using lambdas
                             # See the general comments about continued tasks where continue_queue is defined.
                             # Try to get a new incrmental DAG. If we get one then the collapsed
                             # task which is TBC in the current DAG will not be TBC in the new
@@ -4588,6 +4604,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 return
                     else:
 #hc: cluster:
+                        # collapse tas is nottobecontinued.
                         # put non-TBC states in the cluster_queue
                         DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                         cluster_queue.put(DAG_executor_state.state)
@@ -4595,6 +4612,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             + " state is " + str(DAG_executor_state.state))
 
                     try:
+                        # if P1 has a collapse task P2 that is tobecontinued then P2.ToBeContinued is True
+                        # and P1.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued should also be True.
                         msg = "[Error]: DAG_executor_work_loop:" + " fanout_fanin_faninNB_collapse_groups of current partition is not" \
                             + " equal to ToBeContinued of collapse task (next partition)." \
                             + " state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued: " \
