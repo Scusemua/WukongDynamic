@@ -2067,14 +2067,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         # will get work from the work_queue; the driver will put leaf task inputs
         # in the work_queue before it starts the worker(s).)
         #
-        # Likewise, if the ral lambda is executing a continued task,
+        # Likewise, if the real lambda is executing a continued task,
         # we put the task in the continue queue (as a tuple). Note that 
         # we have already processed the output of the continued task
         # in DAG_executor_lambda, where we put the output in the 
         # data_dict and saved the output in state_info.task_inputs from 
         # which it will be retrieved and used to process the fanins/
         # fanouts of the continued group, or to execute the collapse
-        # task of the continued parttion. Noet that for partitons,
+        # task of the continued parttion. Note that for partitons,
         # we can execute the partition/task, and since a partition 
         # does not have any fanouts/fanins, it only has a collapse task, 
         # when a parition is continued, we can execute its collapse
@@ -2094,6 +2094,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #brc: lambda inc: cq.put
                 # On first iteration of lambda a continued_task is truly a continued_task.
                 # For leaf tasks, continued_task is False.
+                # The output is not added to the tuple - see the above comment:
+                # Note that we have already processed the output .... as in we put the 
+                # output in state_info.task_inputs and we will get it from there when we 
+                # excute the task. Lambdas put there task from the payload in the continue
+                # queue (here) and thwn immediatly get the continue tuple from the 
+                # continue queue - this is to be consistent with the worker code, which always
+                # gets the next task to execute from the continue queue or cluster queue
+                # or work queue.
                 # See the general comments about continued tasks where continue_queue is defined.
                 continue_tuple = (DAG_executor_state.state,True)
                 #continue_queue.put(DAG_executor_state.state)
@@ -3483,10 +3491,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #if not continued_due_to_TBC:
                     #    logger.error("[Error]: For lambda, continued_task is True"
                     #        + " but continued_due_to_TBC is False.")
-#brc: ToDo:         only continued_task if continued_due_to_TBC; otherwise it is a leaf
-# task to be executed for the first time, i.e., if not continued_due_to_TBC 
-# and state is 4 we execute 4, but if continued_due_to_TBC and state is 4 we execute 5.
-# See 3760
                     continued_task = continued_due_to_TBC
                     logger.info("lambda continued task is true")
 
@@ -3752,16 +3756,20 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # i.ee., we aer not really continuing it.
                     #
                     # See the general comments about continued tasks where continue_queue is defined
-#brc: See 3486. If continud_task and state is 4 we should execut 5 regardless of whether
-# 4 is a leaf. In this case we have state_info.task_name in DAG_info.get_DAG_leaf_tasks()
-# so we do not do this.
-                    if state_info.task_name == DAG_executor_constants.NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG or (state_info.task_name not in DAG_info.get_DAG_leaf_tasks()):
+                    # If we get to the if statement above with continued_task True then we know this 
+                    # is a real continued task that has already been executed, so we execute
+                    # the collapse task instead. Recall that when a continue tuple is quueued in 
+                    # continue_queue we use tuple value "True" to mean it is a ral continued task and not 
+                    # a leaf task that is being excuted for the first timw. If this tuple value 
+                    # is False then this is a leaf task that needs to be executed for the first time
+                    # so we set continued to False. This means we will not get the collapse task of
+                    # the leaf task we will just execute the leaf task.
+                    # Note:
+                    if True: # state_info.task_name == DAG_executor_constants.NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG \
+                            # or (state_info.task_name not in DAG_info.get_DAG_leaf_tasks()):
                         # task is a leaf task but its the first leaf task in the DAG (PR1_1) or it is not a leaf task.
-#brc (cont) but PR4_1 is a leaf task that is not PR1_1 and that has already been executed so we want to execute its
-# collapse task. Why do we use NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG? If this is a leaf task but it is continued
-# and we are not using workers ? which is when we have to execute leaf tasks as we find them then we want to 
-# grab the collapse task.
-# Note: we do not check wheher or not we are using lambdas, so maybe this condition works for workers?
+
+#
                         # Process its fanins/fanouts/collapse by grabbing here the collapse task as there are no fanins/fanouts.
                         # Below we will execute the collapse task, which we know has been added to the new incremental DAG.
                         # That is, the collapse task was tobecontinued in the old DAG but the new DAG that 
