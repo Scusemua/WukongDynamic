@@ -921,7 +921,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # version for last deallocation to n, where n >=3. At that point, some
                     # lambda can request 2, which will be less then n, so we will do a restore.
 
-#brc:??
+#brc: The start index needs to be reset even if there are no tuples since we 
+# deposit a new DAG with no Nones?
                     self.deallocation_start_index_groups = 1
                     self.deallocation_start_index_partitions = 1
                     if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
