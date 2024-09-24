@@ -852,12 +852,17 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
             # not using real lambdas, using threads that simulate a lambda.
             try:
-                # start simulated lambdas that with the new DAG_info
-                #for start_tuple in self._buffer:
+                # start simulated lambdas with the new DAG_info
                 first = True
                 logger.info("DAG_infoBuffer_Monitor_for_Lambdas: number of withdraw tuples: " + str(len(self._buffer)))
                 if len(self._buffer) == 0:
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: no withdraw tuples so no lambdas started.")
+
+#brc: The start index needs to be reset even if there are no tuples since we 
+# deposit a new DAG with no Nones?
+                self.deallocation_start_index_groups = 1
+                self.deallocation_start_index_partitions = 1
+
                 for withdraw_tuple in self._buffer:
 #brc: dealloc: get requested_current_version_number and get start_tuple from _buffer tuple
 # for withdraw_tuple in self._buffer:
@@ -921,10 +926,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # version for last deallocation to n, where n >=3. At that point, some
                     # lambda can request 2, which will be less then n, so we will do a restore.
 
-#brc: The start index needs to be reset even if there are no tuples since we 
-# deposit a new DAG with no Nones?
-                    self.deallocation_start_index_groups = 1
-                    self.deallocation_start_index_partitions = 1
+
                     if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                         if requested_current_version_number < self.version_number_for_most_recent_deallocation:
                             try:
@@ -1345,7 +1347,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         requested_current_version_number = kwargs['requested_current_version_number']
 #brc: lambad inc
         logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw() entered monitor, requested_current_version_number = "
-            + str(requested_current_version_number))
+            + str(requested_current_version_number)
+            + ", self.current_version_number_DAG_info: " 
+            + str(self.current_version_number_DAG_info))
 
         DAG_info = None
         restart = False

@@ -2,8 +2,11 @@ import logging
 import sys
 import getopt
 import os
+import threading
 
 import traceback
+
+from . import DAG_executor_constants
 
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
@@ -15,6 +18,12 @@ import traceback
 # directory WukongDynamic.
 
 # https://stackoverflow.com/questions/6234405/logging-uncaught-exceptions-in-python/16993115#16993115
+# Also: "When an exception other than SystemExit is raised and uncaught, 
+# the interpreter calls sys.excepthook with three arguments, the exception class, 
+# exception instance, and a traceback object. In an interactive session this 
+# happens just before control is returned to the prompt; in a Python program this 
+# happens just before the program exits. The handling of such top-level exceptions 
+# can be customized by assigning another three-argument function to sys.excepthook.
 def custom_excepthook(exc_type, exc_value, exc_traceback):
     # Do not print exception when user cancels the program
     if issubclass(exc_type, KeyboardInterrupt):
@@ -32,7 +41,36 @@ def custom_excepthook(exc_type, exc_value, exc_traceback):
         for line in format_exception:
             logging.error(repr(line))
 
+        logging.error("TestAll() terminating exception due to uncaught exception.")
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+            logging.shutdown()
+            os._exit(0)
+
 sys.excepthook = custom_excepthook # handle_exception
+
+# https://superfastpython.com/thread-exception-handling/
+def custom_thread_hook(args):
+    # report the failure
+    logging.error(f'An uncaught exception occurred: in a Thread: {args.exc_value}; traceback:')
+
+    if args.exc_traceback:
+        format_exception = traceback.format_tb(args.exc_traceback)
+        for line in format_exception:
+            logging.error(repr(line))
+
+        logging.error("TestAll() terminating exception due to uncaught exception.")
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+            logging.shutdown()
+            os._exit(0)
+
+threading.excepthook = custom_thread_hook
+
+#brc: ToDo: The except hooks should terminate the program:
+#if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+#    logging.shutdown()
+#    os._exit(0)
+# Note: if a thread has an ungandled exception it will terminate but the 
+# other threads will continue.
 
 def main(argv):
 

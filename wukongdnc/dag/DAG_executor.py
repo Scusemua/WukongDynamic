@@ -4501,7 +4501,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # in their payloads as "input". 
                     state_of_collapsed_task = DAG_info.get_DAG_states()[state_info.collapse[0]]
                     state_info_of_collapse_task = DAG_map[state_of_collapsed_task]
-                    logger.info("DAG_executor_work_loop: check TBC of collapsed task state info: "
+                    logger.info("DAG_executor_work_loop: " + state_info.task_name + " check TBC of collapsed task " + state_info_of_collapse_task.task_name + " state info: "
                         + str(state_info_of_collapse_task))
                     if state_info_of_collapse_task.ToBeContinued:
                         try:
@@ -4573,7 +4573,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             continue_tuple = (DAG_executor_state.state,True,output)
                             #continue_queue.put(DAG_executor_state.state)
                             continue_queue.put(continue_tuple)
-                            logger.info("DAG_executor_work_loop: put state with TBC collapse in continue_queue:"
+                            logger.info("DAG_executor_work_loop: put state for " + state_info.task_name + " with TBC collapse in continue_queue:"
                                 + " state is " + str(DAG_executor_state.state))
 #brc: continue
 #brc: lambda inc:
@@ -4585,18 +4585,24 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # the cluster queue and we get it from the cluster queue (after possibly 
                             # getting and executing other clustered tasks.)
                             requested_current_version_number = DAG_info.get_DAG_version_number() + 1
+                            logger.info("DAG_executor_work_loop : task " + state_info.task_name + " call withdraw to request new DAG version "
+                                + str(requested_current_version_number))
+#brc: ToDo: if DAG_executor_state.state is 6 then sleep 0.5
                             new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number,DAG_executor_state.state,output)
                             if new_DAG_info is not None:
                                 DAG_info = new_DAG_info
                                 # upate DAG_map and DAG_tasks with their new versions in DAG_info
                                 DAG_map = DAG_info.get_DAG_map()
                                 state_info = DAG_map[DAG_executor_state.state]
-#brc: Do these: 
+
                                 state_of_collapsed_task = DAG_info.get_DAG_states()[state_info.collapse[0]]
                                 state_info_of_collapse_task = DAG_map[state_of_collapsed_task]
 
                                 # put non-TBC states in the cluster_queue
-                                DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
+                                DAG_executor_state.state = state_of_collapsed_task
+                                logger.info("DAG_executor_work_loop: withdraw() for " + state_info.task_name + " returned a new DAG so put collapse task " 
+                                    + state_info_of_collapse_task.task_name + " of " + state_info.task_name + " in the cluster queue.")
+                    
                                 cluster_queue.put(DAG_executor_state.state)
                                 # number of tasks in the incremental DAG. Not all tasks can 
                                 # be executed if the new DAG is still imcomplete.
@@ -4608,7 +4614,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 # so the lambda can terminate.) A new lambda will be 
                                 # (re)started to execute this collapsed state/task after a 
                                 # new incremental DAG is generated and deposited().
-                                logger.info("DAG_executor_work_loop: withdraw() does not return a DAG and since we are a lambda not a worker, we return.")
+                                logger.info("DAG_executor_work_loop: withdraw() for " + state_info.task_name + " does not return a DAG and since we are a lambda not a worker, we return.")
                                 return
                     else:
 #hc: cluster:
