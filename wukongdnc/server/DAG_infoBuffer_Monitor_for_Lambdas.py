@@ -860,6 +860,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
 #brc: The start index needs to be reset even if there are no tuples since we 
 # deposit a new DAG with no Nones?
+# Need these deallocs to be conditional on options
+
+#brc: ToDo:
+                #if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                #    and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                 self.deallocation_start_index_groups = 1
                 self.deallocation_start_index_partitions = 1
 
@@ -926,6 +931,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # version for last deallocation to n, where n >=3. At that point, some
                     # lambda can request 2, which will be less then n, so we will do a restore.
 
+#brc: ToDo:
+                    #if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                    #    and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
 
                     if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                         if requested_current_version_number < self.version_number_for_most_recent_deallocation:
