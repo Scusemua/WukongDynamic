@@ -4585,14 +4585,22 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # the cluster queue and we get it from the cluster queue (after possibly 
                             # getting and executing other clustered tasks.)
                             requested_current_version_number = DAG_info.get_DAG_version_number() + 1
-                            logger.info("DAG_executor_work_loop : task " + state_info.task_name + " call withdraw to request new DAG version "
+                            logger.info("DAG_executor_work_loop : task " + state_info.task_name + " before sleep before call withdraw to request new DAG version "
                                 + str(requested_current_version_number))
-#brc: ToDo: if DAG_executor_state.state is 6 then sleep 0.5
+#brc: 
+                            if DAG_executor_state.state == 6:
+                                time.sleep(0.5)
+
+                            logger.info("DAG_executor_work_loop : task " + state_info.task_name + " after sleep before call withdraw to request new DAG version "
+                                + str(requested_current_version_number))
+                                
                             new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number,DAG_executor_state.state,output)
                             if new_DAG_info is not None:
                                 DAG_info = new_DAG_info
                                 # upate DAG_map and DAG_tasks with their new versions in DAG_info
                                 DAG_map = DAG_info.get_DAG_map()
+                                logger.info("DAG_executor_work_loop : new_DAG_info is not None so get state_info of task with state " 
+                                    + str(DAG_executor_state.state))
                                 state_info = DAG_map[DAG_executor_state.state]
 
                                 state_of_collapsed_task = DAG_info.get_DAG_states()[state_info.collapse[0]]

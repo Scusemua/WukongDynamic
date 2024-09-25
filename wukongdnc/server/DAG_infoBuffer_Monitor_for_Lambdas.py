@@ -78,6 +78,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # next deallocation.
         self.deallocation_start_index_groups = 1
         self.deallocation_start_index_partitions = 1
+        self.most_recent_deallocation_end_index = 0
         # on each call ot deposit, we pass a list L of lists. These are 
         # the lists identifie since the last pubication (call to deposit). We then do 
         # self.groups_of_partitions.extend(L), which appends all the lists in 
@@ -316,7 +317,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
         #Q: Can this be false? Yes, if trying to restore version 2? 
-        # But Noo: we use >= 0 and 0 is the min so no?  For verstion 2, 
+        # But No: we use >= 0 and 0 is the min so no?  For verstion 2, 
         # end index is 2+0-2=0 since you can't actually dealloc until you get to version 3.
         # If most recent is, e.g., 3, then we did some deallocs for 3 and we need
         # to restore these for 2 whose end index is 0.
@@ -337,10 +338,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # 0 and we increment it to 1, where the end ndex for 3, the most recent, is 2
         # which we also increment getting 3, giving a range of (1,3), where 3 is exclusive
         # so we restore states 1 and 2. States 3, 4, 5, 6 were never deallocated so a
-        # this point no deallocations have bee done. (Note the request is for 2 and 
+        # this point no deallocations have been done. (Note the request is for 2 and 
         # the version available is 3 so we will return 3 but without any deallocations.)
         #if deallocation_end_index > 0:
-        if deallocation_end_index > 0:
+        if deallocation_end_index >= 0:
             deallocation_end_index += 1
 
         self.version_number_for_most_recent_deallocation = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
@@ -352,7 +353,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
         logger.info("restore_DAG_structures_partitions: deallocation_end_index: " + str(deallocation_end_index)
             + " self.most_recent_deallocation_end_index: " + str(self.most_recent_deallocation_end_index))
-        for i in range(deallocation_end_index, self.version_number_for_most_recent_deallocation):
+        for i in range(deallocation_end_index, self.most_recent_deallocation_end_index):
             logger.info("restore_DAG_structures_partitions: restore " + str(i))
             self.restore_item(i)
         
@@ -498,6 +499,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # a deallocation
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
             self.deallocation_start_index_partitions = deallocation_end_index
+
+#brc: ToDo: set most recent here. Also, what is init value of most recent?
 
     def deallocate_DAG_structures_groups(self,requested_version_number_DAG_info):
         # Version 1 of the incremental DAG is given to the DAG_executor_driver for execution
@@ -863,10 +866,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 # Need these deallocs to be conditional on options
 
 #brc: ToDo:
-                #if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
-                #    and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
-                self.deallocation_start_index_groups = 1
-                self.deallocation_start_index_partitions = 1
+                if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                        and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                    self.deallocation_start_index_groups = 1
+                    self.deallocation_start_index_partitions = 1
+                    self.most_recent_deallocation_end_index = 0
 
                 for withdraw_tuple in self._buffer:
 #brc: dealloc: get requested_current_version_number and get start_tuple from _buffer tuple
@@ -932,53 +936,53 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # lambda can request 2, which will be less then n, so we will do a restore.
 
 #brc: ToDo:
-                    #if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
-                    #    and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                    if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                            and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
 
-                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
-                        if requested_current_version_number < self.version_number_for_most_recent_deallocation:
-                            try:
-                                msg = "[Error]: deposit:" \
-                                    + " requested_current_version_number < self.version_number_for_most_recent_deallocation:" \
-                                    + " but first is False."
-                                assert first , msg
-                            except AssertionError:
-                                logger.exception("[Error]: assertion failed")
-                                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
-                                    logging.shutdown()
-                                    os._exit(0)
+                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
+                            if requested_current_version_number < self.version_number_for_most_recent_deallocation:
+                                try:
+                                    msg = "[Error]: deposit:" \
+                                        + " requested_current_version_number < self.version_number_for_most_recent_deallocation:" \
+                                        + " but first is False."
+                                    assert first , msg
+                                except AssertionError:
+                                    logger.exception("[Error]: assertion failed")
+                                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                        logging.shutdown()
+                                        os._exit(0)
 
-                            # We will set self.version_number_for_most_recent_deallocation in restore
-                            # if we do restores
-                            self.restore_DAG_structures_partitions(requested_current_version_number)
-                        elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
-                            self.deallocate_DAG_structures_partitions(requested_current_version_number)
-                            # We will set self.version_number_for_most_recent_deallocation in restore
-                            # if we do restores
-                        else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
-                            pass
-                    else:
-                        if requested_current_version_number < self.version_number_for_most_recent_deallocation:     
-                            try:
-                                msg = "[Error]: deposit:" \
-                                    + " requested_current_version_number < self.version_number_for_most_recent_deallocation:" \
-                                    + " but first is False."
-                                assert first, msg
-                            except AssertionError:
-                                logger.exception("[Error]: assertion failed")
-                                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
-                                    logging.shutdown()
-                                    os._exit(0)
+                                # We will set self.version_number_for_most_recent_deallocation in restore
+                                # if we do restores
+                                self.restore_DAG_structures_partitions(requested_current_version_number)
+                            elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
+                                self.deallocate_DAG_structures_partitions(requested_current_version_number)
+                                # We will set self.version_number_for_most_recent_deallocation in restore
+                                # if we do restores
+                            else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
+                                pass
+                        else:
+                            if requested_current_version_number < self.version_number_for_most_recent_deallocation:     
+                                try:
+                                    msg = "[Error]: deposit:" \
+                                        + " requested_current_version_number < self.version_number_for_most_recent_deallocation:" \
+                                        + " but first is False."
+                                    assert first, msg
+                                except AssertionError:
+                                    logger.exception("[Error]: assertion failed")
+                                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                        logging.shutdown()
+                                        os._exit(0)
 
-                            # We will set self.version_number_for_most_recent_deallocation in restore
-                            # if we do restores
-                            self.restore_DAG_structures_groups(requested_current_version_number)
-                        elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
-                            # We will set self.version_number_for_most_recent_deallocation in restore
-                            # if we do restore
-                            self.deallocate_DAG_structures_groups(requested_current_version_number)
-                        else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
-                            pass  
+                                # We will set self.version_number_for_most_recent_deallocation in restore
+                                # if we do restores
+                                self.restore_DAG_structures_groups(requested_current_version_number)
+                            elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
+                                # We will set self.version_number_for_most_recent_deallocation in restore
+                                # if we do restore
+                                self.deallocate_DAG_structures_groups(requested_current_version_number)
+                            else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
+                                pass  
 
                     if first:
                         first = False        
@@ -993,24 +997,27 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         else:
                             self.deallocate_DAG_structures_groups(requested_current_version_number)
                     """
-                    
-                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited after deallocation: ")
- 
-                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: all saved deallocations:")
-                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG_map:")
-                    for key, value in self.current_version_DAG_info_DAG_map_save.items():
-                        logger.info(key)
-                        logger.info(value)
-                    logger.info(" ")
-                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG states:")         
-                    for key, value in self.current_version_DAG_info_DAG_states_save.items():
-                        logger.info(key)
-                        logger.info(value)
-                    logger.info(" ")
-                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG tasks:")
-                    for key, value in  self.current_version_DAG_info_DAG_tasks_save.items():
-                        logger.info(str(key) + ' : ' + str(value))
-                    logger.info(" ")
+
+                    if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                            and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+
+                        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited after deallocation: ")
+    
+                        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: all saved deallocations:")
+                        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG_map:")
+                        for key, value in self.current_version_DAG_info_DAG_map_save.items():
+                            logger.info(key)
+                            logger.info(value)
+                        logger.info(" ")
+                        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG states:")         
+                        for key, value in self.current_version_DAG_info_DAG_states_save.items():
+                            logger.info(key)
+                            logger.info(value)
+                        logger.info(" ")
+                        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG tasks:")
+                        for key, value in  self.current_version_DAG_info_DAG_tasks_save.items():
+                            logger.info(str(key) + ' : ' + str(value))
+                        logger.info(" ")
 
                     self.print_DAG_info(self.current_version_DAG_info)
                     # Note: for incremental DAG generation, when we restart a lambda
@@ -1384,9 +1391,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # Note: We cannot get here until after the first deposit() and deposit()
             # saves the num_nodes parameter value passed to it in self.num_nodes.
 
-#brc: ToDo: Possibly need to restore deallocs from prev deposit, i.e., if requsted version
-# number for this withdraw is less than the requested version number for last deposit or
-# last non-blocking withdraw, then restore deallocs at the end.
+            # Possibly need to restore deallocs from prev deposit, i.e., if requsted version
+            # number for this withdraw is less than the requested version number for last deposit or
+            # last non-blocking withdraw, then restore deallocs at the end.
 
             if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                     and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):

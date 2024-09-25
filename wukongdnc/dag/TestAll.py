@@ -63,7 +63,7 @@ def custom_thread_hook(args):
             logging.shutdown()
             os._exit(0)
 
-threading.excepthook = custom_thread_hook
+#threading.excepthook = custom_thread_hook
 
 #brc: ToDo: The except hooks should terminate the program:
 #if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
