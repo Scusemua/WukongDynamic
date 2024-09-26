@@ -273,15 +273,16 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             partition_or_group_names = self.partition_names
         else:
             partition_or_group_names = self.group_names # BFS.group_names
-        logger.info("restore_DAG_structures_lambda: partition or group namesXXX: ")
-        for n in partition_or_group_names:
-            logger.info(n)
+        #logger.info("restore_DAG_structures_lambda: partition or group namesXXX: ")
+        #for n in partition_or_group_names:
+        #    logger.info(n)
         name = partition_or_group_names[i-1]
-        state = self.current_version_DAG_info.DAG_states[name]
+        state = self.current_version_DAG_info_DAG_states_save[name]
         logger.info("restore_DAG_structures_lambda: partition or group name: " + str(name))
         logger.info("restore_DAG_structures_lambda: state: " + str(state))
         self.current_version_DAG_info.DAG_map[state] = self.current_version_DAG_info_DAG_map_save[state]
-
+        self.current_version_DAG_info.DAG_states[name] = self.current_version_DAG_info_DAG_states_save[name]
+        self.current_version_DAG_info.DAG_tasks[name] = self.current_version_DAG_info_DAG_tasks_save[name]
 
     def restore_DAG_structures_partitions(self,requested_version_number_DAG_info):
         """
@@ -890,7 +891,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 # deposit a new DAG with no Nones?
 # Need these deallocs to be conditional on options
 
-#brc: ToDo:
+#brc: ToDo: What about the save structures? clear them? or just remove key when we
+# grab the restored value. We can clear since we are adding key-value pairs so
+# not using list.
                 if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                         and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                     self.deallocation_start_index_groups = 1
