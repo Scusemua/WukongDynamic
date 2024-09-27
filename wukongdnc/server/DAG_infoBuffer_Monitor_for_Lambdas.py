@@ -347,7 +347,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             deallocation_end_index += 1
 
         self.most_recent_deallocation_end_index = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-        
+
+#brc: ToDo: So it gets set here in restore but shouldn;t we also set it at the end of a deallocation?
+# Note that maybe we don't ned it unless we do a restore and here we calc it in restore
+# but could set it after every dealloc.
+     
         # Can self.most_recent_deallocation_end_index > 0 be false? No, since we 
         # know we did a dealloation (for most recent) so end index is greater than 0.
         try:
