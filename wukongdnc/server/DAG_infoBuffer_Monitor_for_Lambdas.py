@@ -345,13 +345,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         #if deallocation_end_index > 0:
         if deallocation_end_index >= 0:
             deallocation_end_index += 1
-
-        self.most_recent_deallocation_end_index = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-
-#brc: ToDo: So it gets set here in restore but shouldn;t we also set it at the end of a deallocation?
-# Note that maybe we don't ned it unless we do a restore and here we calc it in restore
-# but could set it after every dealloc.
-     
+        
         # Can self.most_recent_deallocation_end_index > 0 be false? No, since we 
         # know we did a dealloation (for most recent) so end index is greater than 0.
         try:
@@ -364,6 +358,30 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 logging.shutdown()
                 os._exit(0)
 
+        try:
+            msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
+                + " self.most_recent_deallocation_end_index is not equal to " \
+                + "computed_most_recent_deallocation_end_index."
+            computed_most_recent_deallocation_end_index = \
+                (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+            assert computed_most_recent_deallocation_end_index == self.most_recent_deallocation_end_index, msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+
+        # Note: we used to compute the most_recent_deallocation_end_index but now 
+        # when we do a deallocation we set the value of most_recent_deallocation_end_index.
+        # It is probably okay to just compute it here when we need it since we
+        # only need it here in restore.
+        #self.most_recent_deallocation_end_index = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+
+        # This is used in a range() below and it will be exclusive so increment by 1.
+        # We will set this to a new value at the end of restore to reflect that the 
+        # last dealloated value has changed (since we restored some of the values.)
+        # Note that the restored values are a suffix of the deallocated values 
+        # i.e., are a sequence of values at the end of the sequence of deallocted values.
         if self.most_recent_deallocation_end_index > 0:
             self.most_recent_deallocation_end_index += 1
 
@@ -377,7 +395,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # remember that this is the most recent version number for which we did
             # a deallocation
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
-
             # This was incremented above to be the position one past that of 
             # the last item deallocated, which is where we would start the
             # next deallocation
@@ -388,6 +405,16 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # past the position of the last decrement so the (exclusive)
             # range value is correct)
             self.most_recent_deallocation_end_index = deallocation_end_index -1
+            logger.info("deallocate_DAG_structures_partitions: new index values after restores: "
+                    + "self.version_number_for_most_recent_deallocation: " 
+                    + str(self.version_number_for_most_recent_deallocation)
+                    + " self.deallocation_start_index_partitions: "
+                    + str(self.deallocation_start_index_partitions)
+                    + " self.most_recent_deallocation_end_index: "
+                    + str(self.most_recent_deallocation_end_index))
+        else:
+            logger.info("deallocate_DAG_structures_partitions: " + " no restorations.")
+
 
     def deallocate_DAG_structures_partitions(self,requested_version_number_DAG_info):
         # current_partition_number is not currently used
@@ -506,17 +533,33 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             logger.info("deallocate_DAG_structures_partitions: generate_DAG_info_incremental_partitions: deallocate " + str(i))
             self.deallocate_DAG_structures_lambda(i)
         
-        # set start to end if we did a deallocation, i.e., if start < end. 
+        # Set start to end if we did a deallocation, i.e., if start < end. 
         # Note that if start equals end, then we did not do a deallocation since 
         # end is exclusive. (And we may have just incremented end, so dealllocating 
         # "1 to 1", with start = 1 and end = 1, was implemented as incrementing 
         # end to 2 and using range(1,2) so start < end for the deallocation "1 to 1"
         # Note that end was exclusive so we can set start to end instead of end+1.
+        # Set most recent to deallocation_end_index - 1; we use - 1 since most
+        # recent should be the last position actually deallocated, and since 
+        # end index is exclusive (i.e., is 1 past the actual end) we use end - 1.
         if self.deallocation_start_index_partitions < deallocation_end_index:
-            # remember that this is the most recent version number for which we did
+            # Remember that this is the most recent version number for which we did
             # a deallocation
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
             self.deallocation_start_index_partitions = deallocation_end_index
+            # The most_recent_deallocation_end_index is the position before 
+            # the deallocation_start_index_partitions, i.e., we wil start the next
+            # deallocation right after the end of the last dealloations we have performed.
+            self.most_recent_deallocation_end_index = deallocation_end_index - 1
+            logger.info("deallocate_DAG_structures_partitions: new index values after deallocation: "
+                + "self.version_number_for_most_recent_deallocation: " 
+                + str(self.version_number_for_most_recent_deallocation)
+                + " self.deallocation_start_index_partitions: "
+                + str(self.deallocation_start_index_partitions)
+                + " self.most_recent_deallocation_end_index: "
+                + str(self.most_recent_deallocation_end_index))
+        else:
+            logger.info("deallocate_DAG_structures_partitions: " + " no deallocations.")
 
 #brc: ToDo: set most recent here. Also, what is init value of most recent?
 
@@ -967,7 +1010,13 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # version for last deallocation to n, where n >=3. At that point, some
                     # lambda can request 2, which will be less then n, so we will do a restore.
 
-#brc: ToDo:
+                    # Note: We only do deallocations/restors if there is at leat one
+                    # withdraw_tuple since we need to know the current requested 
+                    # version in order to do deallocations.
+                    # Q: Can we do sme deallocations based on the most recent requested
+                    # version considering that the next requested version may be 
+                    # higher than the last? Or just wait until we get the next
+                    # request, which will be when we get a call to withdraw()
                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                             and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
 
