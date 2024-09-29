@@ -528,7 +528,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             deallocation_end_index += 1
 
         logger.info("deallocate_DAG_structures_partitions: self.deallocation_start_index_partitions: " + str(self.deallocation_start_index_partitions)
-            + " deallocation_end_index: " + str(deallocation_end_index))
+            + " deallocation_end_index: " + str(deallocation_end_index) + " (exclusive)")
         for i in range(self.deallocation_start_index_partitions, deallocation_end_index):
             logger.info("deallocate_DAG_structures_partitions: generate_DAG_info_incremental_partitions: deallocate " + str(i))
             self.deallocate_DAG_structures_lambda(i)
@@ -1079,12 +1079,13 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                             self.deallocate_DAG_structures_groups(requested_current_version_number)
                     """
 
+                    # If no restore/dealloc then saved wil be the asm as previous
                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                             and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
 
                         logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited after deallocation: ")
     
-                        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: all saved deallocations:")
+                        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: all saved deallocations for deposit:")
                         logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG_map:")
                         for key, value in self.current_version_DAG_info_DAG_map_save.items():
                             logger.info(key)
@@ -1527,6 +1528,29 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 else:
                     self.deallocate_DAG_structures_groups(requested_current_version_number)
             """
+
+            # If no restore/dealloc then saved wil be the asm as previous
+            if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
+                    and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+
+                logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited after deallocation: ")
+
+                logger.info("DAG_infoBuffer_Monitor_for_Lambdas: all saved deallocations for deposit:")
+                logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG_map:")
+                for key, value in self.current_version_DAG_info_DAG_map_save.items():
+                    logger.info(key)
+                    logger.info(value)
+                logger.info(" ")
+                logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG states:")         
+                for key, value in self.current_version_DAG_info_DAG_states_save.items():
+                    logger.info(key)
+                    logger.info(value)
+                logger.info(" ")
+                logger.info("DAG_infoBuffer_Monitor_for_Lambdas: saved DAG tasks:")
+                for key, value in  self.current_version_DAG_info_DAG_tasks_save.items():
+                    logger.info(str(key) + ' : ' + str(value))
+                logger.info(" ")
+
             logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info withdrawn after deallocation: ")
             self.print_DAG_info(self.current_version_DAG_info)
 
