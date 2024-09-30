@@ -691,6 +691,7 @@ import logging
 import os
 import socket
 import threading
+import time
 
 import cloudpickle
 import matplotlib.pyplot as plt
@@ -5902,6 +5903,7 @@ https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-pyth
 #Q: Should we guard the BFS.py imports in the above way?
 
 def print_BFS_stats():
+    time.sleep(2)
     logger.info("BFS: print_BFS_stats: ")
     logger.info("")
     logger.info("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
@@ -6129,11 +6131,12 @@ def print_BFS_stats():
     logger.info("")
     logger.info("partitions, number of partitions: " + str(len(partitions))+" (length):")
 
-    for x in partitions:
+    for x,yp in zip(partitions,partition_names):
         if PRINT_DETAILED_STATS:
             #print("-- (" + str(len(x)) + "):", end=" ")
             print_val = ""
-            print_val += "-- (" + str(len(x)) + "):" + " "
+            #print_val += "-- (" + str(len(x)) + "):" + " "
+            print_val += yp + ": (" + str(len(x)) + "):" + " "
             for node in x:
                 print_val += str(node) + " "
                 #print(node,end=" ")
@@ -6157,10 +6160,11 @@ def print_BFS_stats():
             logger.trace("-- " + name)
     logger.info("")
     logger.info("groups, len: " + str(len(groups))+":")
-    for g in groups:
+    for g,yg in zip(groups,group_names):
         if PRINT_DETAILED_STATS:
             print_val = ""
-            print_val += "-- (" + str(len(g)) + "):" + " "
+            #print_val += "-- (" + str(len(g)) + "):" + " "
+            print_val += yg + ": (" + str(len(g)) + "):" + " "
             for node in g:
                 print_val += str(node) + " "
                 #print(node,end=" ")
@@ -6255,10 +6259,9 @@ def print_BFS_stats():
     logger.info("")
     if PRINT_DETAILED_STATS:
         logger.info("partition nodes' frontier_parent_tuples:")
-        for x in partitions:
+        for x,yp in zip(partitions,partition_names):
             if PRINT_DETAILED_STATS:
-                print_val = "-- (" + str(len(x)) + "):" + " "
-                print_val = ""
+                print_val = yp + ": (" + str(len(x)) + "):" + " "
                 for node in x:
                     print_val += str(node.ID) + ": " 
                     # logger.trace(node.ID,end=": ")
@@ -6274,9 +6277,9 @@ def print_BFS_stats():
     logger.info("")
     if PRINT_DETAILED_STATS:
         logger.info("group nodes' frontier_parent_tuples:")
-        for x in groups:
+        for x,yg in zip(groups,group_names):
             if PRINT_DETAILED_STATS:
-                print_val = "-- (" + str(len(x)) + "): "
+                print_val = yg + ": (" + str(len(x)) + "): "
                 for node in x:
                     print_val += str(node.ID) + ": "
                     # logger.trace(node.ID,end=": ")
