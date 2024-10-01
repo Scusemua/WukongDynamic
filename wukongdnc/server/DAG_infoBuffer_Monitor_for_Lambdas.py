@@ -947,6 +947,30 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     self.deallocation_start_index_partitions = 1
                     self.most_recent_deallocation_end_index = 0
 
+                # If we are using incremental partitions, then we are processing
+                # the connected components of partitions one at a time. If
+                # we find a partition P that has a collapse partition that is 
+                # to be continued, then we will call withdraw() to get another
+                # incemental DAG, but no other lambda is executing, i.e.,
+                # there is no other CC of partitions being executed so if
+                # we wait for a new DAG we are the only waiter. If the 
+                # tobecontinued partition is the last partition in the CC, then
+                # it will be complete in the new ADG and after executing this 
+                # now complete partition, the lambda will terminate. So again
+                # only one lambda will be executing (which is the lambda for 
+                # the next CC.) In general, only one lambda can have an
+                # incomplete partition and thus only one can call withdraw().
+                if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
+                    try:
+                        msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
+                            + " using partitions, but self._buffer has more than one withdraw tuple. "
+                        assert len(self._buffer <= 1) , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if DAG_executor_constants.exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+
                 for withdraw_tuple in self._buffer:
 #brc: dealloc: get requested_current_version_number and get start_tuple from _buffer tuple
 # for withdraw_tuple in self._buffer:
