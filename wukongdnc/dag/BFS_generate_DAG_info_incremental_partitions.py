@@ -174,6 +174,35 @@ we start incremental DAG generation. (We might need to synchronize DAG generatio
 inputting the graph, so that we only try to build parts of the DAG that we have already input.
 S3 supports file streaming.)
 
+Suggestion: Parallal incremental DAG generation and execution: for non-incemental, if 
+there are multiple connected components (CCs), the first partition/group of each CC is a
+leaf node in the DAG, so that at the beginning of execution, a worker/lambda is started
+for each leaf node and thus the CCs are executed in parallel. (And for groups, the 
+execution of the groups in a C is in parallel too.) For incremental, CCs are identified
+one at a time. The first partition/node has a worker/lambda started for it at the beginnning
+of execution, but the first partition/group identified for any other CC is executed
+when the partition/group is identified (either by starting a lambda for the leaf
+partition/group or putting the leaf partition/group in the work queue for the workers.)
+Note that each call to bfs() starts a seach of a new CC, i.e., the code says 
+while all the graph nodes have not been visited, call bfs() on an unvisited
+graph node, which visits all of the nodes in the CC of that node. bfs() is called 
+until all of the input graph nodes are visited. This means that we aer not excuting 
+the CCs in parallel. One idea to address this is to try to identify new CCs as
+quickly as possible. That is, use one of the usual algorithms for finding CCs to 
+identify CCs in parallel with running bfs() on the identified CCs. bfs() builds
+a DAG and while it also identifies the CCs building the DAG has a lot of overhead
+compared to just ientifying CCs. So it should be possible to identify CCS much 
+faster than bfs() is doing it. Then when a CC is identified, i.e., we find a 
+graph node N that is the first node of a new CC, we can call bfs(N). Thus, as
+such nodes are identifie, we will have instances of BFS(N) running in parallel,
+each bfs(N) instance incrementally generating and executing the DAG for the 
+CC of N. This could make incremental DAG generation and execution much faster
+for large graphs. Note that the bfs(N) instanc can be spread across multiple 
+machines, etc. Note that w want to identify individual CCS are quickly as
+possible, so using a depth-first-search, which completely ientifies one CC before
+moving to another, might be better than union-find, which doesn't know
+the CCs exactly until th end, i.e., the last union.
+
 """
 
 #brc: num_nodes
