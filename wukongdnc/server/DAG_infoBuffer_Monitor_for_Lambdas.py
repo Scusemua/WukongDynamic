@@ -313,6 +313,38 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         i.e., this number is computed with the same code that we used to deallocate
         groups but with taking the sum of the lengths instead of actually doing
         the deallocations. Is there a shortcut?
+        
+        Example:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: partitions, number of partitions: 15 (length):
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR1_1: (3): 5 17 1
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR2_1L: (15): 2 10 5-s 16 20 8 11 3 17-s 19 4 6 14 1-s 12
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR3_1: (9): 8-s 13 7 11-s 15 6-s 9 4-s 18
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR4_1: (1): 21
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR5_1: (2): 21-s 22
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR6_1: (2): 22-s 25
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR7_1: (2): 25-s 26
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR8_1: (2): 26-s 27
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR9_1: (2): 27-s 28
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR10_1: (1): 23
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR11_1: (2): 23-s 24
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR12_1: (2): 24-s 29
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,744][BFS][MainProcess][MainThread]: PR13_1: (2): 29-s 30
+            [2024-09-30 08:44:10,754][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,754][BFS][MainProcess][MainThread]: PR14_1: (2): 30-s 31
+            [2024-09-30 08:44:10,754][BFS][MainProcess][MainThread]:
+            [2024-09-30 08:44:10,754][BFS][MainProcess][MainThread]: PR15_1: (2): 31-s 32
         """
         # This is where deallocation should end
         deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
@@ -947,19 +979,38 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     self.deallocation_start_index_partitions = 1
                     self.most_recent_deallocation_end_index = 0
 
-                # If we are using incremental partitions, then we are processing
-                # the connected components of partitions one at a time. If
-                # we find a partition P that has a collapse partition that is 
-                # to be continued, then we will call withdraw() to get another
+                # If we are using incremental partitions, then we generating the
+                # DAG by searching the the connected components of partitions one at
+                # a time. If lambda L finds a partition P that has a collapse partition 
+                # C that is to be continued, then L will call withdraw() to get another
                 # incemental DAG, but no other lambda is executing, i.e.,
                 # there is no other CC of partitions being executed so if
-                # we wait for a new DAG we are the only waiter. If the 
-                # tobecontinued partition is the last partition in the CC, then
-                # it will be complete in the new ADG and after executing this 
-                # now complete partition, the lambda will terminate. So again
-                # only one lambda will be executing (which is the lambda for 
+                # L adds a withdraw tuple in withdraw() representing that a new Lambda
+                # # must be started to resume L's execution of C then there will be 
+                # only one withdraw tuple (which is for L) when a new DAG is deposited.'
+                # If the yobecontinued partition C is the last partition in the CC being 
+                # executed by E, then C will be complete in the new ADG and after executing 
+                # this now complete partition C, lambda E will terminate. So again
+                # only one lambda will be executing (which is the lambda for executing
                 # the next CC.) In general, only one lambda can have an
-                # incomplete partition and thus only one can call withdraw().
+                # incomplete partition and thus only one can call withdraw(). This is true
+                # even if the publishing interval for new incremental DAGs is a number n
+                # such that m, m>1, CCs are processed in this interval. In this case, at least
+                # m-1 CCs will not have an incomplete CC, i.e., all if these m-1 CCs
+                # will have a last partition that is not tobecontinued. It is possible
+                # the one CC, which is the CC currently being processed has a tobecontinued
+                # partition. Note that whenever we publsh a new incremental ADG, the 
+                # last partition that was generated is tobecontinued unless it is the 
+                # last partition in the DAG, i.e., there are no more partitions to be 
+                # generated. Noet: When we generate a parttion P that is the last partitions
+                # of a CC ad there are more CCs to process, then P will be marked as 
+                # tobecontinued and thrn we we procss the first partition of the next CC
+                # we will know that P was the last partition of its CC and we will mark P
+                # as not tobecontinued. (Thus we may publish a DAG that has P being tobecontinud
+                # and then publish the next DAG with P being not tobecontinued, if the 
+                # publishing interval happends to require a new DAG to be generated with P 
+                # tobecontinued so the next DAG will be published with P not tobecontinued.
+                # We assert all of this next:
                 if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                     try:
                         msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
