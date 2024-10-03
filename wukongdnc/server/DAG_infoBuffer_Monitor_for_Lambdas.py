@@ -627,7 +627,210 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         else:
             logger.info("deallocate_DAG_structures_partitions: " + " no deallocations.")
 
+    def restore_DAG_structures_groups(self,requested_version_number_DAG_info):
+        """
+        We have:
+        requested_current_version_number < self.version_number_for_most_recent_deallocation:
+        so we have deallocated too many items given the next requested_current_version_number.
+        This means we need to restore some of these items. We have saved every item that\
+        we have deallocaed so we can out them back.
+        The last deallocation was from the saved start to the computed end.
+        For partitions, this is:
+            deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+        which means we have deallocated from 1 to end, though we may not have started
+        at 1, i.e., if we did a sequence of deallocations in deposit(). Still, we
+        have deallocated and saved the items from 1 to end.
+        For groups, we iterate through the partitions from start to end and for each
+        partition we deallocate its n groups. In this case we also end up at an
+        end index for the deallocated groups, and we have deallocated from 
+        1 to the group end index.
+        Tehe restoration is always a suffx of the deallocated items. That is,
+        for the new requested_current_version_number which we know is less than 
+        the version_number_for_most_recent_deallocation, we still want to 
+        deallocate all the items starting at 1, but we need to stop deallovating
+        items that are passed the end index that is computed by 
+        requested_current_version_number. Note that for partitions, we can get ths
+        end index from the "deallocation_end_index =" formula. For groups, this
+        end index depends on the number of groups in each of the partitions to be 
+        deallocated. We can compte this based on the partitions to be deallocated,
+        i.e., this number is computed with the same code that we used to deallocate
+        groups but with taking the sum of the lengths instead of actually doing
+        the deallocations. Is there a shortcut?
+        """
+
+        deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+
+        #Q: Can this be false? Yes, if trying to restore version 2? 
+        # But No: we use >= 0 and 0 is the min so no?  For verstion 2, 
+        # end index is 2+0-2=0 since you can't actually dealloc until you get to version 3.
+        # If most recent is, e.g., 3, then we did some deallocs for 3 and we need
+        # to restore these for 2 whose end index is 0.
+        #Q: "if deallocation_end_index == 0" since it is 0 fr 2 and we need to retore.
+        # so for 3 with interval 2, end index is 2+2-2=2, so dealloc 1..2 (as for 
+        # 3 we have: 1, 2, 3, 4, 5, 6 and we can dealloc 1 and 2 of version 1; so
+        # we resore 1 and 2 of version 1 if we dealloc for 3 and get a request for 2.
+        # So we want to inc end index 0 to 1 and restore from 1 to 2, which is range(1,3)
+        #
+        # For restore we use >= 0. For deallocation, we use > 0. For deallocation, 
+        # we do not want to do a dealloc if end index is 0, which is the case for 
+        # requested version 2, as start will be 1 (the initial value) and if end is 
+        # 0 the range is from 1 to 0 so no dealloations will be done. For restore,
+        # when the version requsted is less than the most recent deallocation end index 
+        # we need to restore. If the most recent is for version 3 and the end index (for 
+        # the just requested) is for version 2, then we need to restore the deallocs that were
+        # done for 3. These deallocs were states 1 and 2. Thus, the end index for 2 is 
+        # 0 and we increment it to 1, where the end index for 3, the most recent, is 2
+        # which we also increment getting 3, giving a range of (1,3), where 3 is exclusive
+        # so we restore states 1 and 2. States 3, 4, 5, 6 were never deallocated so a
+        # this point no deallocations have been done. (Note the request is for 2 and 
+        # the version available is 3 so we will return 3 but without any deallocations,
+        # i.e., the deallocs will have been restored.)
+        #if deallocation_end_index > 0:
+
+        if deallocation_end_index_partitions > 0:
+            deallocation_end_index_partitions += 1
+
+        # Can self.most_recent_deallocation_end_index > 0 be false? No, since we 
+        # know we did a dealloation (for most recent) so end index is greater than 0.
+        try:
+            msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
+                + " self.most_recent_deallocation_end_index is not greater than 0."
+            assert self.most_recent_deallocation_end_index > 0 , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+
+        try:
+            msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
+                + " self.most_recent_deallocation_end_index is not equal to " \
+                + "computed_most_recent_deallocation_end_index."
+            computed_most_recent_deallocation_end_index = \
+                (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+            assert computed_most_recent_deallocation_end_index == self.most_recent_deallocation_end_index, msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+
+        # Note: we used to compute the most_recent_deallocation_end_index but now 
+        # when we do a deallocation we set the value of most_recent_deallocation_end_index.
+        # It is probably okay to just compute it here when we need it since we
+        # only need it here in restore.
+        #self.most_recent_deallocation_end_index = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+
+        # This is used in a range() below and it will be exclusive so increment by 1.
+        # We will set this to a new value at the end of restore to reflect that the 
+        # last dealloated value has changed (since we restored some of the values.)
+        # Note that the restored values are a suffix of the deallocated values 
+        # i.e., are a sequence of values at the end of the sequence of deallocted values.
+        if self.most_recent_deallocation_end_index > 0:
+            self.most_recent_deallocation_end_index += 1
+
+        logger.info("restore_DAG_structures_partitions: deallocation_end_index_partitions: " + str(deallocation_end_index_partitions)
+            + " self.most_recent_deallocation_end_index: " + str(self.most_recent_deallocation_end_index))
+
+        for i in range(self.deallocation_end_index_partitions, self.most_recent_deallocation_end_index):
+            logger.info("deallocate_DAG_structures_groups: deallocate " + str(i))
+            groups_of_partition_i = self.groups_of_partitions[i-1]
+            # number of groups >= 1
+            number_of_groups_of_partition_i = len(groups_of_partition_i)
+            # end index is now 1 past the last group to be deallocated, e.g., 
+            # if start is 1 and number of groups is 3 we want to deallocate 
+            # 1, 2, and 3. The value 4 is fine for end since we will use a 
+            # range(1,4) and 1 is inclusive but 4 is exclusive.
+            # After adding number_of_groups_of_partition_i to deallocation_end_index_groups, 
+            # deallocation_start_index_groups < deallocation_end_index_groups.
+
+            deallocation_end_index_groups = self.deallocation_start_index_groups+number_of_groups_of_partition_i
+
+            try:
+                msg = "[Error]: deallocate_DAG_structures_groups:" \
+                    + " deallocation_start_index_groups is not less than deallocation_end_index_groups after add." \
+                    + " deallocation_start_index_groups: " + str(self.deallocation_start_index_groups) \
+                    + " deallocation_end_index_groups: "  + str(deallocation_end_index_groups)
+                assert self.deallocation_start_index_groups < deallocation_end_index_groups , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                    logging.shutdown()
+                    os._exit(0)
+
+            logger.info("deallocate_DAG_structures_groups: "
+                + " number_of_groups_of_partition_i: " + str(number_of_groups_of_partition_i)
+                + " deallocation_start_index_groups: " + str(self.deallocation_start_index_groups)
+                + " deallocation_end_index_groups: "  + str(deallocation_end_index_groups))
+
+            for j in range(self.deallocation_start_index_groups, deallocation_end_index_groups):
+                # Note: This deallocation uses group_name = BFS.partition_names[j-1]
+                # so deallocate_Group_DAG_structures deallocates group in position j-1
+                # This deallocates structures in the DAG_info, which we presumably do 
+                # when we have very large DAGs that we do not wanr to pass to each lambda.
+                self.restore_item(j)
+ 
+            # set start to end if we did a deallocation, i.e., if start < end. 
+            # Note that if start equals end, then we did not do a deallocation since 
+            # end is exclusive. (And we may have just incremented end, so dealllocating 
+            # "1 to 1", with start = 1 and end = 1, was implemented as incrementing 
+            # end to 2 and using range(1,2) so start < end for the deallocation "1 to 1"
+            # Note that end was exclusive so we can set start to end instead of end+1.
+            if self.deallocation_start_index_groups < deallocation_end_index_groups:
+                # remember that this is the most recent version number for which we did
+                # a deallocation
+                self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
+                self.deallocation_start_index_groups = deallocation_end_index_groups
+
+        if deallocation_end_index_partitions <= self.most_recent_deallocation_end_index:
+            # remember that this is the most recent version number for which we did
+            # a deallocation
+            self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
+            # This was incremented above to be the position one past that of 
+            # the last item deallocated, which is where we would start the
+            # next deallocation
+            self.deallocation_start_index_partitions = deallocation_end_index_partitions
+            # But the actual new end of deallocation for this deallocation (after
+            # restoring items) is deallocation_end_index - 1. We decrement
+            # since deallocation_end_index was incremented above t be one
+            # past the position of the last decrement so the (exclusive)
+            # range value is correct)
+            self.most_recent_deallocation_end_index = deallocation_end_index_partitions -1
+            logger.info("deallocate_DAG_structures_partitions: new index values after restores: "
+                    + "self.version_number_for_most_recent_deallocation: " 
+                    + str(self.version_number_for_most_recent_deallocation)
+                    + " self.deallocation_start_index_partitions: "
+                    + str(self.deallocation_start_index_partitions)
+                    + " self.most_recent_deallocation_end_index: "
+                    + str(self.most_recent_deallocation_end_index))
+        else:
+            logger.info("deallocate_DAG_structures_partitions: " + " no restorations.")
+
 #brc: ToDo: set most recent here. Also, what is init value of most recent?
+
+#brc: Todo: Note: we do not dealloc groups_of_partitions incrementally? When could we
+# do it since we need it here?
+        
+        # Possibly reset deallocation_start_index_partitions. Note that 
+        # deallocation_start_index_groups was reset afer the last group 
+        # deallocation, and we know that we did deallocate 1 or more groups
+        # of a partition, since we are in ths code. However, we don't know 
+        # whether we actually tried to deallocate any partitions, i.e., whether
+        # deallocation_start_index_partitions < deallocation_end_index_partitions
+        # was true for the for i in range() loop. If not, then we did not 
+        # deallocate any groups in any partitions.
+        #
+        # Set start to end if we did a deallocation, i.e., if start < end. 
+        # Note that if start equals end, then we did not do a deallocation since 
+        # end is exclusive. (And we may have just incremented end, so dealllocating 
+        # "1 to 1", with start = 1 and end = 1, was implemented as incrementing 
+        # end to 2 and using range(1,2) so start < end for the deallocation "1 to 1"
+        # Note that end was exclusive so we can set start to end instead of end+1.
+        if self.deallocation_start_index_partitions < deallocation_end_index_partitions:
+            # remember that this is the most recent version number for which we did
+            # a deallocation
+            self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
+            self.deallocation_start_index_partitions = deallocation_end_index_partitions
 
     def deallocate_DAG_structures_groups(self,requested_version_number_DAG_info):
         # Version 1 of the incremental DAG is given to the DAG_executor_driver for execution
@@ -778,17 +981,17 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # when we have very large DAGs that we do not wanr to pass to each lambda.
                 self.deallocate_DAG_structures_lambda(j)
  
-                # set start to end if we did a deallocation, i.e., if start < end. 
-                # Note that if start equals end, then we did not do a deallocation since 
-                # end is exclusive. (And we may have just incremented end, so dealllocating 
-                # "1 to 1", with start = 1 and end = 1, was implemented as incrementing 
-                # end to 2 and using range(1,2) so start < end for the deallocation "1 to 1"
-                # Note that end was exclusive so we can set start to end instead of end+1.
-                if self.deallocation_start_index_groups < deallocation_end_index_groups:
-                    # remember that this is the most recent version number for which we did
-                    # a deallocation
-                    self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
-                    self.deallocation_start_index_groups = deallocation_end_index_groups
+            # set start to end if we did a deallocation, i.e., if start < end. 
+            # Note that if start equals end, then we did not do a deallocation since 
+            # end is exclusive. (And we may have just incremented end, so dealllocating 
+            # "1 to 1", with start = 1 and end = 1, was implemented as incrementing 
+            # end to 2 and using range(1,2) so start < end for the deallocation "1 to 1"
+            # Note that end was exclusive so we can set start to end instead of end+1.
+            if self.deallocation_start_index_groups < deallocation_end_index_groups:
+                # remember that this is the most recent version number for which we did
+                # a deallocation
+                self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
+                self.deallocation_start_index_groups = deallocation_end_index_groups
 
 #brc: ToDo: set most recent here. Also, what is init value of most recent?
 
