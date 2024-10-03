@@ -331,45 +331,54 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             PR13_1: (2): 29-s 30
             PR14_1: (2): 30-s 31
             PR15_1: (2): 31-s 32
-        with Connected Components (CC) PR1_1 - PR3_1, PR4_1 - PR9_1, and PR10+1 - PR15_1. The 
-        first (base) DAG is PR1_1 - PR2_1 with PR2_1 tobecontinued (TBC). With pubication
-        interval 1, the next DAG (version 2) is PR1_1 - PR3_1, with partition 2 now complete
-        and partition 3 TBC. Tbhe executor will execute partition 2 and see that partiton 3
-        is TBC and request a new DAG. In the new DAG, Partition 3 is the last DAG in the first CC 
-        and it is complete. Since partiton 3 has no collapse tas, i.e., succeeding task, the executor
-        will terminate. The DAG generator will eposit() a new DAG that has partition 4, which is the
-        first partition of the next CC. Partition 4 is TBC so a new lambda is not started for
-        executing partiton 4. The next DAG has a complete partition 4 and a TBC partition 5.
+        with Connected Components (CC) PR1_1 - PR3_1, PR4_1 - PR9_1, and PR10_1 - PR15_1. The 
+        version 1 (base) DAG is PR1_1 - PR2_1, with PR1_1 complete and PR2_1 tobecontinued (TBC). 
+        With pubication interval 1, the next DAG (version 2) is PR1_1 - PR3_1, with partition 2 now complete
+        and partition 3 TBC. The lambda executor will execute partition 2 and see that partiton 3
+        is TBC and request a new DAG. Assume the new DAG has partition 3, which is the last DAG in the first CC 
+        and it is complete, while partition 4 is the first partition in the new DAG and is TBC.
+        Partition 3 is executed and since partiton 3 has no collapse task, i.e., succeeding task, the executor
+        will terminate. The DAG generator will deposit() a new DAG that has a complete partition 4, which is the
+        first partition of the next CC and a TBC partition 5.
         A new lambda is started to execute leaf task partition 4. (A leaf task is the first task
-        of a CC.) This nw lambda will execute 4, see that 5 is TBC and request a new DAG. In the 
-        new DAG, 5 is complete and 6 is TBC so the lambda requests a new DAG. In the new DAG,
-        6 is complete and 7 is TBC. Suppose 6 is executed an it takes a long time to execute 6.
-        In the mean time, the ADG generator, will continue to produce new DAGS that contain 
+        of a CC.) This new lambda will execute 4, see that 5 is TBC and request a new DAG. In the 
+        new DAG, assume 5 is complete and 6 is TBC. 5 is executed and since 6 is incomplete, a 
+        new DAG is requsted. In the new DAG, assume 6 is complete and 7 is TBC. Suppose 6 is executed anf
+        it takes a long time to execute 6.
+        In the mean time, the DAG generator, will continue to produce new DAGS that contain 
         partitions 7, 8, 9, 10, 11, 12, 13, 14, 15. When a new DAG is produced containing
-        partitons 10 and 11, where 10 is complete and 11 is TBC, and 10 is the first partition
-        of the 3rd CC. and new lambda will be started to execte leaf task 10. This lambda X
+        partitions 10 and 11, where 10 is complete and 11 is TBC, and 10 is the first partition
+        of the 3rd CC. and new lambda will be started to execte leaf task 10. This lambda X (or
+        if X requests a new DAG and doesn't get one then some other lambda Y that is started)
         will execute 10, 11, 12, 13, 14, and 15 and terminate. Note that after the lamda L
         that is executing partition 6 finishes 6 and sees the TBC partition 7 in its (old)
-        version 6 of the DAG, it will call deposit() requesting version 7 of the DAG. Assume
+        version 6 of the DAG, it will call withdraw() requesting version 7 of the DAG. Assume
         the last deposited version of the DAG is version 11, which contains all partitions from 
-        PR1_1 to PR1_12. Since 7 < 11, i.e., requested version 7 is older than the last
-        version 11 deposited, we can return version 11 of the ADG to L. However, as lambda
-        X was exexcuting the partitions in its CC (10, 11, 12, 13, 14, 15) it was also requesting
-        new versions of the DAG. In these new versions of the DAG that were given to X,
+        PR1_1 to PR12_. Since 7 < 11, i.e., requested version 7 is older than the last
+        version 11 deposited, we can return version 11 of the DAG to L. However, as lambda
+        X/Y was exexcuting the partitions in its CC (10, 11, 12, 13, 14, 15) it was also requesting
+        new versions of the DAG. In these new versions of the DAG that were given to X/Y,
         we will have deallocated some of the partition information in these DAGs, which is 
         the "old" partitions that are no longer needed to execute the newer partitions
-        in the DAG. For example, for version 11, we may have deallocted information about 
-        partitions 1 - 9. This means that if L calsl withdraw() and requests version 7 and
+        in the newer versions DAG. For example, for version 11, we deallocted information about 
+        partitions 1 - 9. This means that if L calls withdraw() and requests version 7 and
         we retun version 11 to L, version 11 will not have informarion about partitions 
         1 - 7 but L neds this deallocated information to execute its DAG. Thus, we must 
-        restore the missing information that L needs. In this case, L does NOT need
-        information about 1-5 but it does need information about partition 6 and the 
-        partitons after 6. Since our version 11 DAG had deallocations for 1 - 9, we
-        need to restore the information for 6, 7, 6, 9, which are partitions that L
+        restore the missing information in version 11 that L needs before we return it to L.
+        In this case, L does NOT need information about 1-5 but it does need information 
+        about partition 6 and the partitons after 6. This is because L is requesting version 
+        7, which means some partitions at the beginning of version 7 can be deallocated but
+        parttions at the end of version 7 and the partitions that were added in versions after 7
+        are also needed. Since our version 11 DAG had deallocations for 1 - 9, we
+        need to restore the information for 6, 7, 8, and 9, which are partitions that L
         needs that were deallocated from version 11. (Version 11 stil has information
-        about partition 10 etc.) So the version of the AG we return to L is version 
-        11 with partitions 1 - 5 being deallocated. Noet that when we deallocate infomation
-        about partition p we save it so that it is avaialble f we need to restore p.
+        about partition 10 etc.) So the version of the DAG we return to L is version 
+        11 with partitions 1 - 5 being deallocated. Note that when we deallocate infomation
+        about partition p we save it so that it is avaialble if we need to restore p.
+        Note: When an executor requests version i of the DAG, it is willing to receive
+        version i or any version after i. In the above scenario, we may have assumed that
+        a request for version i returned version i but it could have insted returned a
+        later version, depending on the interleaving of deposits and withdraws that occurs.
         """
         # This is where deallocation should end
         deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
