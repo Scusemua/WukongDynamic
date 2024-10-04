@@ -644,7 +644,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         partition we deallocate its n groups. In this case we also end up at an
         end index for the deallocated groups, and we have deallocated from 
         1 to the group end index.
-        Tehe restoration is always a suffx of the deallocated items. That is,
+        The restoration is always a suffx of the deallocated items. That is,
         for the new requested_current_version_number which we know is less than 
         the version_number_for_most_recent_deallocation, we still want to 
         deallocate all the items starting at 1, but we need to stop deallovating
@@ -658,6 +658,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         the deallocations. Is there a shortcut?
         """
 
+        # This is what the end index for the deallocations should be, but we may have 
+        # deallocated past that end index when we processed earlier requests for versions
+        # of the incremental DAG that were greater than this one. The index of the last
+        # dealloction that we have done is self.most_recent_deallocation_end_index. If
+        # deallocation_end_index_partitions is less than self.most_recent_deallocation_end_index 
+        # then we need to restore the deallocated values in positions after deallocation_end_index_partitions.
+        # The first such restored value would be in position deallocation_end_index_partitions+1
+        # and the last would be in position self.most_recent_deallocation_end_index.
         deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
         #Q: Can this be false? Yes, if trying to restore version 2? 
@@ -685,13 +693,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # this point no deallocations have been done. (Note the request is for 2 and 
         # the version available is 3 so we will return 3 but without any deallocations,
         # i.e., the deallocs will have been restored.)
-        #if deallocation_end_index > 0:
 
-        if deallocation_end_index_partitions > 0:
+        if deallocation_end_index_partitions >= 0:
             deallocation_end_index_partitions += 1
 
         # Can self.most_recent_deallocation_end_index > 0 be false? No, since we 
-        # know we did a dealloation (for most recent) so end index is greater than 0.
+        # know we did a deallocation (for most recent) so end index is greater than 0.
         try:
             msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
                 + " self.most_recent_deallocation_end_index is not greater than 0."
@@ -702,6 +709,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 logging.shutdown()
                 os._exit(0)
 
+        # Note: we used to compute self.most_recent_deallocation_end_index using self.version_number_for_most_recent_deallocation
+        # but now when we do a deallocation we set the value of self.most_recent_deallocation_end_index so
+        # we do not need to compute it.
+        # It is probably okay to just compute it here when we need it since we only need it here in restore.
+        #self.most_recent_deallocation_end_index = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
+
+        # Check that the saved value for most recent equals the most recent value that 
+        # we can compute from self.version_number_for_most_recent_deallocation
         try:
             msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
                 + " self.most_recent_deallocation_end_index is not equal to " \
@@ -715,17 +730,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 logging.shutdown()
                 os._exit(0)
 
-        # Note: we used to compute the most_recent_deallocation_end_index but now 
-        # when we do a deallocation we set the value of most_recent_deallocation_end_index.
-        # It is probably okay to just compute it here when we need it since we
-        # only need it here in restore.
-        #self.most_recent_deallocation_end_index = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-
         # This is used in a range() below and it will be exclusive so increment by 1.
         # We will set this to a new value at the end of restore to reflect that the 
-        # last dealloated value has changed (since we restored some of the values.)
+        # last deallocated value has changed (since we restored some of the values.)
         # Note that the restored values are a suffix of the deallocated values 
-        # i.e., are a sequence of values at the end of the sequence of deallocted values.
+        # i.e., are a sequence of values at the end of the sequence of values that 
+        # have been deallocated so far.
         if self.most_recent_deallocation_end_index > 0:
             self.most_recent_deallocation_end_index += 1
 
@@ -764,10 +774,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 + " deallocation_end_index_groups: "  + str(deallocation_end_index_groups))
 
             for j in range(self.deallocation_start_index_groups, deallocation_end_index_groups):
-                # Note: This deallocation uses group_name = BFS.partition_names[j-1]
-                # so deallocate_Group_DAG_structures deallocates group in position j-1
-                # This deallocates structures in the DAG_info, which we presumably do 
-                # when we have very large DAGs that we do not wanr to pass to each lambda.
+                # Note: This deallocation uses group_names[j-1]
+                # so restore_item restores the group in position j-1.
                 self.restore_item(j)
  
             # set start to end if we did a deallocation, i.e., if start < end. 
@@ -993,10 +1001,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # Note that end was exclusive so we can set start to end instead of end+1,
             # i.e., we alrady incremened end.
             if self.deallocation_start_index_groups < deallocation_end_index_groups:
-                # remember that this is the most recent version number for which we did
-                # a deallocation. Also, set start to one past the end (where we already 
-                # incremented end above so do not use end+1)
-                self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
                 # Not that we bump deallocation_start_index_groups down as we deallocate the 
                 # groups of the partitions. After the last position, deallocation_start_index_groups
                 # will be ready for the next round of deallocations, i.e., next iteration of
@@ -1027,6 +1031,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # a deallocation. And set deallocation_start_index_partitions so that it
             # is ready for the next round of deallocations, i.e., the next call to this method.
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
+            # The start position of Whichever partitions of groups we just restored becomes 
+            # the new start index for future deallocations. Since the first poaition 
+            # retored was position deallocation_end_index_partitions it becomes the new
+            # value for self.deallocation_start_index_partitions. For example, if the 
+            # next version requsted is greater than self.version_number_for_most_recent_deallocation
+            # we will do some deallocations starting in position self.deallocation_start_index_partitions.
             self.deallocation_start_index_partitions = deallocation_end_index_partitions
 
         # Example. Suppose the publishing interval is 4, i.e., after publishing the
