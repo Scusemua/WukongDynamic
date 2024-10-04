@@ -955,6 +955,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # After adding number_of_groups_of_partition_i to deallocation_end_index_groups, 
             # deallocation_start_index_groups < deallocation_end_index_groups.
 
+            # As the preceding comment just explained, this computation sets deallocation_end_index_groups
+            # to the correct exclusive value for the range, so there is no need to increment it lik
+            # we do for the other end index values.
             deallocation_end_index_groups = self.deallocation_start_index_groups+number_of_groups_of_partition_i
 
             try:
@@ -981,19 +984,25 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # when we have very large DAGs that we do not wanr to pass to each lambda.
                 self.deallocate_DAG_structures_lambda(j)
  
-            # set start to end if we did a deallocation, i.e., if start < end. 
+            # set start to end if we did a deallocation, i.e., if start < end. The new
+            # start will be in position for deallocating the next (if any) partition of groups.
             # Note that if start equals end, then we did not do a deallocation since 
             # end is exclusive. (And we may have just incremented end, so dealllocating 
             # "1 to 1", with start = 1 and end = 1, was implemented as incrementing 
             # end to 2 and using range(1,2) so start < end for the deallocation "1 to 1"
-            # Note that end was exclusive so we can set start to end instead of end+1.
+            # Note that end was exclusive so we can set start to end instead of end+1,
+            # i.e., we alrady incremened end.
             if self.deallocation_start_index_groups < deallocation_end_index_groups:
                 # remember that this is the most recent version number for which we did
-                # a deallocation
+                # a deallocation. Also, set start to one past the end (where we already 
+                # incremented end above so do not use end+1)
                 self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
+                # Not that we bump deallocation_start_index_groups down as we deallocate the 
+                # groups of the partitions. After the last position, deallocation_start_index_groups
+                # will be ready for the next round of deallocations, i.e., next iteration of
+                # the outer loop above. We calclate deallocation_end_index_groups each time 
+                # inner for-loop is excuteded.
                 self.deallocation_start_index_groups = deallocation_end_index_groups
-
-#brc: ToDo: set most recent here. Also, what is init value of most recent?
 
 #brc: Todo: Note: we do not dealloc groups_of_partitions incrementally? When could we
 # do it since we need it here?
@@ -1015,7 +1024,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # Note that end was exclusive so we can set start to end instead of end+1.
         if self.deallocation_start_index_partitions < deallocation_end_index_partitions:
             # remember that this is the most recent version number for which we did
-            # a deallocation
+            # a deallocation. And set deallocation_start_index_partitions so that it
+            # is ready for the next round of deallocations, i.e., the next call to this method.
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
             self.deallocation_start_index_partitions = deallocation_end_index_partitions
 
