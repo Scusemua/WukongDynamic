@@ -4173,6 +4173,9 @@ def bfs(visited, node):
                                 DAG_info_is_complete = True # based on above if-condition being True
 
 #brc: copy for deposit
+                                # Either generate the names of the groups in the current batch of
+                                # partitions or the names of the partitions in the current batch of 
+                                # partitions.
                                 groups_of_partitions_in_current_batch = []
                                 partition_names_in_current_batch = []
 
@@ -4186,9 +4189,8 @@ def bfs(visited, node):
                                         # the server, which is where the DAG_infobuffer_monitor lives
                                         # when we are using lambdas. (We have this list here but
                                         # we need it on the tcp_server when we are using lambas
-                                        # so we send this list but by bit to the server, where we
-                                        # only need to access the lists that we have seen so)
-                                        #                                         
+                                        # so we send this list bit by bit to the server, where we
+                                        # only need to access the lists that we have seen so far.)                                     
 
                                         end_index = len(groups_of_partitions)
                                         try:
@@ -4208,14 +4210,20 @@ def bfs(visited, node):
                                                 logging.shutdown()
                                                 os._exit(0)
                                     
-                                        # start_index_of_groups_of_partitions_copy is inclusive; end_index is exclusive
+                                        # start_index_of_groups_of_partitions_copy is inclusive (inited to 0);
+                                        # end_index is exclusive.
                                         for i in range(start_index_for_groups_of_partitions_copy,end_index):
                                             groups_of_partitions_in_current_batch.append(groups_of_partitions[i])
                                         logger.info("BFS: groups_of_partitions_in_current_batch:")
                                         for list_of_groups in groups_of_partitions_in_current_batch:
-                                            logger.info(list_of_groups)
+                                            logger.info(list_of_groups)                                        
+                                        # We bump start higher as we go along.
                                         start_index_for_groups_of_partitions_copy = end_index
                                     else:
+                                        # Need to generate the partition_names_in_current_batch
+                                        # which is for each new partition added to the incremental
+                                        # partition added to the DAG, the partition name. For more see
+                                        # the comment above for groups.
                                         end_index = len(partition_names)
                                         try:
                                             msg = "[Error]: BFS: len(partition_names) is not 1 when current_partition_number is 1."
@@ -4234,12 +4242,14 @@ def bfs(visited, node):
                                                 logging.shutdown()
                                                 os._exit(0)
                                     
-                                        # start_index_of_groups_of_partitions_copy is inclusive; end_index is exclusive
+                                        # start_index_of_groups_of_partitions_copy is inclusive (inited to 0);
+                                        # end_index is exclusive
                                         for i in range(start_index_for_partition_names_copy,end_index):
                                             partition_names_in_current_batch.append(partition_names[i])
                                         logger.info("BFS: partition_names_in_current_batch:")
                                         for name in partition_names_in_current_batch:
                                             logger.info(name)
+                                        # We bump start higher as we go along.
                                         start_index_for_partition_names_copy = end_index
                 
                                 DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete,
@@ -4735,6 +4745,9 @@ def bfs(visited, node):
                                     # Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas.py, and 
                                     # Remote_Client_for_DAG_infoBuffer_Monitor for processes.
 
+                                    # Either generate the names of the groups in the curren tbatch of 
+                                    # partitions or the names of the partitions in the current batch of 
+                                    # partitions.
                                     groups_of_partitions_in_current_batch = []
                                     partition_names_in_current_batch = []
                                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
@@ -4747,26 +4760,31 @@ def bfs(visited, node):
                                             # the server, which is where the DAG_infobuffer_monitor lives
                                             # when we are using lambdas. (We have this list here but
                                             # we need it on the tcp_server when we are using lambas
-                                            # so we send this list but by bit to the server, where we
+                                            # so we send this list bit by bit to the server, where we
                                             # only need to access the lists that we have seen so far.)
                                             #
                                             #global start_index_for_groups_of_partitions_copy
                                             end_index = len(groups_of_partitions)
-                                            # start_index_of_groups_of_partitions_copyis inclusive; end_index is exclusive
+                                            # start_index_of_groups_of_partitions_copy is inclusive (inited to 0);
+                                            # end_index is exclusive
+
                                             for i in range(start_index_for_groups_of_partitions_copy,end_index):
                                                 groups_of_partitions_in_current_batch.append(groups_of_partitions[i])
                                             logger.info("BFS: groups_of_partitions_in_current_batch:")
                                             for list_of_groups in groups_of_partitions_in_current_batch:
                                                 logger.info(list_of_groups)
+                                            # We bump start higher as we go along.
                                             start_index_for_groups_of_partitions_copy = end_index
                                         else:
                                             end_index = len(partition_names)
-                                            # start_index_of_groups_of_partitions_copy is inclusive; end_index is exclusive
+                                            # start_index_of_groups_of_partitions_copy is inclusive (inited to 0);
+                                            # end_index is exclusive
                                             for i in range(start_index_for_partition_names_copy,end_index):
                                                 partition_names_in_current_batch.append(partition_names[i])
                                             logger.info("BFS: partition_names_in_current_batch:")
                                             for name in partition_names_in_current_batch:
                                                 logger.info(name)
+                                            # We bump start higher as we go along.
                                             start_index_for_partition_names_copy = end_index
 #brc: use of DAG_info: if publish then pass DAG_info on deposit()
 

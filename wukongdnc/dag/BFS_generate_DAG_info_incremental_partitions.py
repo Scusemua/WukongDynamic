@@ -2254,7 +2254,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # we give the simulated lambda a (seperate) copy of the DAG_info. When we use
     # real lambdas, the deallocations to DAG_info are done on the tcp_server and
     # then a serialized copy of DAG_info is sent to the lambdas, so the real lambdas 
-    # have a seperate copy of the DAG_info.
+    # have a seperate copy of the DAG_info and there is no need to make a copy here.
     if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and not DAG_executor_constants.USING_WORKERS \
             and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION \
             and DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
@@ -2262,6 +2262,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         DAG_info_copy = copy.deepcopy(DAG_info)
         return DAG_info_copy
     else:
+        # Note: for workers, we do not try to deallocate old info in the DAG_info object so
+        # we are not making a copy here. 
         return DAG_info
 
 def deallocate_DAG_structures(current_version_number_DAG_info):

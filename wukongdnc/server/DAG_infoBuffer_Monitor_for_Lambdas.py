@@ -644,7 +644,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         partition we deallocate its n groups. In this case we also end up at an
         end index for the deallocated groups, and we have deallocated from 
         1 to the group end index.
-        The restoration is always a suffx of the deallocated items. That is,
+        The restoration is always a suffix of the deallocated items. That is,
         for the new requested_current_version_number which we know is less than 
         the version_number_for_most_recent_deallocation, we still want to 
         deallocate all the items starting at 1, but we need to stop deallovating
@@ -1112,15 +1112,23 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
     def deposit(self,**kwargs):
         # deposit a new DAG_info object. It's version number will be one more
-        # than the current DAG_info object.
-        # Wake up any workes waiting for the next version of the DAG. Workers
-        # that finish the current version i of the DAG will wait for the next 
-        # version i+1. Note: a worker may be finishing an earlier versio of 
-        # the DAG. When they request a nwe version, it may be the current
-        # version or an older version that they are requesting, We will give
-        # them the current version, which may be newer than the version they
-        # requsted. This is fine. We assume tha tthe DAG grows incrementally
-        # and we add new states but do not delete old states from the DAG.
+        # than the current DAG_info object, which is in self.current_version_DAG_info.
+        # Whether a newly generated DAG_info by bfs() is published to the workers/lambdas,
+        # i.e., bfs() calls deposit(DAG_info) depends on the publishing interval - if the 
+        # interval is i bfs() publishes every ith DAG_info object that is generated.
+        # Wake up any workers waiting for the next version of the DAG. Workers
+        # that finish executing the tasks in their version i of the DAG will request the next 
+        # version i+1. If version i+1 or a later version hs not been published yet
+        # then the workers (who call withdraw() to get a new DAG_info) will wait.
+        # Note: a worker may be finishing executing an earlier version j of 
+        # the DAG. When they request new version j+1, it may be the current
+        # version in self.current_version_DAG_info they are requesting or an older 
+        # version that they are requesting, that is, the workers are requesting j+1
+        # but bfs() has already deosited a version k where k>j+1. In this case, we will give
+        # them the current version in self.current_version_DAG_info, which is newer than the 
+        # version theyrequsted. This is fine. Note that it is an option to deallocate old 
+        # info in the DAG_INFO object when we ar using lambdas; this decreases the size of
+        # the potentially large DAG_info object that is sent to the lambdas.
         try:
             super(DAG_infoBuffer_Monitor_for_Lambdas, self).enter_monitor(method_name="deposit")
         except Exception:
@@ -1136,30 +1144,31 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
         self.current_version_number_DAG_info = self.current_version_DAG_info.get_DAG_version_number()
 #brc leaf tasks
-        # For lambdas, we can't start a leaf task when we get it in list of leaf tasks
-        # as it is not complete. So we put it in the continue queue and start it when 
+        # For lambdas, we can't start a leaf task when we get it in list parameter new_leaf_tasks
+        # if the leaf task is not complete, i.e., it is to-be-continued (TBC). So we put it in the continue 
+        # queue and start it when 
         # we get the next deposit() - the leaf task will be complete in the next deposit.
         # (Note: when we generate dag incrementally, when we get a new leaf task, we will
         # make the previous group/partitition complete and output the group's pickle file for 
-        # the previous group/paritition, but we do not output the group's picklr file for 
-        # for the leaf task, which is the current partition/group.)
+        # the previous group/paritition, but we do not output the group's pickle file for 
+        # for the new leaf task, which is the current partition/group.)
         # 
         # if DAG_info is complete then we can start leaf task now as leaf is start of new 
-        # component and DAG_info is complete. In fact, since the leaf task is the last
-        # group/partition to be generated, we need to start it now since there
-        # will be no more deposits.
+        # component and DAG_info is complete. See below where leaf tasks are started.
+        # In fact, since the leaf task is the last group/partition to be generated, 
+        # we need to start it now since there will be no more deposits.
         DAG_info_is_complete = kwargs['DAG_info_is_complete']
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
         self.num_nodes = kwargs['num_nodes']
 
-        # Note: cummulative_leaf_tasks gets cleared after we start the new leaf tasks.
-        # For debugging - all leaf tasks started so far
+        # Note: cummulative_leaf_tasks is for debugging - collection of all leaf tasks identified so far.
         self.cummulative_leaf_tasks += new_leaf_tasks
         if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
             and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
             if DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                 # Note: if we are not using groups then groups_of_partitions_in_current_batch is []
-                # and nothing is added to self.groups_of_partitions on the extend, which works too
+                # and nothing ever is added to self.groups_of_partitions, which works too since
+                # we will not try to use self.groups_of_partitions.
                 #
                 # this is a list of lists
                 groups_of_partitions_in_current_batch = kwargs['groups_of_partitions_in_current_batch']
@@ -1209,65 +1218,70 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 leaf_task_state = work_tuple[0]
                 logger.info(str(leaf_task_state))
 
-        restart = False
+        restart = False # not using restart
 
-#brc: lanbda inc: start lambdas for all continued states in buffer and leaf tasks
-        #self._next_version.signal_c_and_exit_monitor()
+#brc: lambda inc: 
+
+        # Start lambdas for all continued states in buffer and for new leaf tasks 
+        # if the DAG_info is complete.
 
         if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
             # not using real lambdas, using threads that simulate a lambda.
             try:
-                # start simulated lambdas with the new DAG_info
+                # start simulated lambdas with the new DAG_info if DAG_info was 
+                # requested by lambdas that previously called withdraw()
                 first = True
                 logger.info("DAG_infoBuffer_Monitor_for_Lambdas: number of withdraw tuples: " + str(len(self._buffer)))
                 if len(self._buffer) == 0:
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: no withdraw tuples so no lambdas started.")
 
-#brc: The start index needs to be reset even if there are no tuples since we 
-# deposit a new DAG with no Nones?
-# Need these deallocs to be conditional on options
 
 #brc: ToDo: What about the save structures? clear them? or just remove key when we
 # grab the restored value. We can clear since we are adding key-value pairs so
 # not using list.
+
+                # The start index needs to be reset even if there are no tuples since a
+                # new DAG that is deposited has not had any deallocations done on it.
+#brc: ToDo: Thus will change when we deposit an increment.
                 if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                         and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                     self.deallocation_start_index_groups = 1
                     self.deallocation_start_index_partitions = 1
                     self.most_recent_deallocation_end_index = 0
 
-                # If we are using incremental partitions, then we generating the
-                # DAG by searching the the connected components of partitions one at
-                # a time. If lambda L finds a partition P that has a collapse partition 
+                # If we are using incremental partitions, then we generate the
+                # DAG by searching the connected components of partitions one component at
+                # a time, i.e., all the partitions in component 1, then all the partitions 
+                # in componet 2, etc. If lambda L finds a partition P that has a collapse partition 
                 # C that is to be continued, then L will call withdraw() to get another
-                # incemental DAG, but no other lambda is executing, i.e.,
+                # incremental DAG. Note that no other lambda can be executing, i.e.,
                 # there is no other CC of partitions being executed so if
-                # L adds a withdraw tuple in withdraw() representing that a new Lambda
-                # # must be started to resume L's execution of C then there will be 
-                # only one withdraw tuple (which is for L) when a new DAG is deposited.'
-                # If the yobecontinued partition C is the last partition in the CC being 
-                # executed by E, then C will be complete in the new ADG and after executing 
+                # L adds a withdraw tuple in withdraw() representing that a new Lambda E
+                # must be started to resume L's execution of C then there will be 
+                # only one withdraw tuple (which is for L) when a new DAG is deposited.
+                # If the tobecontinued partition C is the last partition in the CC being 
+                # executed by lambda E, then C will be complete in the new DAG and after executing 
                 # this now complete partition C, lambda E will terminate. So again
-                # only one lambda will be executing (which is the lambda for executing
-                # the next CC.) In general, only one lambda can have an
+                # only one lambda will be executing (which is the next lambda started for executing
+                # (the leaf task in) the next CC.) In general, only one lambda can have an
                 # incomplete partition and thus only one can call withdraw(). This is true
                 # even if the publishing interval for new incremental DAGs is a number n
                 # such that m, m>1, CCs are processed in this interval. In this case, at least
                 # m-1 CCs will not have an incomplete CC, i.e., all if these m-1 CCs
                 # will have a last partition that is not tobecontinued. It is possible
                 # the one CC, which is the CC currently being processed has a tobecontinued
-                # partition. Note that whenever we publsh a new incremental ADG, the 
+                # partition. Note that whenever we publsh a new incremental DAG, the 
                 # last partition that was generated is tobecontinued unless it is the 
                 # last partition in the DAG, i.e., there are no more partitions to be 
-                # generated. Noet: When we generate a parttion P that is the last partitions
-                # of a CC ad there are more CCs to process, then P will be marked as 
-                # tobecontinued and thrn we we procss the first partition of the next CC
+                # generated. Note: When we generate a parttion P that is the last partitions
+                # of a CC and there are more CCs to process, then P will be marked as 
+                # tobecontinued and then we we generate the first partition of the next CC
                 # we will know that P was the last partition of its CC and we will mark P
                 # as not tobecontinued. (Thus we may publish a DAG that has P being tobecontinud
-                # and then publish the next DAG with P being not tobecontinued, if the 
+                # and then publish the next DAG with P being not tobecontinued, this happens if the 
                 # publishing interval happends to require a new DAG to be generated with P 
-                # tobecontinued so the next DAG will be published with P not tobecontinued.
-                # We assert all of this next:
+                # tobecontinued in which case the next DAG will be published with P not tobecontinued.
+                # We assert there is at most one withdraw tuple when using partitions next:
                 if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                     try:
                         msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
@@ -1325,6 +1339,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     start_tuple = withdraw_tuple[1]
                     # pass the state/task the thread is to execute at the start of its DFS path
                     start_state = start_tuple[0]
+                    # Note: we get the input/output from start_tuple[1] below.
 
                     # we know this is true: requested_current_version_number <= self.current_version_number_DAG_info:
                     # The requested_current_version_number is either:
@@ -1492,7 +1507,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # If this is the first DAG_info and the only DAG_info, i.e., 
                 # it contains only partitions 1 and 2 (and the groups therein.)
                 # (The first partition is laways a single group that starts a component, and 
-                # the second partition may or may not be the start of a new component. 
+                # the second partition may or may not be the start of a new component.) 
                 # If it is not, then the second partition can have a lot of groups, like the 
                 # whiteboard example. If it is the start of a new component then the second
                 # partition is also a single group. A graph with two nodes and no edges has
@@ -1503,13 +1518,13 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # this node is group/partition 3 and it is a leaf task that will be started 
                 # by deposit(). Since group/partition 3 is the final group/partition in the 
                 # graph, deposit will start it immediately, instead of waiting for the 
-                # next deposit (as there will be no moer deposit since the graph is complete.)
+                # next deposit (as there will be no moemorer deposits since the graph is complete.)
                 #
                 # Note that the DAG_info read by DAG_executor_driver will have both of 
                 # these leaf tasks and the DAG_executor_driver will start both leaf tasks 
                 # so we cannot start the second leaf task(s) here or it will be executed twice.
                 # To prevent the second leaf task/group/partitio from being started twice
-                # in BFS the secon leaf node is not added to to the new_leaf_tasks so 
+                # in BFS the second leaf node is not added to to the new_leaf_tasks so 
                 # new_leaf_tasks will be empty.
                 #
                 # If the DAG_info is complete, then the leaf task is complete and
@@ -1529,14 +1544,25 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # as it is also complete. 
                     self.continue_queue += new_leaf_tasks
                 else:
-                    # leaf task is unexecutable now. Execute it on next deposit().
-                    # Note: # We can also start a leaf task if we know it 
-                    # is the last group/partition of a component even if the DAG_ifo is 
-                    # not complete. For a partition (and the groups therein) bfs can track
-                    # whether any nodes in this partition (and grooups therein) have any
+                    # The leaf task is tobecontinued so we cannot start it - we will wait
+                    # until the next deposit to start/execute it since we know it it not TBC n 
+                    # the next DAG_info object generated. (A task that is TBC mean that we do 
+                    # not now the fanins/fanouts of the tssk; we do not want to execuet the task
+                    # until we know its fanins/fanouts; when we execute a task we label each task  
+                    # output with the fanin/fanout it is intended for, so for now we want to now
+                    # the fanins/fanouts when we execute the task. We could concievably execute
+                    # a task, save its outputs and then tag the outputs with their fanin/fanout
+                    # destination once we know the fanins/fanouts.
+                    # Note: Option: We could also start a leaf task if we knew it 
+                    # is the first (def. of leaf) and last group/partition of a connected component 
+                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could track
+                    # whether any nodes in this partition (and groups therein) have any
                     # children. If not, then this partition (and the groups therein) is the 
-                    # last partition in the current connected component and we can start 
-                    # a lambda for the leaf task now. But this is a lot of work.
+                    # last partition in the current connected component and if it is a leaf task and
+                    # thus the only partiton in the connected component we can start 
+                    # a lambda for the leaf task now. But this is a lot of work and it would only
+                    # be worth it if a publication boundary occured right after the leaf partition
+                    # was added to DAG_info.
                     pass
                 
                 # start a lambda to excute the leaf task found on the previous deposit()
