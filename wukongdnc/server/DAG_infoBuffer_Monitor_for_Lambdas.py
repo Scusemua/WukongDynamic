@@ -1294,44 +1294,64 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                             os._exit(0)
 
                 for withdraw_tuple in self._buffer:
-#brc: dealloc: get requested_current_version_number and get start_tuple from _buffer tuple
-# for withdraw_tuple in self._buffer:
-#   requested_current_version_number = withdraw_tuple[0]; 
-#   start_tuple = withdraw_tuple[1]
-# if DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
-#    use requested_current_version_number to prune
-# in sorted order by requsted version numbr so the higher the number the more you can dealloc
-# So: keep deallocating more and more: I think you can always start where you left off, i.e.,
-# if you last dealloc 10, and the next version requsted is at lest 1 verion higher thaen you 
-# can start dealloc at 11 (if version is the same then do nothing).
-# We are dealloc structures in a DAG_info, not a Partition/Group internal structure.
-# But eventuallly you get a new Deposit which has no deallocs; also, you can get a withdraw
-# with a requsted version number that is smaller than the last round, and so has fewer
-# deallocs than the resulring DAG_info from the last round.
-# Note: we are saving the deallocated items in case we need them but since they aer sorted
-# we do not need them in the current round?
-#
-# Consider: when you deposit, you only deposit the new suffix? so yuo can keep the deallocs
-# that you have done so far? but if you get a smaller request number then yuo need to 
-# put some deallocated items back?
-#
-# For simulated lambdas, the incremental DAG generation and dealloc methods are running
-# locally and concurrently:
-# Note: doing dealloc in deposit so not concurrently dealloc items and adding new items
-# in incremental DAG generation methods (as bfs() thread calls both the incemental
-# DAG generation method and the deposit())
-# Note: do dealloc in withdraw too, which can be concurrent with incemental DAG generation
+                    # The withdraw_tuples are sorted in ascending order of request_number.
+                    # So if we dealloc for request i then we can dealloc more for request 
+                    # j. j>i. We dealloc from start index to end index and then 
+                    # assign end to start. Start is then ready for the next deallocation.
+                    #
+                    # Note that after deposit finishes, all the withdraw tuples have been
+                    # processed (i.e., lambdas have been started for each tuple and a DAG
+                    # (with deallocations) is passed to the started lambda. Th next monitor
+                    # entry might be for withdraw(). The requested version on the withdraw
+                    # might be less than the last requested version (for the last withdraw
+                    # tuple) processed by this loop. In that case, the current version of
+                    # the DAG has more deallocs than it should have based on the version
+                    # requested by withdraw(), e.g., if the last withdraw tuple is for 
+                    # version 10 but the version requested in withdraw() is 5, then the 
+                    # current version of the DAG has deallocs that are appropriate for 
+                    # version 10, but there are more deallocs than would be appropriate
+                    # for version 5. In that case, we need to restore some of the deallocs 
+                    # that weer done for version 10 (we restore a suffix of the version 10
+                    # deallocs.) Note that when we do a dealloc of task/state i in the DAG,
+                    # we save the informarion for i so that we can restore the information
+                    # if necessary.
+                    # Note that a new call to deposit starts with a DAG that has no 
+                    # deallocatios, so the previous deallocations done to previously
+                    # deposited DAGs aer lost.
+
+                    # ToDo: For new DAGs we pass to deposit only the differences between the 
+                    # new DAG and the current DAG. That allows us to keep the deallocations
+                    # that we have been done on the current DAG. If the requested
+                    # version number in the first withdraw tuple is less than the version 
+                    # number for the last deallocation (which couldl have been for the last 
+                    # withdraw tuple in the previos call to deposit()  or the request in the
+                    # most recent call to withdraw()) then we will have to do a restore
+                    # when we process the first withdraw tuple 
+                    # Note: for simulated lambdas, DAG execution and DAG generation and 
+                    # dealloc (called by bfs()) are running locally and concurrently. That 
+                    # is we can access the DAG for execution concurrently with generating 
+                    # and deallocating the DAG. Thus, the DAG given to the executor is a 
+                    # deep copy of the generated DAG so that the executor and bfs() are
+                    # not sharing a DAG object (so there are no concurrent read/write 
+                    # accesses of the same object.)
+                    # For real lambdas, the DAG returned to a lambda executor is returned
+                    # over the network as a serialized copy, so the lambda executor is
+                    # not sharing a DAG object with bfs() generatin and deallocation.
+                    # In this case the monitor object with method deposit() is on the tcp_server 
+                    # process and bfs() is running in a different process (tastAll) so the 
+                    # DAG_info object in deposit() is seperate from the Partition/Group 
+                    # structures used by bfs() to create the next DAG_info, i.e., no 
+                    # concurrent access.
+                    # Note: the bfs() thread calls both the incemental
+                    # DAG generation method and the deposit() method (where deposit()
+                    # does any deallocs) so DAG generation and deallocation are both
+                    # done by bfs() and thus are not concurrent.
+# ToDo: do dealloc in withdraw too, which can be concurrent with incremental DAG generation
 # methods adding to DAG. As lambdas call withdraw to get a new DAG and bfs
 # calls incremental DAG generation methods and workers/lambdas run concurrently 
-# with bfs()
-# For real lambdas, the monitor object with deposit() method is on the tcp_server process
-# and bfs() is running in a different process (tastAll) so the DAG_info object in deposit()
-# is seperte from the Partition/Group structures used to create the DAG_info being 
-# accessed by bfs(), i.e., no concurrent access.
-#
-# Note: For real lambdas, the monitor is on the server so dag info is not a reference to
-# partition/group internal info. Not so for simuated lambdas. For the latter 
-# we make a deep copy so they are seperate, i.e., so changing one does not change the other.
+# with bfs(). So problem for simulated lambdas: withdraw  deallocs/restores concurrent
+# with bfs() generation.? So deposut a deep copy of incremental changes, where 
+# gen methods ar just keeping a window of states (current,previous,prevous previous)
 
                     requested_current_version_number = withdraw_tuple[0]
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: deposit: "
@@ -1341,12 +1361,21 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     start_state = start_tuple[0]
                     # Note: we get the input/output from start_tuple[1] below.
 
-                    # we know this is true: requested_current_version_number <= self.current_version_number_DAG_info:
+                    # We know this is true: requested_current_version_number <= self.current_version_number_DAG_info:
+                    # This is because if a lambda excutor E currently is executing DAG version i, when it is 
+                    # finished with version i, which is either the first version 1 of the DAG, 
+                    # or a version obtained by a call to withdraw(), which is the version deposited by
+                    # the most recent deposit() D1, E will request version i+1, so that any deposit()
+                    # D2 after D1 will have a version number greater than i (otherwise deposit D2
+                    # deposits a DAG with a version number <= that of D1, which is impossible.
+                    #
                     # The requested_current_version_number is either:
                     # - less than version_number_for_most_recent_deallocation: need to restore a suffix
-                    #      of deallocation 
+                    #      of previous deallocation 
                     # - equal to version_number_for_most_recent_deallocation: nothing to do
-                    # - greater than version_number_for_most_recent_deallocation: Can deallocate a suffix
+                    # - greater than version_number_for_most_recent_deallocation: Can extend the previous od deallocs
+                    # Note: Here we are using the version number of the DAg for the most recent dellocation
+                    # not the version number of the current version of the DAG (i.e., last version deposited).
                     #
                     # Note: First request is for version number 2. This will be greater than
                     # version for last deallocation, which was inited to 0, so try to deallocate
@@ -1357,7 +1386,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # version for last deallocation to n, where n >=3. At that point, some
                     # lambda can request 2, which will be less then n, so we will do a restore.
 
-                    # Note: We only do deallocations/restors if there is at leat one
+                    # Note: We only do deallocations/restore if there is at least one
                     # withdraw_tuple since we need to know the current requested 
                     # version in order to do deallocations.
                     # Q: Can we do sme deallocations based on the most recent requested
