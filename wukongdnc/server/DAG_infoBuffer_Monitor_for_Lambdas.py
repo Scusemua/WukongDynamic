@@ -1230,7 +1230,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             try:
                 # start simulated lambdas with the new DAG_info if DAG_info was 
                 # requested by lambdas that previously called withdraw()
+
+                # we will be processing the first withdraw tuple. We thn set first to False.
+                # Used below to assert something about the first withdraw_tuple.
                 first = True
+
                 logger.info("DAG_infoBuffer_Monitor_for_Lambdas: number of withdraw tuples: " + str(len(self._buffer)))
                 if len(self._buffer) == 0:
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: no withdraw tuples so no lambdas started.")
@@ -1377,27 +1381,58 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # Note: Here we are using the version number of the DAg for the most recent dellocation
                     # not the version number of the current version of the DAG (i.e., last version deposited).
                     #
-                    # Note: First request is for version number 2. This will be greater than
-                    # version for last deallocation, which was inited to 0, so try to deallocate
-                    # but nothing deallocated. We have above that 
-                    # requested_current_version_number <= self.current_version_number_DAG_info
-                    # so we will get version 2 or greater. If we get version 2, we will 
-                    # request version 3, and we can do the first deallocation, setting
-                    # version for last deallocation to n, where n >=3. At that point, some
-                    # lambda can request 2, which will be less then n, so we will do a restore.
-
+                    # Note: The First request is for version number 2 - the DAG driver starts
+                    # a lambda for the first partition/group that is collected (which is a leaf
+                    # node) and this lambda will exexcute partition/group 1 and see that the next
+                    # partition/groups are to-be-continued, so it will call withdraw to request a 
+                    # new incremental DAG with version number 2. This 2 will be greater than the
+                    # version for last deallocation, which was inited to 0, so if version 2
+                    # has been deposited (by bfs()) and no higher version has been deposited,
+                    # we will try to deallocate but no deallocation is possible for version 2 so 
+                    # nothing will be deallocated. It's also possible that several calls to deposit()
+                    # have benn made and the current version is version 3 or higher. In that case
+                    # deallocations can and will be done - the deallocations done are the ones
+                    # appropriate for the requested version. That is, if a lambda requests version, 
+                    # say, 2, and version 5 has been deposited, then based on the progress that
+                    # the lambda has made, which is that it has executed partition/group 1 and it needs
+                    # to continue with the excution of the partitions/groups after that, we will 
+                    # deallocat the "old" partitions/groups that are no loger needed. The current
+                    # version is 5, which conains partitons/groups that he lambda wuill need to 
+                    # excute so we cannot do a deallocation based on version 5 - version 5 does not 
+                    # indicate the progress that the lambda has made, it only indicates the progress
+                    # that has been made in generating the DAG (not excuting it),
+                    # 
+                    # If we start a lambda L1 and pass it version 2 in its payload, it will eventally 
+                    # request version 3. At some point, either before or after the request is made
+                    # by lambda L1 (which calls withdraw() to make a request), 1 or more deposits()
+                    # can be made. For example, bfs() may deposit version 3, 4, and 5, before the 
+                    # call to withdraw() enters the monitor, or bfs() may deposit version 3 after 
+                    # withdraw() completes. For version 3 or higher, we can do the first deallocation, 
+                    # setting the version number for last deallocation to 3, n>=3, where 3 was the 
+                    # version requested by lamnda L1. At that point, some other lambda L2 can request 
+                    # version 2, which will be less then 3 the version number for last deallocation,
+                    # so we will do a restore to restore elements that were deallocated but that are
+                    # needed by L2. That is, L2, which requests version 2 has made less progres than
+                    # L1, which requestd version 3, so we have to restore some of the elments that
+                    # were deallocated based on L1's progress but tht are needed by P2 since L2
+                    # has made less progress.
+                    #
                     # Note: We only do deallocations/restore if there is at least one
                     # withdraw_tuple since we need to know the current requested 
-                    # version in order to do deallocations.
-                    # Q: Can we do sme deallocations based on the most recent requested
-                    # version considering that the next requested version may be 
-                    # higher than the last? Or just wait until we get the next
-                    # request, which will be when we get a call to withdraw()
+                    # version in order to do deallocations and the requested version 
+                    # numbers are in the withdraw_tuples.
+
                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                             and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
 
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                             if requested_current_version_number < self.version_number_for_most_recent_deallocation:
+                                # This condition can only be True if we are processing the first withdraw_tuple,
+                                # since we update self.version_number_for_most_recent_deallocation (to the requested
+                                # version number in the first withdraw_tuple) and the requested
+                                # version numbers made by withdraw_tuples after the first are equal to or higher 
+                                # than that ofthe first withdraw_tuple (since the tuples are in ascending sorted order ot
+                                # requested versions).
                                 try:
                                     msg = "[Error]: deposit:" \
                                         + " requested_current_version_number < self.version_number_for_most_recent_deallocation:" \
@@ -1416,10 +1451,18 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                                 self.deallocate_DAG_structures_partitions(requested_current_version_number)
                                 # We will set self.version_number_for_most_recent_deallocation in restore
                                 # if we do restores
-                            else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
+                            else:   
+                                # requested_current_version_number == self.version_number_for_most_recent_deallocation
+                                # so the deallocations that have been made are also valid for this request.
                                 pass
                         else:
                             if requested_current_version_number < self.version_number_for_most_recent_deallocation:     
+                                # This condition can only be True if we are processing the first withdraw_tuple,
+                                # since we update self.version_number_for_most_recent_deallocation (to the requested
+                                # version number in the first withdraw_tuple) and the requested
+                                # version numbers made by withdraw_tuples after the first are equal to or higher 
+                                # than that ofthe first withdraw_tuple (since the tuples are in ascending sorted order ot
+                                # requested versions).
                                 try:
                                     msg = "[Error]: deposit:" \
                                         + " requested_current_version_number < self.version_number_for_most_recent_deallocation:" \
@@ -1438,13 +1481,15 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                                 # We will set self.version_number_for_most_recent_deallocation in restore
                                 # if we do restore
                                 self.deallocate_DAG_structures_groups(requested_current_version_number)
-                            else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
+                            else:   
+                                # requested_current_version_number == self.version_number_for_most_recent_deallocation
+                                # so the deallocations that have been made are also valid for this request.
                                 pass  
 
-                    if first:
+                    if first: # don't need this if
                         first = False        
 
-                    #ToDo: Consider passing delta of DAG_info instead of entire DAG.
+#brc: ToDo: Consider passing delta of DAG_info instead of entire DAG.
 
                     """ OLD
                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
@@ -1455,7 +1500,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                             self.deallocate_DAG_structures_groups(requested_current_version_number)
                     """
 
-                    # If no restore/dealloc then saved wil be the asm as previous
+                    # If no restore/dealloc then saved will not have changed
                     if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                             and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
 
@@ -1479,20 +1524,27 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
                     self.print_DAG_info(self.current_version_DAG_info)
                     # Note: for incremental DAG generation, when we restart a lambda
-                    # for a continued task, if the task is a group, we give it the output
+                    # for a continued task, if the task is a group, we give th lambda the output
                     # it generated previously (before terminating) and use the output
                     # to do the group's/task's fanins/fanout. If the task is a partition,
-                    # we give the partition the input for its execution. 
+                    # we give the lambda the output that was generated when the continued
+                    # task was xecuted, which becomes the input for the execution of the 
+                    # continued task's collapse task.
                     # (Tricky: after executing a group with TBC fanins/fanout/collpases,
                     # if it has TBC fanouts/faninNBs/fanins, we cannot do any of them so we
                     # have to wait until we get a new DAG and restart the group/task
                     # so we can complete the fanouts/faninNBs/fanins. After excuting 
-                    # a partition the partition can only have a collapse, i.e., we know
-                    # we must execute the colapse task. So when we restart the partition/task,
-                    # we supply the input for the collpase task and execute the collapse task.
-                    # That is, if partion P has a collapse task task that is a continued task,
-                    # we send P's output and its collapse task C as parameters of deposit() then
-                    # when we "restart" we execute C with P's output as C's input.
+                    # a partition P with a TBC collapse task/partition C, we cannot execute
+                    # C. A partition can only have a collapse task (which is a special 
+                    # type of fanout task) so we know we will execute C  when we get a new
+                    # incremental DAG. Therefore, when we restart the partition/task P
+                    # we supply the input for the collpase task C and execute the collapse task.
+                    # That is, if partition P has a collapse task task  is a continued task,
+                    # we send P's output and the state pf P as parameters of deposit(), which 
+                    # are saved in a withdraw_tupe) then when we "restart" the lambda here (using
+                    # the information in the withdraw_tuple) the lambda gets the state of P, 
+                    # then gets the collapse task C of P and then execute Cs with P's output as C's input.
+                    # (P's output is in the lambda's payload)
                     input_or_output = start_tuple[1]    # output of P and input of collapse task C
                     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = True)
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
