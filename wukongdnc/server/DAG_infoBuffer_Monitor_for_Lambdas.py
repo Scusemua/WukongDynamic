@@ -1584,31 +1584,33 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     thread.start()
                 self._buffer.clear()
 
-                # If this is the first DAG_info and the only DAG_info, i.e., 
-                # it contains only partitions 1 and 2 (and the groups therein.)
-                # (The first partition is laways a single group that starts a component, and 
-                # the second partition may or may not be the start of a new component.) 
+                # DAG_info version 1, if there is more than one partition, contains 
+                # partition/group 1 (i.e., partition 1 always has one group) and 
+                # partition 2/the one or more groups in partition 2.
+                # The first partition is always a single group that starts a component, and 
+                # the second partition may or may not be the start of a new component.
                 # If it is not, then the second partition can have a lot of groups, like the 
                 # whiteboard example. If it is the start of a new component then the second
                 # partition is also a single group. A graph with two nodes and no edges has
                 # 2 components. The first node is component/group/partition 1 and the 
                 # second node is component/group/partition 2). Both of these groups/partitions
                 # are leaf tasks and both will be started by DAG_executor_driver since they are
-                # leaf tasks detected in the first 2 partitions. If there is a third node then 
-                # this node is group/partition 3 and it is a leaf task that will be started 
-                # by deposit(). Since group/partition 3 is the final group/partition in the 
-                # graph, deposit will start it immediately, instead of waiting for the 
-                # next deposit (as there will be no moemorer deposits since the graph is complete.)
+                # leaf tasks detected in the first 2 partitions. If there is a third node (an no others) in
+                # this graph then this node is the only node in partition 3/group of partiton 3, and it is a 
+                # leaf task that will be started by deposit(). (The first partition (which is also a group)
+                # of a connected component is a leaf task.) Since group/partition 3 is the final 
+                # group/partition in the graph, deposit will start it immediately, instead of waiting for the 
+                # next deposit (as there will be no more deposits since the graph is completely visited.)
                 #
                 # Note that the DAG_info read by DAG_executor_driver will have both of 
-                # these leaf tasks and the DAG_executor_driver will start both leaf tasks 
-                # so we cannot start the second leaf task(s) here or it will be executed twice.
-                # To prevent the second leaf task/group/partitio from being started twice
+                # these leaf tasks (partition/group 1 and partition/group 2) and the DAG_executor_driver
+                # will start both leaf tasks so we cannot start the second leaf task(s) here or it will 
+                # be executed twice. To prevent the second leaf task/group/partition from being started twice
                 # in BFS the second leaf node is not added to to the new_leaf_tasks so 
                 # new_leaf_tasks will be empty.
                 #
-                # If the DAG_info is complete, then the leaf task is complete and
-                # so does not need to be continued later, we can start a labda for the
+                # If the DAG_info is complete, then the leaf task is complete (it has no fanins/fanouts) and
+                # so does not need to be continued later, we can start a lambda for the
                 # leaf task now (as oppsed to putting the leaf tsk in the continue queue
                 # and starting a lambda for it on the next deposit - since the DAG_info
                 # is complete incremental DAG generation is over and there will be no 
@@ -1629,14 +1631,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # the next DAG_info object generated. (A task that is TBC mean that we do 
                     # not now the fanins/fanouts of the tssk; we do not want to execuet the task
                     # until we know its fanins/fanouts; when we execute a task we label each task  
-                    # output with the fanin/fanout it is intended for, so for now we want to now
+                    # output with the fanin/fanout it is intended for, so for now we need to know
                     # the fanins/fanouts when we execute the task. We could concievably execute
                     # a task, save its outputs and then tag the outputs with their fanin/fanout
                     # destination once we know the fanins/fanouts.
                     # Note: Option: We could also start a leaf task if we knew it 
                     # is the first (def. of leaf) and last group/partition of a connected component 
-                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could track
-                    # whether any nodes in this partition (and groups therein) have any
+                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could
+                    # track whether any nodes in this partition (and groups therein) have any
                     # children. If not, then this partition (and the groups therein) is the 
                     # last partition in the current connected component and if it is a leaf task and
                     # thus the only partiton in the connected component we can start 
@@ -1728,14 +1730,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # the next DAG_info object generated. (A task that is TBC mean that we do 
                     # not now the fanins/fanouts of the tssk; we do not want to execuet the task
                     # until we know its fanins/fanouts; when we execute a task we label each task  
-                    # output with the fanin/fanout it is intended for, so for now we want to now
+                    # output with the fanin/fanout it is intended for, so for now we need to know
                     # the fanins/fanouts when we execute the task. We could concievably execute
                     # a task, save its outputs and then tag the outputs with their fanin/fanout
                     # destination once we know the fanins/fanouts.
                     # Note: Option: We could also start a leaf task if we knew it 
                     # is the first (def. of leaf) and last group/partition of a connected component 
-                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could track
-                    # whether any nodes in this partition (and groups therein) have any
+                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could
+                    # track whether any nodes in this partition (and groups therein) have any
                     # children. If not, then this partition (and the groups therein) is the 
                     # last partition in the current connected component and if it is a leaf task and
                     # thus the only partiton in the connected component we can start 
@@ -1838,14 +1840,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # the next DAG_info object generated. (A task that is TBC mean that we do 
                     # not now the fanins/fanouts of the tssk; we do not want to execuet the task
                     # until we know its fanins/fanouts; when we execute a task we label each task  
-                    # output with the fanin/fanout it is intended for, so for now we want to now
+                    # output with the fanin/fanout it is intended for, so for now we need to know
                     # the fanins/fanouts when we execute the task. We could concievably execute
                     # a task, save its outputs and then tag the outputs with their fanin/fanout
                     # destination once we know the fanins/fanouts.
                     # Note: Option: We could also start a leaf task if we knew it 
                     # is the first (def. of leaf) and last group/partition of a connected component 
-                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could track
-                    # whether any nodes in this partition (and groups therein) have any
+                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could
+                    # track whether any nodes in this partition (and groups therein) have any
                     # children. If not, then this partition (and the groups therein) is the 
                     # last partition in the current connected component and if it is a leaf task and
                     # thus the only partiton in the connected component we can start 
@@ -1915,14 +1917,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # the next DAG_info object generated. (A task that is TBC mean that we do 
                     # not now the fanins/fanouts of the tssk; we do not want to execuet the task
                     # until we know its fanins/fanouts; when we execute a task we label each task  
-                    # output with the fanin/fanout it is intended for, so for now we want to now
+                    # output with the fanin/fanout it is intended for, so for now we need to know
                     # the fanins/fanouts when we execute the task. We could concievably execute
                     # a task, save its outputs and then tag the outputs with their fanin/fanout
                     # destination once we know the fanins/fanouts.
                     # Note: Option: We could also start a leaf task if we knew it 
                     # is the first (def. of leaf) and last group/partition of a connected component 
-                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could track
-                    # whether any nodes in this partition (and groups therein) have any
+                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could
+                    # track whether any nodes in this partition (and groups therein) have any
                     # children. If not, then this partition (and the groups therein) is the 
                     # last partition in the current connected component and if it is a leaf task and
                     # thus the only partiton in the connected component we can start 
@@ -1948,10 +1950,13 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
     
 
     def withdraw(self, **kwargs):
-        # request a new version of the DAG. A worker that finishes version 
+        # request a new version of the DAG. A lambda L that finishes version 
         # i will request i+1. Note that i+1 may <= current_version. If so
-        # return the current version. If not, then the worker is requesting
-        # the next version of the DAG, which hasn't been generated yet.
+        # return the current version. If not, then L is requesting
+        # the next version of the DAG, which hasn't been generated yet so
+        # we do not return a new DAG to L. Instead, L will see that no new DAG
+        # was returned and terminate. When a new DAG is depsited, we will 
+        # "restart" a new lambda to continue excuting the new DAG where L left off.
         super().enter_monitor(method_name = "withdraw")
         requested_current_version_number = kwargs['requested_current_version_number']
 #brc: lambad inc
@@ -1967,45 +1972,79 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw will return current Lambda"
                 " with version " + str(self.current_version_number_DAG_info))
 
-#brc: ToDo: do deallocation here. But if next call is also to withdraw(), then requested version may
-# be out of order i.e., this version is less than that of the previous dealloc. (Note: by 
-# definition requested_current_version_number <= self.current_version_number_DAG_info.) In that
-# case, we need to restore at least part of the old DAG_info states. Note also that if the next
-# call is to deposit then we have a new DAG_info to work with so whatever we did in withdraw
-# is gone, perhaps unless we deposit just the new art and go from there.
-# Note: Can we carry over some of the withdraw stuff? Or soem of the previous eposits stuff?
-# otherwise we have to start over since we do not prune the Partition/Group structures.
-# And there is a good chance that version numbers are getting higher. 
-# Note: If the version number is a lot lower we can do the prunes on the new DAG instead of 
-# restoring from the saved DAG states. (but we may just deposit the new stuff)
-#
-# Note, we pass the entire new DAg from bfs to deposit() which could be a lot, just like
-# passing the entire DAG to the lamdas.
-
+            # We have requested a new DAG version this is less than the current version (i.e.,,
+            # the last version deposited. If we request version 2 and the current version is 2 then
+            # we can return version 2. If the current version is 3, then we can return 3.
+            # Before we return the DAG we may be able to eallocate some information in the DAG.
+            # That is, the DAG may contain old information that is no longer needed by the lambda
+            # that made the request. In this case we can perform deallocations. On the other hand
+            # we may have just performed some deallocatiions in the previous call to wtihdraw to
+            # remove old information that we not needed by the lambda that made the previous request,
+            # but this information may be needed by the lambda that made the current request,
+            # This is becuase the current requested version is less than that of the previous erquested
+            # version. dealloc. For example, the previous request by lambda 1 was for version 5 where 
+            # the current version was version 6. In that case, we deallocated soem information in 
+            # the current version 6 that was no longer needed by lambda L1 based on the "progress"
+            # it had made executed its DAG, i.e., the fact that it was requsting version 5 means that
+            # there is information that was in versions 1, 2, 3, etc that L1 does not need since it has
+            # already executed the part of the DAG in versions 1, 2, 3, etc. But L2 is requesting version,
+            # say, 3, which is less than 5 (where the last dealocations were done based on version 5)
+            # so L2 needs information that was deallocated from the current version 6 based on the fact
+            # that its requested version 3 indicates that it has not made as much progres as L1.
+            # In that case, we need to restore at least part of the old DAG_info states of the current version.
+            #
+            # Note: When we deposit() a new DAG_info we start over with a ADG that has no 
+            # deallocations.
+            # Option: Do not start over.
+            #
             # Note: We cannot get here until after the first deposit() and deposit()
             # saves the num_nodes parameter value passed to it in self.num_nodes.
-
-            # Possibly need to restore deallocs from prev deposit, i.e., if requsted version
-            # number for this withdraw is less than the requested version number for last deposit or
-            # last non-blocking withdraw, then restore deallocs at the end.
+            # self.num_nodes is used next.
 
             if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                     and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
-                # we know this is true: requested_current_version_number <= self.current_version_number_DAG_info:
+                # we know this is true from the above if-satement: 
+                #   requested_current_version_number <= self.current_version_number_DAG_info:
                 # The requested_current_version_number is either:
-                # - less than version_number_for_most_recent_deallocation: need to restore a suffix
-                #      of deallocation 
-                # - equal to version_number_for_most_recent_deallocation: nothing to do
-                # - greater than version_number_for_most_recent_deallocation: Can deallocate a suffix
+                # - less than version_number_for_most_recent_deallocation ==> need to restore a suffix
+                #      of last deallocation 
+                # - equal to version_number_for_most_recent_deallocation ==> nothing to do
+                # - greater than version_number_for_most_recent_deallocation ==> Can continue 
+                #       with dellocations at the point where the last deallocation ended,
                 #
-                # Note: First request is for version number 2. This will be greater than
-                # version for last deallocation, which was inited to 0, so try to deallocate
-                # but nothing deallocated. We have above that 
-                # requested_current_version_number <= self.current_version_number_DAG_info
-                # so we will get version 2 or greater. If we get version 2, we will 
-                # request version 3, and we can do the first deallocation, setting
-                # version for last deallocation to n, where n >=3. At that point, some
-                # lambda can request 2, which will be less then n, so we will do a restore.
+                # Note: First request is alays for version number 2. This will be greater than
+                # version for last deallocation since no deallocations have occurred yet and 
+                # version_number_for_most_recent_deallocation was inited to 0. So we will call 
+                # deallocate but nothing will be deallocated. We know from above that 
+                #   requested_current_version_number <= self.current_version_number_DAG_info
+                # so we will return version 2 or greater to the calling lambda. If that lambda
+                # gets version 2, it will eventually request version 3, and we will do the first 
+                # deallocation, setting version for last deallocation to 3. Note that we remember
+                # the version that was requested 3 which was used as the bsis for the deallocations.
+                # We may return version 3 or a higher version, depending on the last version 
+                # deposited, which could be version 6. but we use version 3 as the basis for 
+                # deallocation since the request of 3 indicates the progress that the calling 
+                # lambda has made in excuting its DAG, i.e., it has executed at lest some of the 
+                # tasks that were in version 1. Noet that some lambda can then request version 2, 
+                # which will be a request that is less than the requested version 3 that was the 
+                # basis of the last dealloation that was done. In that csae we will need to do a restore
+                # to restore some of the deallocations that were done based on requested version 3.
+                # (Basically, if a request is made for version 3, we can deallocate information 
+                # in the current version (last deposited version) of the DAG about partition/group/task 1 as
+                # this partition/group/task 1 was already executed and it is not a continued task.
+                # When a request is then received for version 2, we have to restore the information 
+                # about version 1 since it will be needed by the lambda requested version 2. 
+                # In detail: In version 1 of DAG, partition/group 1 has a tobecontinued collapse
+                # task partition/group 2. A lambda L can excute 1, but it will need to requst a 
+                # new DAG version 2 that will have complete information about 2 (the fanins/fanouts of 2).
+                # Even though L executed 1, it needs information about 1 in the ndw DAG it receives
+                # because it needs to acess the info about 1 to get the fanins/fanouts task of 1, which is 
+                # partiton 2 or the groups in 2.
+                # In general, just because we execute a task T in version i does not mean we can deallocate 
+                # all info about T in version i+1 since T may have fanins/fanouts to tasks that were
+                # continued in version i and we need info about T in version i+1 to complete the
+                # procesing of T (i.e., we have executed T but we need to do its fanins/fanouts which in
+                # the new DAG version i+1 are no longer to tobecontined tasks).
                 if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
                     if requested_current_version_number < self.version_number_for_most_recent_deallocation:
                         # We will set self.version_number_for_most_recent_deallocation in restore
