@@ -1431,7 +1431,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                                 # since we update self.version_number_for_most_recent_deallocation (to the requested
                                 # version number in the first withdraw_tuple) and the requested
                                 # version numbers made by withdraw_tuples after the first are equal to or higher 
-                                # than that ofthe first withdraw_tuple (since the tuples are in ascending sorted order ot
+                                # than that of the first withdraw_tuple (since the tuples are in ascending sorted order ot
                                 # requested versions).
                                 try:
                                     msg = "[Error]: deposit:" \
@@ -1449,8 +1449,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                                 self.restore_DAG_structures_partitions(requested_current_version_number)
                             elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
                                 self.deallocate_DAG_structures_partitions(requested_current_version_number)
-                                # We will set self.version_number_for_most_recent_deallocation in restore
-                                # if we do restores
+                                # We will set self.version_number_for_most_recent_deallocation in deallocate
+                                # if we do deallocate
                             else:   
                                 # requested_current_version_number == self.version_number_for_most_recent_deallocation
                                 # so the deallocations that have been made are also valid for this request.
@@ -1478,8 +1478,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                                 # if we do restores
                                 self.restore_DAG_structures_groups(requested_current_version_number)
                             elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
-                                # We will set self.version_number_for_most_recent_deallocation in restore
-                                # if we do restore
+                                # We will set self.version_number_for_most_recent_deallocation in deallocate
+                                # if we do deallocate
                                 self.deallocate_DAG_structures_groups(requested_current_version_number)
                             else:   
                                 # requested_current_version_number == self.version_number_for_most_recent_deallocation
@@ -1524,7 +1524,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
                     self.print_DAG_info(self.current_version_DAG_info)
                     # Note: for incremental DAG generation, when we restart a lambda
-                    # for a continued task, if the task is a group, we give th lambda the output
+                    # for a continued task, if the task is a group, we give the lambda the output
                     # it generated previously (before terminating) and use the output
                     # to do the group's/task's fanins/fanout. If the task is a partition,
                     # we give the lambda the output that was generated when the continued
@@ -1535,26 +1535,26 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # have to wait until we get a new DAG and restart the group/task
                     # so we can complete the fanouts/faninNBs/fanins. After excuting 
                     # a partition P with a TBC collapse task/partition C, we cannot execute
-                    # C. A partition can only have a collapse task (which is a special 
-                    # type of fanout task) so we know we will execute C  when we get a new
+                    # C. A partition can only have a collapse task (which is the only fanin/fanout
+                    # task of the partition) so we know we will execute C when we get a new
                     # incremental DAG. Therefore, when we restart the partition/task P
-                    # we supply the input for the collpase task C and execute the collapse task.
-                    # That is, if partition P has a collapse task task  is a continued task,
-                    # we send P's output and the state pf P as parameters of deposit(), which 
-                    # are saved in a withdraw_tupe) then when we "restart" the lambda here (using
+                    # we supply the input (P's output) for the collapse task C and execute the collapse task.
+                    # That is, if partition P has a collapse task task is a continued task,
+                    # we send P's output and the state of P as parameters of deposit(), which 
+                    # are saved in a withdraw_tuple) then when we "restart" the lambda here (using
                     # the information in the withdraw_tuple) the lambda gets the state of P, 
-                    # then gets the collapse task C of P and then execute Cs with P's output as C's input.
+                    # then gets the collapse task C of P and then executes C with P's output as C's input.
                     # (P's output is in the lambda's payload)
-                    input_or_output = start_tuple[1]    # output of P and input of collapse task C
+                    input_or_output = start_tuple[1]    # output of P is input of collapse task C
+                    # starting new DAG_executor in state start_state
                     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = True)
-                    DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                    DAG_exec_state.restart = False    # not using these fields; these are for synch objects  
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: (re)starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
                         + " continued task: " + str(DAG_exec_state.continued_task))
                     #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
-                        #"state": int(start_state_fanin_task),
                         # We are using threads to simulate lambdas. The data_dict in 
                         # this case is a global object visible to all threads. Each thread
                         # will put its results in the data_dict befoer sending the results
@@ -1565,14 +1565,13 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         # with real lambdas.
                         "input": input_or_output,
                         "DAG_executor_state": DAG_exec_state,
-                        # Using threads to simulate lambdas and th threads
-                        # just read DAG_info locally, we do not need to pass it 
-                        # to each Lambda.
-                        # passing DAG_info to be consistent with real lambdas
+                        # Using threads to simulate lambdas and the threads just read DAG_info 
+                        # locally room global map, so we do not actually need to pass it 
+                        # to each Lambda. Passing DAG_info to be consistent with real lambdas
                         "DAG_info": self.current_version_DAG_info,
                         # server takes the place of tcp_server which the real lambdas
-                        # use. server is accessibl to the lambda simulator threads as 
-                        # a global variable
+                        # use. server is accessible to the lambda simulator threads as 
+                        # a global shared variable.
                         #"server": server
                     }
                     # Note:
@@ -1646,7 +1645,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # was added to DAG_info.
                     pass
                 
-                # start a lambda to excute the leaf task found on the previous deposit()
+                # start a lambda to excute the leaf task found on the previous deposit(). When
+                # the leaf task was found it was marked as tobecontinued in the DAG. This is 
+                # the next DAG and in this DAG the leaft task is not tobocontinued and so can 
+                # be executed.
                 for work_tuple in self.continue_queue:
                     # pass the state/task the thread is to execute at the start of its DFS path
                     start_state = work_tuple[0]
@@ -1664,33 +1666,46 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # we must execute the collapse task. So when we restart the partition/task,
                     # we supply the input for the collpase task and execute the collapse task.)
                     input_or_output = [] 
+                    # starting  new DAG_executor in state start_state
                     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = False)
-                    DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                    DAG_exec_state.restart = False      
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda for leaf task with DAG_executor_state.state:" + str(DAG_exec_state.state)
                         + " leaf task: " + str(DAG_exec_state.continued_task))
                     #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
-                        #"state": int(start_state_fanin_task),
-                        # We aer using threads to simulate lambdas. The data_dict in 
-                        # this case is a global object visible to all threads. Each thread
-                        # will put its results in the data_dict befoer sending the results
-                        # to the FanInNB, so the fanin results collected by the FanInNB 
-                        # are already available in the global data_dict. Thus, we do not 
-                        # really need to put the results in the payload for the started
-                        # thread (simulating a real lambda) but we do to be conistent 
-                        # with real lambdas.
+                        # Note: for incremental DAG generation, when we restart a lambda
+                        # for a continued task, if the task is a group, we give the lambda the output
+                        # it generated previously (before terminating) and use the output
+                        # to do the group's/task's fanins/fanout. If the task is a partition,
+                        # we give the lambda the output that was generated when the continued
+                        # task was xecuted, which becomes the input for the execution of the 
+                        # continued task's collapse task.
+                        # (Tricky: after executing a group with TBC fanins/fanout/collpases,
+                        # if it has TBC fanouts/faninNBs/fanins, we cannot do any of them so we
+                        # have to wait until we get a new DAG and restart the group/task
+                        # so we can complete the fanouts/faninNBs/fanins. After excuting 
+                        # a partition P with a TBC collapse task/partition C, we cannot execute
+                        # C. A partition can only have a collapse task (which is the only fanin/fanout
+                        # task of the partition) so we know we will execute C when we get a new
+                        # incremental DAG. Therefore, when we restart the partition/task P
+                        # we supply the input (P's output) for the collapse task C and execute the collapse task.
+                        # That is, if partition P has a collapse task task is a continued task,
+                        # we send P's output and the state of P as parameters of deposit(), which 
+                        # are saved in a withdraw_tuple) then when we "restart" the lambda here (using
+                        # the information in the withdraw_tuple) the lambda gets the state of P, 
+                        # then gets the collapse task C of P and then executes C with P's output as C's input.
+                        # (P's output is in the lambda's payload)
                         "input": input_or_output, # will be [] for leaf task
                         "DAG_executor_state": DAG_exec_state,
-                        # Using threads to simulate lambdas and th threads
-                        # just read DAG_info locally, we do not need to pass it 
-                        # to each Lambda.
-                        # passing DAG_info to be consistent with real lambdas
+                        # Using threads to simulate lambdas and the threads just read DAG_info 
+                        # locally from a global shared map, so we do not actually need to pass it 
+                        # to each Lambda. Passing DAG_info to be consistent with real lambdas.
                         "DAG_info": self.current_version_DAG_info,
                         # server takes the place of tcp_server which the real lambdas
-                        # use. server is accessibl to the lambda simulator threads as 
-                        # a global variable
+                        # use. server is accessible to the lambda simulator threads as 
+                        # a global shared variable.
                         #"server": server
                     }
                     # Note:
@@ -1701,13 +1716,33 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     thread_name_prefix = "Thread_leaf_"
                     thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
                     thread.start()
-                #self.current_version_new_leaf_tasks.clear()
-                # clear the started leaf tasks
+                # clear the started leaf tasks from the continue_queue
                 self.continue_queue.clear()
-                # add the leaf task to the continue queue since it is not 
-                # complete and start a labda for it in next deposit()
+                # add the leaf tasks just found to the continue queue since it is not 
+                # complete and start a lambda for it in next deposit()
                 if not DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
+                else:
+                    # The leaf task is tobecontinued so we cannot start it - we will wait
+                    # until the next deposit to start/execute it since we know it it not TBC n 
+                    # the next DAG_info object generated. (A task that is TBC mean that we do 
+                    # not now the fanins/fanouts of the tssk; we do not want to execuet the task
+                    # until we know its fanins/fanouts; when we execute a task we label each task  
+                    # output with the fanin/fanout it is intended for, so for now we want to now
+                    # the fanins/fanouts when we execute the task. We could concievably execute
+                    # a task, save its outputs and then tag the outputs with their fanin/fanout
+                    # destination once we know the fanins/fanouts.
+                    # Note: Option: We could also start a leaf task if we knew it 
+                    # is the first (def. of leaf) and last group/partition of a connected component 
+                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could track
+                    # whether any nodes in this partition (and groups therein) have any
+                    # children. If not, then this partition (and the groups therein) is the 
+                    # last partition in the current connected component and if it is a leaf task and
+                    # thus the only partiton in the connected component we can start 
+                    # a lambda for the leaf task now. But this is a lot of work and it would only
+                    # be worth it if a publication boundary occured right after the leaf partition
+                    # was added to DAG_info.
+                    pass
             except Exception:
                 logger.exception("[ERROR] DAG_infoBuffer_Monitor_for_Lambdas: Failed to start DAG_executor thread for state " + str(start_state))
                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -1717,7 +1752,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # using real lambdas
             try:
                 # start real lambdas with the new DAG_info
-                #for start_tuple in self._buffer:
                 for withdraw_tuple in self._buffer:
                     requested_current_version_number = withdraw_tuple[0]
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: deposit: "
@@ -1799,7 +1833,25 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 if DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
                 else:
-                    # leaf task is unexecutable now. Execute it on next deposit()
+                    # The leaf task is tobecontinued so we cannot start it - we will wait
+                    # until the next deposit to start/execute it since we know it it not TBC n 
+                    # the next DAG_info object generated. (A task that is TBC mean that we do 
+                    # not now the fanins/fanouts of the tssk; we do not want to execuet the task
+                    # until we know its fanins/fanouts; when we execute a task we label each task  
+                    # output with the fanin/fanout it is intended for, so for now we want to now
+                    # the fanins/fanouts when we execute the task. We could concievably execute
+                    # a task, save its outputs and then tag the outputs with their fanin/fanout
+                    # destination once we know the fanins/fanouts.
+                    # Note: Option: We could also start a leaf task if we knew it 
+                    # is the first (def. of leaf) and last group/partition of a connected component 
+                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could track
+                    # whether any nodes in this partition (and groups therein) have any
+                    # children. If not, then this partition (and the groups therein) is the 
+                    # last partition in the current connected component and if it is a leaf task and
+                    # thus the only partiton in the connected component we can start 
+                    # a lambda for the leaf task now. But this is a lot of work and it would only
+                    # be worth it if a publication boundary occured right after the leaf partition
+                    # was added to DAG_info.
                     pass
                 # start a lambda to excute the leaf task found on the previous deposit()
                 for work_tuple in self.continue_queue:
@@ -1857,6 +1909,27 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # complete and start a labda for it in next deposit()
                 if not DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
+                else:
+                    # The leaf task is tobecontinued so we cannot start it - we will wait
+                    # until the next deposit to start/execute it since we know it it not TBC n 
+                    # the next DAG_info object generated. (A task that is TBC mean that we do 
+                    # not now the fanins/fanouts of the tssk; we do not want to execuet the task
+                    # until we know its fanins/fanouts; when we execute a task we label each task  
+                    # output with the fanin/fanout it is intended for, so for now we want to now
+                    # the fanins/fanouts when we execute the task. We could concievably execute
+                    # a task, save its outputs and then tag the outputs with their fanin/fanout
+                    # destination once we know the fanins/fanouts.
+                    # Note: Option: We could also start a leaf task if we knew it 
+                    # is the first (def. of leaf) and last group/partition of a connected component 
+                    # even if the DAG_info is not complete. For a partition (and the groups therein) bfs could track
+                    # whether any nodes in this partition (and groups therein) have any
+                    # children. If not, then this partition (and the groups therein) is the 
+                    # last partition in the current connected component and if it is a leaf task and
+                    # thus the only partiton in the connected component we can start 
+                    # a lambda for the leaf task now. But this is a lot of work and it would only
+                    # be worth it if a publication boundary occured right after the leaf partition
+                    # was added to DAG_info.
+                    pass
             except Exception:
                 logger.exception("[ERROR] DAG_infoBuffer_Monitor_for_Lambdas: Failed to start DAG_executor thread for state " + str(start_state))
                 if DAG_executor_constants.exit_program_on_exception:
