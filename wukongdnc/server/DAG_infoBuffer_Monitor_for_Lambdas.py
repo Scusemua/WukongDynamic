@@ -76,8 +76,34 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # within each partition sequentially through group names to deallocate greup structures in DAG_info.
         # For this we deallocate start to end and then set start = end so we can continue on the 
         # next deallocation.
+        # Note: We refer to "start_index" and "end_index" but we are not deallocating elements
+        # in some specified "position" or at "index" x in an array or list. The elements we
+        # deallocate are in a map. The keys in a map are integers 1, 2, 3, etc, referring to
+        # partitions/groups 1, 2, 3, etc so when we dealocate from "1 to 3" we delete the key-value
+        # pairs with keys 1, 2, 3 from the map. The fact that keys 1, 2, 3 form a "range" makes
+        # it helpful to use the notion of index as in 'from start_index to end_index". We always 
+        # deallocate consecutive key values 1, 3, 3 etc.
+        #
+        # The first partition/group is partition/group 1 not 0, where 1 will be the key and the 
+        # value will be information about partition/group 1, e.g., its fanins/fanouts and task.
         self.deallocation_start_index_groups = 1
         self.deallocation_start_index_partitions = 1
+        # if a lambda L1 requests a new version i of the DAG, and new DAG version j, j>=i is available
+        # we may be able to deallocaet some of the information in the new DAG before we send it
+        # to the lambda. This deallocation is based on the i the requested version number. The
+        # value of i is a measure of the progress the lambda has made in executing its ADG, i.e.,
+        # it has executed all the tasks in version1, 2, 3, ... i-2 so we can delete/deallocate infomation
+        # about these old alrady executed tasks. If we do deallocate information, then we save the
+        # value of i that was usd as the basis of these deallocations in self.version_number_for_most_recent_deallocation.
+        # We will need this value in case some other lamda L2 issues a request for version k, k<i, in which 
+        # case some of the deallocated information needs to be restored as the information is needed
+        # by L2. We will restore the deallocated info before we send the resulting DAG to L2
+        self.version_number_for_most_recent_deallocation = 0
+        # We also save the index for the last deallocation that was made. This is needed for the restore
+        # operation. for example, if we dealloctat 1, 2, 3, 4, 5, 6 and we need to restore values,
+        # the restored values will always be a suffix of the deallocated values, e.g., we may 
+        # restore suffix 4, 5, and 6. Restore will compuet the start_index of the restore
+        # and use self.most_recent_deallocation_end_index as the end ndex of the restore.
         self.most_recent_deallocation_end_index = 0
         # on each call ot deposit, we pass a list L of lists. These are 
         # the lists identifie since the last pubication (call to deposit). We then do 
@@ -94,12 +120,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.group_names = []
         self.partition_names = []
         
+        # when we dealloctate values we save them in cse we need to restoer them. Essentially
+        # we move deallocated values to the save collection and possble move them back.
         self.current_version_DAG_info_DAG_map_save = {}
         self.current_version_DAG_info_DAG_tasks_save = {}
         self.current_version_DAG_info_DAG_states_save = {}
 
         self.num_nodes = 0
-        self.version_number_for_most_recent_deallocation = 0
+
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
@@ -616,6 +644,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             # Remember that this is the most recent version number for which we did
             # a deallocation. 
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
+            # The inex of the next element to be deallocated is one past the last element
+            # to be deallocated. Since deallocation_end_index was exclusive in the range
+            # (start,end) its value is one past the last element to be deallocated
+            # (so there is no need to subtract 1)
             self.deallocation_start_index_partitions = deallocation_end_index
             # The most_recent_deallocation_end_index is the position before 
             # the deallocation_start_index_partitions, i.e., we will start the next
