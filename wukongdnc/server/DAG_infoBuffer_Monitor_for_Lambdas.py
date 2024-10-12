@@ -585,7 +585,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # to be dealloctated. Example, to deallocate "1 to 1" use range(1,2), where 1 is inclusive 
         # but 2 is exclusive; to deallocate "2 , 3, and 4" use range(2,5).
         # 
-        # However, don't increment deallocation_end_index unless we can 
+        # However, don't increment deallocation_end_index unless we will 
         # actually do a deallocation. We can do a deallocation unless start index is 1 and end index is less
         # than 1. If end index > 0 we can deallocate as the value of the above formula for end index
         # just keeps growing as the version number increases.
@@ -593,29 +593,34 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         if deallocation_end_index > 0:
             deallocation_end_index += 1
 
+        # self.deallocation_start_index_partitions initialized to 1, which is the first state 
+        # for which we can deallocate
+        # Q: Use state instead of index since we are using keys in maps? not positions in arrays?
         logger.info("deallocate_DAG_structures_partitions: self.deallocation_start_index_partitions: " + str(self.deallocation_start_index_partitions)
             + " deallocation_end_index: " + str(deallocation_end_index) + " (exclusive)")
         for i in range(self.deallocation_start_index_partitions, deallocation_end_index):
             logger.info("deallocate_DAG_structures_partitions: generate_DAG_info_incremental_partitions: deallocate " + str(i))
             self.deallocate_DAG_structures_lambda(i)
         
-        # Set start to end if we did a deallocation, i.e., if start < end. 
+        # Set start to end if we did a deallocation, i.e., if start < end in range. 
         # Note that if start equals end, then we did not do a deallocation since 
         # end is exclusive. (And we may have just incremented end, so dealllocating 
-        # "1 to 1", with start = 1 and end = 1, was implemented as incrementing 
-        # end to 2 and using range(1,2) so start < end for the deallocation "1 to 1"
+        # "1 to 1" not as a range, with start = 1 and end = 1, was implemented with a 
+        # range as incrementing end to 2 and using range(1,2) so start < end for the 
+        # deallocation "1 to 1" not as a range.
         # Note that end was exclusive so we can set start to end instead of end+1.
-        # Set most recent to deallocation_end_index - 1; we use - 1 since most
+        # Set most recent dealloc to deallocation_end_index - 1; we use - 1 since most
         # recent should be the last position actually deallocated, and since 
         # end index is exclusive (i.e., is 1 past the actual end) we use end - 1.
         if self.deallocation_start_index_partitions < deallocation_end_index:
             # Remember that this is the most recent version number for which we did
-            # a deallocation
+            # a deallocation. 
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
             self.deallocation_start_index_partitions = deallocation_end_index
             # The most_recent_deallocation_end_index is the position before 
-            # the deallocation_start_index_partitions, i.e., we wil start the next
-            # deallocation right after the end of the last dealloations we have performed.
+            # the deallocation_start_index_partitions, i.e., we will start the next
+            # deallocation right after the end of the last deallocations we have performed,
+            # where we just set deallocation_start_index_partitions = deallocation_end_index
             self.most_recent_deallocation_end_index = deallocation_end_index - 1
             logger.info("deallocate_DAG_structures_partitions: new index values after deallocation: "
                 + "self.version_number_for_most_recent_deallocation: " 
@@ -2051,9 +2056,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         # if we do restores
                         self.restore_DAG_structures_partitions(requested_current_version_number)
                     elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
+                        # We will set self.version_number_for_most_recent_deallocation in deallocate
+                        # if we do deallocations
                         self.deallocate_DAG_structures_partitions(requested_current_version_number)
-                        # We will set self.version_number_for_most_recent_deallocation in restore
-                        # if we do restores
+
                     else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
                         pass
                 else:
@@ -2062,8 +2068,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         # if we do restores
                         self.restore_DAG_structures_groups(requested_current_version_number)
                     elif requested_current_version_number > self.version_number_for_most_recent_deallocation:
-                        # We will set self.version_number_for_most_recent_deallocation in restore
-                        # if we do restores
+                        # We will set self.version_number_for_most_recent_deallocation in deallocate
+                        # if we do deallocations
                         self.deallocate_DAG_structures_groups(requested_current_version_number)
                     else:   # requested_current_version_number == self.version_number_for_most_recent_deallocation:
                         pass          
