@@ -316,31 +316,46 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         """
         We have:
         requested_current_version_number < self.version_number_for_most_recent_deallocation:
+        so when we did deallocations for version self.version_number_for_most_recent_deallocation:]
+        we did a certain number of deallocations based on that version number (we use the version 
+        number to compute end in the range (start,end+1) of the deallocations). But the 
+        requested_current_version_number is less than the version number of the last deallocation
         so we have deallocated too many items given the next requested_current_version_number.
-        This means we need to restore some of these items. We have saved every item that\
-        we have deallocaed so we can out them back.
+        That is the DAG_info has items that were deallocated befoer the DAG_info was given to the
+        lambda that made the request but these items are needed in the DAG_info that we will give
+        to the lambda that made the current request we are processing.
+        This means we need to restore some of these items in DAG_info. We have saved every item that\
+        we have deallocaed so we can put them back.
         The last deallocation was from the saved start to the computed end.
-        For partitions, this is:
+        For partitions, the computed value of end is:
             deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-        which means we have deallocated from 1 to end, though we may not have started
-        at 1, i.e., if we did a sequence of deallocations in deposit(). Still, we
-        have deallocated and saved the items from 1 to end.
-        For groups, we iterate through the partitions from start to end and for each
-        partition we deallocate its n groups. In this case we also end up at an
-        end index for the deallocated groups, and we have deallocated from 
-        1 to the group end index.
-        Tehe restoration is always a suffx of the deallocated items. That is,
+        which means we have deallocated the groups in partitions 1 to end (this may have done a 
+        sequnce of deallocations to get from partitions  1 to end). Still, we have deallocated and saved 
+        infomation about the groups in partitions 1 to end. In particular, we
+        iterate through the partitions from start to end and for each
+        partition we deallocate its n groups. Groups have their own indices, e.g., partition 1 has index 0,
+        partition 2 has index 1, etc, while group 1 (the only group) of partition 1 has index 0 and 
+        group 1 of partition 2 has index 1 and group 2 of partition 2 has index 2 and group 3 of
+        partition 2 has index 3 and group 1 of partition 3 has index 4, etc. So we deallocate group 
+        information frm start to end which are computed as we go. (if the first group of a partition
+        is in position i and the partition has 3 groups, then start is i and end is i+(3-1) = i+2 but end 
+        is esclusive in the range so we use a range vale of i+3 for end.
+        
+        Fix: compute start using end coputation and end is saved value for last dealloc
+        
+        The restoration is always a suffix of the deallocated items. That is,
         for the new requested_current_version_number which we know is less than 
         the version_number_for_most_recent_deallocation, we still want to 
         deallocate all the items starting at 1, but we need to stop deallovating
         items that are passed the end index that is computed by 
         requested_current_version_number. Note that for partitions, we can get ths
-        end index from the "deallocation_end_index =" formula. For groups, this
+        end index from the usual "deallocation_end_index =" formula. For groups, this
         end index depends on the number of groups in each of the partitions to be 
-        deallocated. We can compte this based on the partitions to be deallocated,
-        i.e., this number is computed with the same code that we used to deallocate
-        groups but with taking the sum of the lengths instead of actually doing
-        the deallocations. Is there a shortcut?
+        deallocated. We can compute this based on the partitions to be deallocated
+        (we know the number of groups in each partition).
+        The end index number for groups is computed with the same code that we used to deallocate
+        groups instead of actually doing deallocations we sum the sizes of the partitions to 
+        get the end value for the restore.
         
         Example: The input graph graph_24N_3CC_fanin_restoredealloc.gr has partitions:
             partitions, number of partitions: 15 (length):
@@ -1087,8 +1102,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # Example. Suppose the publishing interval is 4, i.e., after publishing the
         # base DAG (version 1) with partitions 1 and 2, we publish version 2 with 
         # 1 2 3 4 5 6 (base DAG plus 4 partitions). Before bfs() calls depost()
-        # to publish this DAG it gets the last requsted DAG version which is initializd
-        # to 1 and passes 1 to deallocate_DAG_structures.
+        # to publish this DAG it gets the last requested DAG version (using the method above) 
+        # which is initializd to 1 and passes 1 to deallocate_DAG_structures.
+        # (No one requests version 1, it is given to th DAG_execution_driver but it is 
+        # logially the last requested version.)
         # For deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)
         #    * DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
         # we get end is -4. Thus the for loop for i in range() does not execute
@@ -1096,55 +1113,56 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # is not less than  deallocation_end_index_partitions we do not set start to end.
         # 
         # Next, bfs() will generate version 3 with 1 2 3 4 5 6 7 8 9 10, which has
-        # 2 partitions from the base DAG version 1 and 2*4 partitions for versions
-        # 2 and 3 (4 aded for versin 2 and 4 added for versin 3). bfs() generats 
+        # 2 partitions from the base DAG version 1 and 2*4 partitions added for versions
+        # 2 and 3 (4 added for version 2 and 4 added for version 3). bfs() generats 
         # DAG version 3 and before bfs()
         # calls deposit() to publish this new DAG version 3 it gets the last requsted 
         # DAG version, which we assume is 2 and passes 2 to deallocate_DAG_structures.
         # For deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)
         #    * DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-        # we get end is 0 (and we add 1 fr usind end in range) Thus the for loop for 
+        # we get end is 0 (and we add 1 to end to use end in the range) Thus the for loop for 
         # i in range(1,1) does not execute
         # and we do not do any deallocations. Also, since deallocation_start_index_partitions
         # 1 is not less than deallocation_end_index_partitions 1 we do not set start to end.
         # Recall that the first version for which deallocations can be done is 3, since
-        # the formula for end will evaluate to 1 when the version number is 3 (so we use an
-        # end of 1+1 in the range)
+        # the formula for end will evaluate to a value n greater than 0 when the version number 
+        # is 3 (so we use anend of n+1 in the range). The value of n will e the same as the value
+        # of the publishing interval.
         #
         # Next, bfs() will generate version 4 with partitions 1 - 14, which has
         # 2 partitions from the base DAG version 1 and 3*4 partitions for versions
         # 2, 3 and 4. bfs() generates DAG version 4 and before bfs()
-        # calls deposit() to publish this new DAG version 4 it gets the last requested 
-
-        #FIX
-        
+        # calls deposit() to publish this new DAG version 4 it gets the last requested
         # DAG version which we assume is 3 and passes 3 to deallocate_DAG_structures.
         # For deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)
         #    * DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-        # we get end is 2. Thus the for loop for i in range(1,3) will execute. We
+        # we get end is 12. Thus the for loop for i in range(1,13) will execute. We
         # describe the groups deallocations for partitions 1 and 2 below, Also,
         # since deallocation_start_index_partitions is less than deallocation_end_index_partitions 
-        # we will set start to end which sets start to 3, as in the next partition 
-        # whose groups will be deallocated is partition 3 (after just deallocating the 
-        # groups in partitions 1 and 2.)
-        # Assume we are building a DAG for the white board example.
-        # For the for i in range(1,3) loop, with i = 1 we do 
+        # we will set start to end which sets start to 13, as in the next partition 
+        # whose groups will be deallocated is partition 13 (after just deallocating the 
+        # groups in partitions 1 - 12.)
+        #
+        # Assume we are building a DAG for the white board example with publishing interval 2
+        # and the version requested is 3. Then end will be calculated using the above formula as
+        # 2 + ((3-2)*2) - 2 = 2. Increment end for use in the range gives range (1,3)
+        # For the "for i in range(1,3)"" loop, with i = 1 we do 
         # groups_of_partition_i = BFS.groups_of_partitions[i-1]
         # number_of_groups_of_partition_i = len(groups_of_partition_i)
         # which sets groups_of_partition_i to a list containing the single group PR1_1 in 
-        # partition 1 so that number_of_groups_of_partition_i is 1. Now
+        # partition/group 1 so that number_of_groups_of_partition_i is 1. Now
         # deallocation_end_index_groups = deallocation_start_index_groups+number_of_groups_of_partition_i
-        # = 1 + 1 = 2, which gives the for loop for j in range(1,2) (where 2 is exclusive).
+        # = 1 + 1 = 2, which gives the for loop "for j in range(1,2) (where 2 is exclusive).
         # This loop will deallocate the single group in partition 1:
         # deallocate_Group_DAG_structures(j) where this method accesses position j-1
-        # since the positions in structures we are deallocating start with position 0,
+        # since the positions in the structures we are deallocating start with position 0,
         # i.e., the first group PR1_1 is in position 0, as in group_name = BFS.partition_names[j-1]
-        # After this for j in range (1,2) ends we set 
+        # After this "for j in range (1,2) ends we set 
         # deallocation_start_index_groups = deallocation_end_index_groups
         # so deallocation_start_index_groups is set to 2. This means the next group
-        # that we deallocate is group 2 (in position 1).
+        # that we deallocate is group 2 (which is in position 1).
         # 
-        # The for loop for i in range(1,3) continues with i = 2. We do
+        # The for loop "for i in range(1,3)" continues with i = 2. We do
         # groups_of_partition_i = BFS.groups_of_partitions[i-1]
         # number_of_groups_of_partition_i = len(groups_of_partition_i).
         # This sets groups_of_partition_i to a list containing the groups of 
@@ -1156,10 +1174,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # Now deallocation_end_index_groups = deallocation_start_index_groups+number_of_groups_of_partition_i
         # = 2 + 3 = 5, which gives the for loop for j in range(2,5) (where 5 is exclusive).
         # This loop will deallocate the three groups in partition 2 using
-        # deallocate_Group_DAG_structures(j). After this for j in range (2,5) loop ends we set 
+        # deallocate_Group_DAG_structures(j). After this "for j in range (2,5)"" loop ends we set 
         # deallocation_start_index_groups = deallocation_end_index_groups
         # so deallocation_start_index_groups is set to 5. This means the next group
         # that we deallocate will be group 5, the first group of partition 3.
+        # We also set self.version_number_for_most_recent_deallocation to the requested 
+        # version 3 for this deallocation.
 
     def deposit(self,**kwargs):
         # deposit a new DAG_info object. It's version number will be one more
