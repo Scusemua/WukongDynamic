@@ -314,48 +314,69 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
     def restore_DAG_structures_partitions(self,requested_version_number_DAG_info):
         """
-        We have:
-        requested_current_version_number < self.version_number_for_most_recent_deallocation:
-        so when we did deallocations for version self.version_number_for_most_recent_deallocation:]
+        This if-condition is true when we call restore_DAG_structures_partitions:
+            requested_current_version_number < self.version_number_for_most_recent_deallocation:
+        so when we did deallocations for version self.version_number_for_most_recent_deallocation
         we did a certain number of deallocations based on that version number (we use the version 
         number to compute end in the range (start,end+1) of the deallocations). But the 
-        requested_current_version_number is less than the version number of the last deallocation
-        so we have deallocated too many items given the next requested_current_version_number.
-        That is the DAG_info has items that were deallocated befoer the DAG_info was given to the
-        lambda that made the request but these items are needed in the DAG_info that we will give
-        to the lambda that made the current request we are processing.
-        This means we need to restore some of these items in DAG_info. We have saved every item that\
-        we have deallocaed so we can put them back.
-        The last deallocation was from the saved start to the computed end.
-        For partitions, the computed value of end is:
+        requested_current_version_number is less than the version number used for the last deallocation
+        so we have deallocated too many items given the current requested_current_version_number.
+        That is the current DAG_info (the last DAG_info deposited) has items that were deallocated 
+        when it was given to the lambda that made the request for version_number_for_most_recent_deallocation, 
+        but these item are needed in the DAG_info that we will give to the lambda that made the request for 
+        requested_current_version_number that we are now processing. This means we need to restore some of 
+        these items in the current DAG_info. We have saved every item that we have deallocaed so we can 
+        restore items.
+
+        Example: Suppose the current DAG_info is version 3, and we have processed a request for version 3
+        from a lambda. Assume the publishing interval is 4. Then the current DAG_info version 3 had partitions
+            1 2 3 4 5 6 7 8 9 10
+        where 1 and 2 were added for version 1, 3, 4, 5, and 6 were added for version 2, and 7, 8, 9, and 10
+        were added for version 3. For the version 3 request, the end index for deallocations was
             deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-        which means we have deallocated the groups in partitions 1 to end (this may have done a 
-        sequnce of deallocations to get from partitions  1 to end). Still, we have deallocated and saved 
-        infomation about the groups in partitions 1 to end. In particular, we
-        iterate through the partitions from start to end and for each
-        partition we deallocate its n groups. Groups have their own indices, e.g., partition 1 has index 0,
-        partition 2 has index 1, etc, while group 1 (the only group) of partition 1 has index 0 and 
-        group 1 of partition 2 has index 1 and group 2 of partition 2 has index 2 and group 3 of
-        partition 2 has index 3 and group 1 of partition 3 has index 4, etc. So we deallocate group 
-        information frm start to end which are computed as we go. (if the first group of a partition
-        is in position i and the partition has 3 groups, then start is i and end is i+(3-1) = i+2 but end 
-        is esclusive in the range so we use a range vale of i+3 for end.
+        = 2 + ((3-2)*4) - 2 = 4 so we deallocated items 1, 2, 3, and 4. (In version 2, 6 was tobecontinued and 
+        5 had a collapse to tobecontinued 6. We generate version 3 by adding 7, 8, 9, and 10 and we also
+        change 6 to be not-tobecontinued and 5 no lober has a collapse to a tobecontinued partition so
+        version 3 contains 5 and 6 since we changed 5 and 6 and 7, 8, 9 and 10 since we added them. Recall
+        that some lmabda was unable to do the coallpse for 5 so it requested a new DAG with version 3 
+        but one was not available. Whe version 3 was deposited, we do the deallocations just described and 
+        start a lambda that will continue where it left off in version 2, i.e., it will execute the collapse 
+        task 6 of 5. (We pass the output of 5 to the lambda which will use it as the input of 6) At the 
+        end of these dealloctions, we set self.version_number_for_most_recent_deallocation to 3
+        and self.most_recent_deallocation_end_index to 4. Thus the DAG_info for a lambda that will 
+        rstart its execution by completing the execution of the partitions in version 1 should 
+        have no deallocations, i.e., it needs the version 1 partititions 1 and 2 to be in the 
+        version 2 DAG it receives. The current DAG_info does not have information for partitions
+        1, 2, 3, and 4 since they were deallocated. (It has 5, 6, 7, 8, 9, and 10). This means 
+        we need to restore information about 1, 2, 3, and 4 in the current version 3 DAG_info.
+        The end index computed for version 2 was 0, i.e., the last valid partition to be deallocated
+        is 0 so everything deallocated beyond 0 needs to be restored. The end of the last 
+        dealloation is self.most_recent_deallocation_end_index which is 4, so we restore
+        items (end index+1) to self.most_recent_deallocation_end_index, which is (0+1)
+        to self.most_recent_deallocation_end_index, which is 1 to 4. After the restoration
+        version 3 contains 1 - 10. (The lambda requested version 2 but it is okay to give it 
+        version 3 or any version >= 2)
         
-        Fix: compute start using end coputation and end is saved value for last dealloc
-        
+        Suppose now a lambda requests version 2. The end index for deallocations is 2 + ((2-2)*4) -2 = 0
+        which means that no deallocations can be done. (Partitions 1 and 2 in version 1 need to also 
+        be in version 2 since the version 2 DAG changes the tobecntinued infromation for 1 and 2 and 
+        a lambda that gets version 2 will begin by executing the collapse task 2 of 1, and then continue
+        by excuting 4, 4, etc.)
+
         The restoration is always a suffix of the deallocated items. That is,
         for the new requested_current_version_number which we know is less than 
         the version_number_for_most_recent_deallocation, we still want to 
         deallocate all the items starting at 1, but we need to stop deallovating
-        items that are passed the end index that is computed by 
-        requested_current_version_number. Note that for partitions, we can get ths
+        items that are past the end index that is computed using
+        requested_current_version_number. Note that for partitions, we can get this
         end index from the usual "deallocation_end_index =" formula. For groups, this
         end index depends on the number of groups in each of the partitions to be 
         deallocated. We can compute this based on the partitions to be deallocated
         (we know the number of groups in each partition).
-        The end index number for groups is computed with the same code that we used to deallocate
-        groups instead of actually doing deallocations we sum the sizes of the partitions to 
-        get the end value for the restore.
+        The end index number for restoring groups is computed with the same code that 
+        we used to deallocate groups instead of actually doing deallocations we sum 
+        the sizes of the partitions to get the end value for the restore, then we restore 
+        ...
         
         Example: The input graph graph_24N_3CC_fanin_restoredealloc.gr has partitions:
             partitions, number of partitions: 15 (length):
@@ -689,33 +710,49 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
     def restore_DAG_structures_groups(self,requested_version_number_DAG_info):
         """
-        We have:
-        requested_current_version_number < self.version_number_for_most_recent_deallocation:
-        so we have deallocated too many items given the next requested_current_version_number.
-        This means we need to restore some of these items. We have saved every item that\
-        we have deallocaed so we can out them back.
+        This if-condition is true when we call restore_DAG_structures_partitions:
+            requested_current_version_number < self.version_number_for_most_recent_deallocation:
+        so when we did deallocations for version self.version_number_for_most_recent_deallocation
+        we did a certain number of deallocations based on that version number (we use the version 
+        number to compute end in the range (start,end+1) of the deallocations). But the 
+        requested_current_version_number is less than the version number of the last deallocation
+        so we have deallocated too many items given this requested_current_version_number.
+        That is the DAG_info has items that were deallocated in the DAG_info that was given to the
+        lambda that made the request for version_number_for_most_recent_deallocation but these items
+        are needed in the DAG_info that we will give to the lambda that made the request for 
+        requested_current_version_number that we are now processing.
+        This means we need to restore some of these items in DAG_info. We have saved every item that
+        we have deallocaed so we can restore items.
         The last deallocation was from the saved start to the computed end.
-        For partitions, this is:
+        For partitions, the computed value of end is:
             deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-        which means we have deallocated from 1 to end, though we may not have started
-        at 1, i.e., if we did a sequence of deallocations in deposit(). Still, we
-        have deallocated and saved the items from 1 to end.
-        For groups, we iterate through the partitions from start to end and for each
-        partition we deallocate its n groups. In this case we also end up at an
-        end index for the deallocated groups, and we have deallocated from 
-        1 to the group end index.
+        which means we have deallocated the groups in partitions 1 to end (this may have done a 
+        sequence of deallocations to get from partition 1 to end). Still, we have deallocated and saved 
+        infomation about the groups in partitions 1 to end. In particular, we
+        iterate through the partitions from start to end and for each
+        partition we deallocate its n groups. Groups have their own indices, e.g., partition 1 has index 0,
+        partition 2 has index 1, etc, while group 1 (the only group) of partition 1 has index 0 and 
+        group 1 of partition 2 has index 1 and group 2 of partition 2 has index 2 and group 3 of
+        partition 2 has index 3 and group 1 of partition 3 has index 4, etc. So we deallocate group 
+        information from start to end which are computed as we go. (if the first group of a partition
+        is in position i and the partition has 3 groups, then start is i and end is i+(3-1) = i+2 but end 
+        is exclusive in the range so we use a range vale of i+3 for end.
+        
+        Fix: compute start using end coputation and end is saved value for last dealloc
+
         The restoration is always a suffix of the deallocated items. That is,
         for the new requested_current_version_number which we know is less than 
         the version_number_for_most_recent_deallocation, we still want to 
         deallocate all the items starting at 1, but we need to stop deallovating
         items that are passed the end index that is computed by 
         requested_current_version_number. Note that for partitions, we can get ths
-        end index from the "deallocation_end_index =" formula. For groups, this
+        end index from the usual "deallocation_end_index =" formula. For groups, this
         end index depends on the number of groups in each of the partitions to be 
-        deallocated. We can compte this based on the partitions to be deallocated,
-        i.e., this number is computed with the same code that we used to deallocate
-        groups but with taking the sum of the lengths instead of actually doing
-        the deallocations. Is there a shortcut?
+        deallocated. We can compute this based on the partitions to be deallocated
+        (we know the number of groups in each partition).
+        The end index number for groups is computed with the same code that we used to deallocate
+        groups instead of actually doing deallocations we sum the sizes of the partitions to 
+        get the end value for the restore.
         """
 
         # This is what the end index for the deallocations should be, but we may have 
