@@ -369,13 +369,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         deallocate all the items starting at 1, but we need to stop deallovating
         items that are past the end index that is computed using
         requested_current_version_number. Note that for partitions, we can get this
-        end index from the usual "deallocation_end_index =" formula. For groups, this
-        end index depends on the number of groups in each of the partitions to be 
-        deallocated. We can compute this based on the partitions to be deallocated
-        (we know the number of groups in each partition).
-        The end index number for restoring groups is computed with the same code that 
-        we used to deallocate groups instead of actually doing deallocations we sum 
-        the sizes of the partitions to get the end value for the restore, then we restore 
+        end index from the usual "deallocation_end_index =" formula. 
         ...
         
         Example: The input graph graph_24N_3CC_fanin_restoredealloc.gr has partitions:
@@ -723,36 +717,126 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         requested_current_version_number that we are now processing.
         This means we need to restore some of these items in DAG_info. We have saved every item that
         we have deallocaed so we can restore items.
-        The last deallocation was from the saved start to the computed end.
+        A deallocation is from the current start (one past the end of the last dealloc) to the computed end.
         For partitions, the computed value of end is:
             deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-        which means we have deallocated the groups in partitions 1 to end (this may have done a 
-        sequence of deallocations to get from partition 1 to end). Still, we have deallocated and saved 
-        infomation about the groups in partitions 1 to end. In particular, we
-        iterate through the partitions from start to end and for each
-        partition we deallocate its n groups. Groups have their own indices, e.g., partition 1 has index 0,
-        partition 2 has index 1, etc, while group 1 (the only group) of partition 1 has index 0 and 
-        group 1 of partition 2 has index 1 and group 2 of partition 2 has index 2 and group 3 of
-        partition 2 has index 3 and group 1 of partition 3 has index 4, etc. So we deallocate group 
-        information from start to end which are computed as we go. (if the first group of a partition
-        is in position i and the partition has 3 groups, then start is i and end is i+(3-1) = i+2 but end 
-        is exclusive in the range so we use a range vale of i+3 for end.
+        which means we deallocate the groups that are in partitions from the current start index to the
+        deallocation_end_index. The first deallocation has a start index of 1. After we have done a sequence 
+        of deallocations, we have deallocated and saved information about the groups from the first 
+        partition to the last partition deallocated, which is the deallocation_end_index computed for the 
+        last deallocation. When we deallocate groups, we iterate through the partitions from start to end 
+        and for each partition we deallocate its n groups. Groups have their own indices since each
+        partition can have multiple groups e.g., partition 2 may have three groups each with their 
+        own index. So we deallocate group 
+        information from start index to end index which are computed for each artition as we go. (If the 
+        first group of a partition has inex i and the partition has 3 groups, then start is i and end 
+        is i+(3-1) = i+2 but end is exclusive in the range so we use a range vale of i+3 for end.
         
         Fix: compute start using end coputation and end is saved value for last dealloc
 
         The restoration is always a suffix of the deallocated items. That is,
         for the new requested_current_version_number which we know is less than 
         the version_number_for_most_recent_deallocation, we still want to 
-        deallocate all the items starting at 1, but we need to stop deallovating
-        items that are passed the end index that is computed by 
-        requested_current_version_number. Note that for partitions, we can get ths
-        end index from the usual "deallocation_end_index =" formula. For groups, this
-        end index depends on the number of groups in each of the partitions to be 
-        deallocated. We can compute this based on the partitions to be deallocated
-        (we know the number of groups in each partition).
-        The end index number for groups is computed with the same code that we used to deallocate
-        groups instead of actually doing deallocations we sum the sizes of the partitions to 
-        get the end value for the restore.
+        deallocate all the items starting at 1, but we need to stop deallocating
+        items that are past the end index that is computed by requested_current_version_number. 
+        Note that for partitions, we can get this end index from the usual "deallocation_end_index =" formula. 
+        For groups, this group end index also depends on the number of groups in each of the partitions whose
+        groups are to be deallocated. We can compute this group end index on the number of groups in each 
+        partition. Assume the start index is currently 1. Using the deallocation_end_index =" formula to 
+        compute the end index for the partitions whose groups are to be deallocate we might get the value 3, 
+        which means we want to deallocate the DAG info for the groups in partitions start to end, which is 1 to 3.
+        The first partition always has one group. Assume partitions 2 and 3 each have 2 groups.
+        Then we want to deallocate info for 1 + 2 + 2 = 5 groups. The start index for groups
+        is also 1. Thus we deallocate group info from 1 to 5. At the end of this deallocation,
+        the sart index for partitions is set to 4, which is one past the end 3 and is the index
+        of the next partition. Likewise, te start index for groups is set to 6. Note that 
+        the start inddex for partitions and the start index for groups may have different 
+        values. Note also that when we are deallocating group info, we still compute the end 
+        index for partitions in the usual manner and then determine how many groups are
+        in these partitions to get the number of groups whose info we are deallocating
+        (by summing the sizes of the partitions the to be deallocated groups are in).
+        We emphasize that DAG generattion is primarily partition-based, that is, even when 
+        we generate groups, we do this by generating partitions and  dividing the paritions
+        into groups. So deallocation is also partition-based - we get the groups to deallocate
+        by first computing the partitions and then we compute the (number of consecutive)
+        groups in these partitions.
+
+        Example: The input graph graph_24N_3CC_fanin_restoredealloc.gr has groups:
+            partitions, number of partitions: 15 (length):
+            PR1_1: (3): 5 17 1
+            PR2_1L: (15): 2 10 5-s 16 20 8 11 3 17-s 19 4 6 14 1-s 12
+            PR3_1: (9): 8-s 13 7 11-s 15 6-s 9 4-s 18
+            PR4_1: (1): 21
+            PR5_1: (2): 21-s 22
+            PR6_1: (2): 22-s 25
+            PR7_1: (2): 25-s 26
+            PR8_1: (2): 26-s 27
+            PR9_1: (2): 27-s 28
+            PR10_1: (1): 23
+            PR11_1: (2): 23-s 24
+            PR12_1: (2): 24-s 29
+            PR13_1: (2): 29-s 30
+            PR14_1: (2): 30-s 31
+            PR15_1: (2): 31-s 32
+        with Connected Components (CC) the groups in PR1_1 - PR3_1, the groups in PR4_1 - PR9_1, and the 
+        groups in PR10_1 - PR15_1. 
+        The version 1 (base) DAG is PR1_1 - (PR2_1, PR2_1L, PR2_3), with PR1_1 complete and the groups
+        in PR2_1 tobecontinued (TBC). 
+        With pubication interval 1, the next DAG (version 2) has the groups in PR1_1 - PR3_1, with the 
+        groups in partition 2 now complete and the groups in partition 3 TBC. 
+        The lambda executors will execute the groups in partition 2 and see that the groups in partiton 3
+        are TBC and request a new DAG. Note that partition/group PR1_1 has fanouts to groups PR2_1,
+        PR2_2L, and PR2_3 so there are three executors finvolved in excuting PR2_1, PR2_2L, and PR2_3.
+        We will not be concerned here with th details about fanouts/fanins and which executor is 
+        executing which task/group.
+        Assume the new DAG has the groups in partition 3, which is the last DAG in the first CC 
+        and it is complete, while the partition 4 is the first partition in the new DAG and its groups are TBC.
+        The groups in Partition 3 are executed (as fanouts/fanins, etc of groups in partition 2) and since 
+        partiton 3 has no fanins/fanouts, their executors will terminate. 
+        The DAG generator will deposit() a new DAG that has the groups of partition 4, which are complete,
+        where 4 is the first partition of the next CC and TBC groups of partition 5.
+        A new lambda is started to execute the single group of partition 4, which is a leaf task. (A leaf task 
+        is the first task of a CC, for which a new lambda will be started to excute the leaf) This new lambda 
+        will execute the single (leaf) group) of 4, see that the single group of 5 is TBC and request a new 
+        DAG. In the new DAG, assume the group of 5 is complete and the grooup of 6 is TBC. The group of 5 is 
+        executed and since the group of 6 is incomplete, a new DAG is requsted. In the new DAG, assume the group 
+        of 6 is complete and the group of 7 is TBC. Suppose the group of 6 is executed and it takes a long time 
+        to execute this group. In the mean time, the DAG generator, will continue to produce new DAGS that contain 
+        the groupss of partitions 7, 8, 9, 10, 11, 12, 13, 14, 15. When a new DAG is produced containing
+        partitions 10 and 11, where the group in 10 is complete and the group in 11 is TBC, and 10 is the 
+        first partition of the 3rd CC a new lambda will be started to execute leaf task 10. This lambda X (or
+        if X requests a new DAG and doesn't get one then some other lambda Y that is started to continue where
+        X left off) will execute the groups in 10, 11, 12, 13, 14, and 15 (all in its version of the DAG) 
+        and terminate. Note that after the lamda L that is executing the group in partition 6 finishes this 
+        group and sees the TBC group in partition 7 in its (old) version 6 of the DAG, it will call withdraw() 
+        requesting version 7 of the DAG. Assume the last deposited version of the DAG is version 11, which 
+        which contains all partitions from PR1_1 to PR12_. Since 7 < 11, i.e., requested version 7 is older 
+        than the last version 11 deposited, we can return version 11 of the DAG to L. However, as lambda
+        X/Y was exexcuting the partitions in its CC (10, 11, 12, 13, 14, 15) it was also requesting
+        new versions of the DAG. In these new versions of the DAG that were given to X/Y,
+        we will have deallocated some of the group information in these DAGs, which is 
+        the "old" groups that are no longer needed to execute the newer groups
+        in the newer versions DAG. For example, for version 11, we deallocted information about 
+        the groups in partitions 1 - 9. This means that if L calls withdraw() and requests version 7 and
+        we return version 11 to L, version 11 will not have the deallocated information about partitions 
+        1 - 7 but L needs this deallocated information to execute its DAG. Thus, we must 
+        restore the missing information in version 11 that L needs before we return it to L.
+        In this case, L does NOT need information about 1-5 but it does need information 
+        about the group in partition 6 and the groups in partitions after 6. This is because L is
+        requesting version 7, which means some groups (in partitions) at the beginning of version 7 
+        can be deallocated but groups in partitions at the end of version 7 and the partitions that 
+        were added in versions after 7 are also needed. Since our version 11 DAG had deallocations for 
+        groups in partitions 1 - 9, we need to restore the information for the groups in partitions 
+        6, 7, 8, and 9, which are groups in partitions that L needs that were deallocated from version 11. 
+        (Version 11 stil has information about the groups in partition 10 etc.) So the version of the 
+        DAG we return to L is version 11 with partitions 1 - 5 being deallocated. Note that when we 
+        deallocate infomation about the groups in partition p we save it so that it is avaialble if we 
+        need to restore the groups in p.
+        Note: When an executor requests version i of the DAG, it is willing to receive
+        version i or any version after i. In the above scenario, we may have assumed that
+        a request for version i returned version i but it could have instead returned a
+        later version, depending on the interleaving of deposits of new DAGs and withdraws of
+        a DAG that occurs.
         """
 
         # This is what the end index for the deallocations should be, but we may have 
