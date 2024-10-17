@@ -441,37 +441,56 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # This is where deallocation should end
         deallocation_end_index = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
-        #Q: Can this be false? Yes, if trying to restore version 2? 
-        # But No: we use >= 0 and 0 is the min so no?  For verstion 2, 
-        # end index is 2+0-2=0 since you can't actually dealloc until you get to version 3.
-        # If most recent is, e.g., 3, then we did some deallocs for 3 and we need
-        # to restore these for 2 whose end index is 0.
-        #Q: "if deallocation_end_index == 0" since it is 0 fr 2 and we need to retore.
-        # so for 3 with interval 2, end index is 2+2-2=2, so dealloc 1..2 (as for 
-        # 3 we have: 1, 2, 3, 4, 5, 6 and we can dealloc 1 and 2 of version 1; so
-        # we resore 1 and 2 of version 1 if we dealloc for 3 and get a request for 2.
-        # So we want to inc end index 0 to 1 and restore from 1 to 2, which is range(1,3)
+       # Note: this condition cannot be false. We called restore_DAG_structures_groups
+        # with a requested_version_number_DAG_info that was smaller than the version number
+        # for the most recent deallocation so we know some values should be restored 
+        # given the requestd version number, i.e., the deallocations for the requsted version 
+        # number are a prefix of the deallotions made so far so the end index computed
+        # for the rquested version number must be >= 0. We use 0 since for a requested version
+        # number of 2 the end index is 0, which menas that no deallocations shoud be made
+        # for version 2 and if some have been made then we need to rstore them all.
+        # Note: version 3 is the first version for which we can do deallocations.
+        # Example: For requested version 3 with publishing interval 2, end index is 
+        # 2+((3-2)*2)-2=2. start index will have its initil=al value so dealloc 1..2.
+        # Version 3 will have artitions 1, 2, 3, 4, 5, 6. We can dealloc 1..2, where 1 and 2
+        # were the partitions added to create vrsion 1. So we restore 1 and 2 of version 1 
+        # if we do the deallocations for verion 3 and get a request for version 2.
+        # The deallocation_end_index_partitions is computed above as 0, which means the end of the 
+        # valid deallocations for version 2 is 0, i.e., no dallocations are allowed. We need
+        # to restore the deallocations after that, which start in 1 and end with the end index
+        # for the most recent deallocation, which was index 2 for version 3. Thus, below we
+        # increment 0 to 1 and restore from 1 to 2, which is range(1,3).
         #
-        # For restore we use >= 0. For deallocation, we use > 0. For deallocation, 
+        # Note, for restore in the condition below we use >= 0. For deallocation, 
+        # in the corresonding condition we use > 0. For deallocation, 
         # we do not want to do a dealloc if end index is 0, which is the case for 
-        # requested version 2, as start will be 1 (the initial value) and if end is 
-        # 0 the range is from 1 to 0 so no dealloations will be done. For restore,
-        # when the version requsted is less than the most recent deallocation end index 
-        # we need to restore. If the most recent is for version 3 and the end index (for 
+        # requested version 2. For version 2 start will be 1 (the initial value) and if end is 
+        # 0 the range is from "1 to 0", which using range is ange (1,1) so no dealloations 
+        # will be done, as needed. Version 3 is the first version for which we can do
+        # deallocations. For restore, when the version requsted is less than the most 
+        # recent version for which deallocations were done, end index,  we need to restore
+        # some deallocations. If the most recent is for version 3 and the end index 0 (for 
         # the just requested) is for version 2, then we need to restore the deallocs that were
         # done for 3. These deallocs were states 1 and 2. Thus, the end index for 2 is 
-        # 0 and we increment it to 1, where the end index for 3, the most recent, is 2
-        # which we also increment getting 3, giving a range of (1,3), where 3 is exclusive
-        # so we restore states 1 and 2. States 3, 4, 5, 6 were never deallocated so a
-        # this point no deallocations have been done. (Note the request is for 2 and 
-        # the version available is 3 so we will return 3 but without any deallocations,
-        # i.e., the deallocs will have been restored.)
+        # 0 and we increment it to 1, where the end index for the most recent version for which 
+        # deallocs done, which is version 3, is 2. We increment 2 to 3 for the range,
+        # iving a range of (1,3), where 3 is exclusive.
+        # so we restore states 1 and 2. States 3, 4, 5, 6 were never deallocated so at
+        # this point no deallocations have been done in the current version 3. (Note the 
+        # request is for 2 and the version available is 3 so we will return 3 but without 
+        # any deallocations, i.e., the deallocs will have been restored. If the next request 
+        # is for version 3, we will do the deallocations again before returning version 3,
+        # with the deallocations, to the lambda requesting version 3. The idea is that
+        # the deallocations can make the DAG info object much smaller and this will make up
+        # for the time to do the deallocations. 
         #if deallocation_end_index > 0:
         if deallocation_end_index >= 0:
             deallocation_end_index += 1
         
-        # Can self.most_recent_deallocation_end_index > 0 be false? No, since we 
-        # know we did a dealloation (for most recent) so end index is greater than 0.
+        # Can self.most_recent_deallocation_end_index > 0 (see the next condition) be false? 
+        # No, since we  know we did a deallocation (for most recent version) so the most recent
+        # end index for deallocatios, which was saved when the deallocatins
+        # were done, is greater than 0.
         try:
             msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
                 + " self.most_recent_deallocation_end_index is not greater than 0."
@@ -517,17 +536,19 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         
         if deallocation_end_index <= self.most_recent_deallocation_end_index:
             # remember that this is the most recent version number for which we did
-            # a deallocation
+            # a deallocation.
             self.version_number_for_most_recent_deallocation = requested_version_number_DAG_info
-            # This was incremented above to be the position one past that of 
+            # deallocation_end_index was incremented above to be the position one past that of 
             # the last item deallocated, which is where we would start the
-            # next deallocation
+            # next deallocation. So we are using the value used in the range.
             self.deallocation_start_index_partitions = deallocation_end_index
-            # But the actual new end of deallocation for this deallocation (after
-            # restoring items) is deallocation_end_index - 1. We decrement
-            # since deallocation_end_index was incremented above t be one
+            # But the actual new end of deallocation for this just done deallocation (after
+            # restoring items) is deallocation_end_index - 1. We decrement by 1
+            # since deallocation_end_index was incremented above to be one
             # past the position of the last decrement so the (exclusive)
-            # range value is correct)
+            # range value would be correct). Recall that deallocation_end_index is the 
+            # index where we started restoring, so deallocation_end_index-1 is the 
+            # indx of the last deallocation that has been done,
             self.most_recent_deallocation_end_index = deallocation_end_index -1
             logger.info("deallocate_DAG_structures_partitions: new index values after restores: "
                     + "self.version_number_for_most_recent_deallocation: " 
@@ -835,8 +856,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         Note: When an executor requests version i of the DAG, it is willing to receive
         version i or any version after i. In the above scenario, we may have assumed that
         a request for version i returned version i but it could have instead returned a
-        later version, depending on the interleaving of deposits of new DAGs and withdraws of
-        a DAG that occurs.
+        later version, depending on the interleaving of deposits of new DAGs and DAG withdraws of
+        that occurs.
         """
 
         # This is what the end index for the deallocations should be, but we may have 
@@ -849,37 +870,56 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # and the last would be in position self.most_recent_deallocation_end_index.
         deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
-        #Q: Can this be false? Yes, if trying to restore version 2? 
-        # But No: we use >= 0 and 0 is the min so no?  For verstion 2, 
-        # end index is 2+0-2=0 since you can't actually dealloc until you get to version 3.
-        # If most recent is, e.g., 3, then we did some deallocs for 3 and we need
-        # to restore these for 2 whose end index is 0.
-        #Q: "if deallocation_end_index == 0" since it is 0 fr 2 and we need to retore.
-        # so for 3 with interval 2, end index is 2+2-2=2, so dealloc 1..2 (as for 
-        # 3 we have: 1, 2, 3, 4, 5, 6 and we can dealloc 1 and 2 of version 1; so
-        # we resore 1 and 2 of version 1 if we dealloc for 3 and get a request for 2.
-        # So we want to inc end index 0 to 1 and restore from 1 to 2, which is range(1,3)
+        # Note: this condition cannot be false. We called restore_DAG_structures_groups
+        # with a requested_version_number_DAG_info that was smaller than the version number
+        # for the most recent deallocation so we know some values should be restored 
+        # given the requestd version number, i.e., the deallocations for the requsted version 
+        # number are a prefix of the deallotions made so far so the end index computed
+        # for the rquested version number must be >= 0. We use 0 since for a requested version
+        # number of 2 the end index is 0, which menas that no deallocations shoud be made
+        # for version 2 and if some have been made then we need to rstore them all.
+        # Note: version 3 is the first version for which we can do deallocations.
+        # Example: For requested version 3 with publishing interval 2, end index is 
+        # 2+((3-2)*2)-2=2. start index will have its initil=al value so dealloc 1..2.
+        # Version 3 will have artitions 1, 2, 3, 4, 5, 6. We can dealloc 1..2, where 1 and 2
+        # were the partitions added to create vrsion 1. So we restore 1 and 2 of version 1 
+        # if we do the deallocations for verion 3 and get a request for version 2.
+        # The deallocation_end_index_partitions is computed above as 0, which means the end of the 
+        # valid deallocations for version 2 is 0, i.e., no dallocations are allowed. We need
+        # to restore the deallocations after that, which start in 1 and end with the end index
+        # for the most recent deallocation, which was index 2 for version 3. Thus, below we
+        # increment 0 to 1 and restore from 1 to 2, which is range(1,3).
         #
-        # For restore we use >= 0. For deallocation, we use > 0. For deallocation, 
+        # Note, for restore in the condition below we use >= 0. For deallocation, 
+        # in the corresonding condition we use > 0. For deallocation, 
         # we do not want to do a dealloc if end index is 0, which is the case for 
-        # requested version 2, as start will be 1 (the initial value) and if end is 
-        # 0 the range is from 1 to 0 so no dealloations will be done. For restore,
-        # when the version requsted is less than the most recent deallocation end index 
-        # we need to restore. If the most recent is for version 3 and the end index (for 
+        # requested version 2. For version 2 start will be 1 (the initial value) and if end is 
+        # 0 the range is from "1 to 0", which using range is ange (1,1) so no dealloations 
+        # will be done, as needed. Version 3 is the first version for which we can do
+        # deallocations. For restore, when the version requsted is less than the most 
+        # recent version for which deallocations were done, end index,  we need to restore
+        # some deallocations. If the most recent is for version 3 and the end index 0 (for 
         # the just requested) is for version 2, then we need to restore the deallocs that were
         # done for 3. These deallocs were states 1 and 2. Thus, the end index for 2 is 
-        # 0 and we increment it to 1, where the end index for 3, the most recent, is 2
-        # which we also increment getting 3, giving a range of (1,3), where 3 is exclusive
-        # so we restore states 1 and 2. States 3, 4, 5, 6 were never deallocated so a
-        # this point no deallocations have been done. (Note the request is for 2 and 
-        # the version available is 3 so we will return 3 but without any deallocations,
-        # i.e., the deallocs will have been restored.)
+        # 0 and we increment it to 1, where the end index for the most recent version for which 
+        # deallocs done, which is version 3, is 2. We increment 2 to 3 for the range,
+        # iving a range of (1,3), where 3 is exclusive.
+        # so we restore states 1 and 2. States 3, 4, 5, 6 were never deallocated so at
+        # this point no deallocations have been done in the current version 3. (Note the 
+        # request is for 2 and the version available is 3 so we will return 3 but without 
+        # any deallocations, i.e., the deallocs will have been restored. If the next request 
+        # is for version 3, we will do the deallocations again before returning version 3,
+        # with the deallocations, to the lambda requesting version 3. The idea is that
+        # the deallocations can make the DAG info object much smaller and this will make up
+        # for the time to do the deallocations. 
 
         if deallocation_end_index_partitions >= 0:
             deallocation_end_index_partitions += 1
 
-        # Can self.most_recent_deallocation_end_index > 0 be false? No, since we 
-        # know we did a deallocation (for most recent) so end index is greater than 0.
+        # Can self.most_recent_deallocation_end_index > 0 (see the next condition) be false? 
+        # No, since we  know we did a deallocation (for most recent version) so the most recent
+        # end index for deallocatios, which was saved when the deallocatins
+        # were done, is greater than 0.
         try:
             msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
                 + " self.most_recent_deallocation_end_index is not greater than 0."
@@ -895,9 +935,13 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # we do not need to compute it.
         # It is probably okay to just compute it here when we need it since we only need it here in restore.
         #self.most_recent_deallocation_end_index = (2+((self.version_number_for_most_recent_deallocation-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-
-        # Check that the saved value for most recent equals the most recent value that 
-        # we can compute from self.version_number_for_most_recent_deallocation
+       
+        # self.most_recent_deallocation_end_index is used in a range() below and it will be exclusive so 
+        # increment by 1.
+        # We will set this to a new value at the end of restore to reflect that the 
+        # last dealloated value has changed (since we restored some of the values.)
+        # Note that the restored values are a suffix of the deallocated values 
+        # i.e., are a sequence of values at the end of the sequence of deallocted values.
         try:
             msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
                 + " self.most_recent_deallocation_end_index is not equal to " \
@@ -913,10 +957,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
         # This is used in a range() below and it will be exclusive so increment by 1.
         # We will set this to a new value at the end of restore to reflect that the 
-        # last deallocated value has changed (since we restored some of the values.)
+        # last deallocated index has changed (since we restored some of the values.)
         # Note that the restored values are a suffix of the deallocated values 
         # i.e., are a sequence of values at the end of the sequence of values that 
-        # have been deallocated so far.
+        # have been deallocated so far. Likewise, the deallocations that remain for the 
+        # current requsted version are a prefix of the deallocations that had been done
+        # previously.
         if self.most_recent_deallocation_end_index > 0:
             self.most_recent_deallocation_end_index += 1
 
