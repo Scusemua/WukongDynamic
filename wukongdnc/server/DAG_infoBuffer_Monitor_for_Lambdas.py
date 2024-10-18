@@ -1063,87 +1063,112 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 # do it since we need it here?
 
     def deallocate_DAG_structures_groups(self,requested_version_number_DAG_info):
+        # For the whiteboard example
         # Version 1 of the incremental DAG is given to the DAG_executor_driver for execution
-        # (assuming the DAG has more than 1 partition). So the first version workers can request 
-        # is version 2. At that point, they will have executed partition 1, found that 
-        # partition 2 was to-be-continued, saw that partition 1, which is not to-be-continued but has a collapse
-        # to a continued partition 2, and that the DAG was not complete, and so requested version 2.
-        # (The worker that executed partition 1, actually the task corresponding to computing the 
-        # pagerank values of partition 1, will save the state and output for that task in its continue queue. When 
-        # that worker gets a new incremental DAG, it will get the state and output from its continue
-        # queue and retart DAG execution by getting the collapse for partition 1 which is partition 2
-        # and executing partition 2 as usual. In general if workers request version n, n>1, (all workers
-        # request the same version of the DAG each round), then they have already executed partitions 1 through
-        # 2+((n-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL), where the last 
-        # partition 2+((n-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL) is continued and 
-        # the preceding partition has a collapse to the continued task. Again, the workers have already executed
-        # partitions 1 and 2 and a certain number of partitions that have been added in each new version
-        # of the incremental DAG. Version 1 has partitions 1 and 2 and version 2 is the first version that 
-        # can be requested by the workers. Note that if they request version 2, they have only excuted
-        # partitions 1 and 2 (and really only executed partition 1 as partiton 2 was to-be-continued)
-        # so that use of n-2 in this case is 2-2=0 and the last partition 2+(0*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL)
-        # is 2 as expected.(So 2 is the last partition in version 1, which doesn't man 2 has been executed 
-        # since the last partition in an incomplete graph is to-be-continued.)
+        # (assuming the DAG has more than 1 partition). The driver will start a lambda for 
+        # executing group/partiton 1, which is a leaf node. The groups in partition 2 are 
+        # tobecontinued and 2 may be a leaf node (it is a leaf node if partition 1 is the 
+        # only node in its connected component (CC) in which case partition 2 is a single group).
+        # (The first partition of a new CC has a single group (since none of the nodes in 
+        # this group have parent nodes (since previous partiton was the last in its CC)))) 
+        # This firt lambda is given version 1 of the DAG. So the first version a lambda can 
+        # request is version 2. At that point, the lambda will have seen that partition/group 1 '
+        # is not to-be-continued executed partition/group 1, seen that partition/group 1
+        # has fanouts/fanins to tobecontinued groups in partition 2, and that the DAG was not 
+        # complete (there are more partitions to be generated in the DAG), and so requested version 2.
+        # (The lambda that executed partition/group 1, actually the task corresponding to computing the 
+        # pagerank values of partition/group 1, will send its state (1) and output on the call to withdraw() 
+        # and if no new DAG is avaiable withdraw() will save the state and output in a withdraw
+        # tuple. When a new DAG is deposited, a lambda will be started for the withdraw tuple
+        # and the lambda will receive the saved state/output from the withdraw tuple (in its payload).
+        # The lambda will start executing the new DAG by processing the fanins/fanouts for the 
+        # task identified by the state (1) the lambda received. In this case, the state is for partiton/group 1
+        # and the fanouts are to group PR2_1 and PR2_3 and the fanin is to PR2_2L.
+        # In general if a lambda requests version n of the DAG, n>1, then it
+        # has already processed partitions 1 through 2+((n-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL), 
+        # where the last partition 2+((n-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL) is continued and 
+        # the preceding partition was excuuted and has fanins/fanouts to the continued tasks/groups in the last partition.
+        # So the lambda has already executed partitions 1 and 2 (of version 1) and a certain number of partitions
+        # that have been added in each new generated version of the incremental DAG. Version 1 has partitions 1 
+        # and 2 and version 2 is the first version that can be requested by a lambda. Note that if a lambda 
+        # requests version 2, it has processed partitions 1 and 2 (i.e., executed partition 1 as partiton 2 was 
+        # to-be-continued) so that the formula's use of n-2 in this case is 2-2=0 and the last partition 
+        # 2+(0*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL) is 2 as expected. (So 2 is the last partition 
+        # in version 1, which doesn't mean 2 has been executed since the last partition in an incomplete graph 
+        # is to-be-continued as the fanins/fanouts from groups in this partition to the groups in the next
+        # partition are unknown. They will become known in the next DAG that is generated and this DAG or 
+        # a succeeding DAG that is the next da/g to be published is published. this publshed DAG will be 
+        # given to the lambdas who request a new DAG.
         #
-        # Example: DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4 and workers request Version 3. 
-        # Then the partitions that have been executed are 1, 2, 3, 4, 5, and 6, where version 2 has partitons 1, 
-        # 2, 3, 4, 5, and 6, where 6 is to-be-continued, and version 1 has partitions 1 and 2. Workers are 
-        # requesting Version 3, which will add the 4 partitions 7, 8, 9, and 10 as 
-        # DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4. In the new version 3 of the DAG, 
-        # partition 6 is not-continued and partition 5  has no collapse to a continued state. 
-        # (Note that when we add partition 7 to the DAG, we change partition 6 to be non-to-be-continued
-        # and we change partition 5 so that it has no collapse to a to-be-continued partition. The new DAG with
-        # partition 7, which is a to-be-continued partition (due to DEPOSIT INTERVAL = 4), is not published, and neither 
-        # are the DAGS created by adding partitions 8, and 9, respectively. The DAG created by adding 10 is published.)
-        # (We have added 8 partitions since we generated the base DAG (with partitions 1 and 2) and
-        # 8 mod 4 (DAG INTERVAL) is 0). Note that we added 7, 8, 9, and 10 but we also changed 5
-        # and 6, so we need 5 and 6 to be in version 3 of the DAG, i.e., we do not deallocate 5 and 6 so they are in
-        # version 3. So we can deallocate the info in the DAG strctures about DAG states 1, 2, 3, 4, which 
-        # is 1 through (2+((n-2)*pub_interval))-2, n=3, which is 1 through 2+(1*4)-2 = 4. Note that when workers request 
-        # version 3 we can deallocate DAG structure information about partitions 1, 2, 3, 4, in version 2 but 
-        # not partitions 5 and 6. This is because the status of 5 and 6 in version 3 is changed from that of version 2.
-        # Partition 5 has a collapse to continued task 6 in version 2 but in version 3 task 6 is not
-        # to-be-continued and thus 5 no longer has a collapse to a continued task. So when the workers
-        # get version 3 of the DAG they restart execution by getting the state and output for already
-        # executed task 5 from the continue queue, retrieving the collapse task 6 of state 5, and 
-        # executing task 6. Thus we do not dealloate the DAG states for 5 and 6, even though they
-        # were in version 2 and we are getting a new version 3.
+        # Example: DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4 and a lambda requests Version 3. 
+        # Then the partitions an the groups therein that have been executed are 1, 2, 3, 4, 5, and 6, where 
+        # version 2 has partitions 1, 2, 3, 4, 5, and 6, where 6 is to-be-continued, and version 1 has partitions 
+        # 1 and 2. A lambda is  requesting Version 3, which will add the groups in the 4 partitions 7, 8, 9, and 10 as 
+        # DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL is 4. In the new version 3 of the DAG, the grops n
+        # partition 6 are not-tobecontinued and the groups in partition 5 now have no fanins/fanouts to a continued
+        # group,(Note that when we add the groups in partition 7 to the DAG, we change he groups in partition 6 
+        # to be not-to-be-continued and we change the groups in partition 5 so that they have has no fanins/fanouts 
+        # to a to-be-continued group. The new DAG with the groups in partition 7, which are to-be-continued groups
+        # is not published, due to DEPOSIT INTERVAL = 4)and neither are the DAGS created by adding the groups 
+        # in partitions 8, and 9, respectively. The DAG created by adding th groups in partition 10 is published.)
+        # (We have added the groups of 8 partitions since we generated the base DAG (with partitions 1 and 2) and
+        # 8 mod 4 (DAG INTERVAL) is 0). Note that we added 7, 8, 9, and 10 but we also changed the groups in 5
+        # and 6, so we need the groups in 5 and 6 to be in version 3 of the DAG, i.e., we do not deallocate 
+        # DAG info for the groups in 5 and 6 so this info will be in version 3. So we can deallocate the info 
+        # in the DAG structures for the DAG groups in partitions 1, 2, 3, 4, which 
+        # is 1 through partition (2+((n-2)*pub_interval))-2, where n=3, which is 1 through 2+(1*4)-2 = 4. 
+        # Note that when lambdas requests version 3 we can deallocate DAG structure information about 
+        # the groups in partitions 1, 2, 3, 4, but not the groups in partitions 5 and 6. This is because 
+        # the status of the groups in 5 and 6 in version 3 is changed from that of version 2.
+        # Partition 5 has fanins/fanouts to continued groups in partition 6 in version 2 but in version 3 
+        # the groups in partition 6 are not to-be-continued and thus the groups in partiton 5 no longer habe
+        # a fanon/fanout to a continued group. So when lambdas get version 3 of the DAG they restart execution
+        # by getting the state and output for an already executed group of partition 5 (this state/output are 
+        # given to the lambda in its payload), retrieving the fanin/fanouts of the group given by the state, and 
+        # executing the fanins/fanouts of this group. Thus we do not dealloate the DAG states for groups in 
+        # partitions 5 and 6, even though they were in version 2 and we are getting a new version 3.
         # Note that we don't always start deallocation at 1, we start where the last deallocation ended.
-        # So in this example, after deallocating 1, 2, 3, and 4, start_deallocation becomes 5. Note that if 
-        # workers request version 2, then 2+((n-2)*pub_interval))-2 is 2+(0*4)-2 = 0 so we deallocate from 1 to 0 
-        # so no deallocations will be done. As mentioned above, the states for partitions 1 and 2 in 
-        # version 1 will change in version 2, so we do not deallocate 1 and 2 when the workers
-        # request version 2. Partitions 1 and 2 will be among the partitions deallocated when workers
-        # request version 3. (From above, we will deallocate 1, 2, 3, 4.)
+        # So in this example, after deallocating the groups in partitions 1, 2, 3, and 4, start_deallocation 
+        # for the partitions becomes 5. Note that if a lambda requests version 2, then 
+        # 2+((n-2)*pub_interval))-2 is 2+(0*4)-2 = 0 so we deallocate from 1 to 0 which means that 
+        # no deallocations will be done. As mentioned above, the states for partitions 1 and 2 in 
+        # version 1 will change in version 2, so we do not deallocate the groups in partitions 1 and 2 when 
+        # the lambda that excutes partition/group 1 request version 2. The groups in partitions 1 and 2 will 
+        # be among the groups deallocated when lambdas request version 3. (From above, for pubishing interval
+        # 4, we will deallocate groups in partitions 1, 2, 3, 4 when lambdaas request version 3; the requested
+        # version number is a measure of the progres the lamba has mad in exeuting itd part of the ADG, i.e.,
+        # some partitions/groups are old partitions/groups that have been processed and are no loner needed.
         #
         # Note that the initial value of the version number in the DAG_infoBufferMonitor that 
-        # maintains the last version number requested by the workers is 1. Workers don't actually 
+        # maintains the last version number requested by a lambda is 1. Lambdas don't actually 
         # request version 1, as version 1, which contains partitions 1 and 2, is given to
-        # the DAG_executor_driver, which starts DAG execution with version 1 of the incremental DAG. 
-        # (Partition 1 is a leaf task. Partition 2 either depends on partition 1 or is another leaf task.
+        # the DAG_executor_driver, which starts a lambda with version 1 of the incremental DAG. 
+        # (Partition 1 is a leaf task. The groups in partition 2 either depend on partition 1 or 
+        # partition 2 is a single grooup that is another leaf task (so partition/group 1 is the first 
+        # and last of CC 1 and partition/group 2 is the first of its CC)
         # More leaf tasks can be discovered during incremental DAG generation. This is unlike non-incremental 
         # DAG generation, which discovers all of the leaf tasks during DAG gneration and gives all these leaf tasks
-        # to the DAD_executor_driver (as part of the DAG INFO structure). The DAG_executor_driver will 
+        # to the DAG_executor_driver (as part of the DAG_INFO structure). The DAG_executor_driver will 
         # start a lambda for each leaf task, or if workers are being used it will enqueue the leaf tasks
-        # in the work queue.)
-        # So the first version requested by the users is 2, and the first version deposited
-        # in the DAG_infoBufferMonitor is 2. The workers can excute DAG version 1 and request
-        # DAG version 2 before bfs() has deposited version 2 into the DAG_infoBufferMonitor.
-        # (Deposit makes the new version available to workers, who call withdraw() to get a new
+        # in the work queue and tart the workers.
+        # So the first version requested by a lambda is 2, and the first version deposited
+        # in the DAG_infoBufferMonitor is 2. The first leaf node lambda will execute DAG version 1 and then may
+        # request# DAG version 2 before bfs() has deposited version 2 into the DAG_infoBufferMonitor.
+        # (Deposit makes the new version available to lambdas, who call withdraw() to get a new
         # version.) Before bfs() deposits new version 2, it will ask DAG_infoBufferMonitor for 
-        # the most recent version requested by the workers. This will be the initial value 1
-        # since bfs() has not called deposit for the first time to deposit version 2 (which 
+        # the most recent version requested by the lambdas. This will be the initial value 1
+        # since bfs() has not called deposit() for the first time to deposit version 2 (which 
         # bfs will do next). bfs will pass 1 to deallocate_DAG_structures as the value
         # of requested_version_number_DAG_info so the value of 
         # 2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
-        # will be 2+((1-2) * 4)-2 = -4 so we will deallocate from 1 to -4 so no deallocations
+        # will be 2+((1-2) * 4)-2 = -4 so we will deallocate from 1 to -4 so no deallocations are done
         # as expected. (We cannot deallocate 1 or 2 yet as we are not done with them - in version
-        # 2 partition 2 becomes not to-be-continued and partition 1 now has no collapse to a 
-        # continued state, so we restart executing the DAG by accessing 1's state information
-        # to get 1's collpase task 2, which we can now execute. We already excuted 1 and then
-        # stopped execution when we saw 1's collapse was to a to-be-continued state 2)
+        # 2 the groups in partition 2 becomes not to-be-continued and partition/group 1 now has no fanons/fanouts to a 
+        # continued group (in partition 2), so we restart executing the DAG by accessing partition/group 1's 
+        # state information to get 1's fanins/fanouts, which are processed as usual. We already excuted 1 and then
+        # stopped execution when we saw 1's fanins/fanouts were to to-be-continued groups in partition 2)
         # Note: Given the formula 2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2,
-        # the value given by this formula cannot become greater than 1 until workers request version 3. For
+        # the value given by this formula cannot become greater than 0 until workers request version 3. For
         # version 2, requested_version_number_DAG_info-2 is 2-2 = 0, so we get 2+0-2=0.
         # Note: if the DAG interval is 2, then for requesting version 3, we get 2+((3-2)*2)-2 = 2. Version 2 
         # has partitions 1 2 3 4, which means we can deallocate partitions 1 up to the end partition which is 2.
@@ -1152,22 +1177,22 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # execution stopped at to-be-continued taak/partition 4.)
 
         # Note: the version number gets incremented only when we publish a new DAG. The first 
-        # DAG we publish is the base DAG with partitions 1 and 2. If the interval is 4,
-        # the next DAG we generate has partitions 1, 2, and 3 but it is not published since
-        # we publish every 4 partitions (after the base DAG) So the next verson is version 2,
-        # which will have partitions 1, 2, 3, 4, 5, 6 for a total of 2+4 partitions.
+        # DAG we publish is the base DAG (version 1) with the groups in partitions 1 and 2. If the publishing 
+        # interval is 4, the next DAG we generate has partitions 1, 2, and 3 but it is not published since
+        # we publish every 4 partitions (after the base DAG version 1) So the next verson to be published is
+        # version 5 which will have partitions 1, 2, 3, 4, 5, 6 for a total of 2+4=6 partitions.
 
         deallocation_end_index_partitions = (2+((requested_version_number_DAG_info-2)*DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL))-2
 
         # we will use deallocation_end_index in a range so it needs to be one past the last partition
-        # to be dealloctated. Example, to deallocate "1 to 1" use range(1,2), where 1 is inclusive 
-        # but 2 is exclusive; to deallocate "2 , 3, and 4" use range(2,5).
+        # whose groups are to be dealloctated. Example, to deallocate "1 to 1" use range(1,2), where 1 is inclusive 
+        # but 2 is exclusive; to deallocate "2 , 3, and 4" uses range(2,5).
         # 
         # However, don't increment deallocation_end_index unless we can 
         # actually do a deallocation. We can do a deallocation unless start index is 1 and end index is less
         # than 1. If end index > 0 we can deallocate as the value of the above formula for end index
         # just keeps growing as the version number increases.
-        # which is implemented as range(1,2), 
+        # Note that deallocate "1 to 1, i.e., deallocte 1, is implemented with a range as range(1,2), 
         if deallocation_end_index_partitions > 0:
             deallocation_end_index_partitions += 1
 
@@ -1176,19 +1201,30 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         for i in range(self.deallocation_start_index_partitions, deallocation_end_index_partitions):
             logger.info("deallocate_DAG_structures_groups: deallocate " + str(i))
             groups_of_partition_i = self.groups_of_partitions[i-1]
-            # number of groups >= 1
+            # number of groups in a partition is >= 1
             number_of_groups_of_partition_i = len(groups_of_partition_i)
             # end index is now 1 past the last group to be deallocated, e.g., 
             # if start is 1 and number of groups is 3 we want to deallocate 
-            # 1, 2, and 3. The value 4 is fine for end since we will use a 
+            # 1, 2, and 3. The computed value 4 is fine for end since we will use a 
             # range(1,4) and 1 is inclusive but 4 is exclusive.
             # After adding number_of_groups_of_partition_i to deallocation_end_index_groups, 
             # deallocation_start_index_groups < deallocation_end_index_groups.
 
             # As the preceding comment just explained, this computation sets deallocation_end_index_groups
-            # to the correct exclusive value for the range, so there is no need to increment it lik
+            # to the correct exclusive value for the range, so there is no need to increment it like
             # we do for the other end index values.
             deallocation_end_index_groups = self.deallocation_start_index_groups+number_of_groups_of_partition_i
+
+            #Example: partition 1 (always PR1_1) has one group (PR1_1), partition 2 has 3 groups PR2_1,
+            # PR2_2L, PR2_3, and partition 3 has 3 groups PR3_1, PR3_2, PR3_3. If we want to deallocate
+            # DAG info for the groups in these 3 partitions, stat will be 1 (the intial value), the sum
+            # of the number of groups in these 3 partitions is 1 + 3 + 3 = 7 so we will deallocate
+            # group indices 1 .. 7 which are in the partitions witj indices 1 .. 3. Thusm we compute
+            # the start and end of the partition indice and then the end of the group indices. The 
+            # start index of the grooup is maintained (stored) as we go. So after these deallocations,
+            # we set start = 8. e also remember the last index deallocated, which here is 7. If we need
+            # to restore some deallocations (which aer always a suffic of the deallocs that have been
+            # done), the restoration will end at 7 (whcih is start - 1).
 
             try:
                 msg = "[Error]: deallocate_DAG_structures_groups:" \
