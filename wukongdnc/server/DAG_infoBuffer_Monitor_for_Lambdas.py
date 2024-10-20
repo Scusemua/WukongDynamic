@@ -4,6 +4,7 @@ import threading
 import time
 import uuid
 import os
+import traceback
 
 #from ..dag.DAG_executor_constants import RUN_ALL_TASKS_LOCALLY
 #from ..dag.DAG_executor_constants import exit_program_on_exception
@@ -297,20 +298,51 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
         partition_or_group_names = []
         if not DAG_executor_constants.USE_PAGERANK_GROUPS_INSTEAD_OF_PARTITIONS:
-#brc: ToDo: we need partition names too?
             partition_or_group_names = self.partition_names
         else:
             partition_or_group_names = self.group_names # BFS.group_names
         #logger.info("restore_DAG_structures_lambda: partition or group namesXXX: ")
         #for n in partition_or_group_names:
         #    logger.info(n)
+        # get the name of the partition or group
         name = partition_or_group_names[i-1]
+        # use the name to get the state/task whose information is being restord,
+        # e.g., restore DAG info about partition "PR2_1"
         state = self.current_version_DAG_info_DAG_states_save[name]
         logger.info("restore_DAG_structures_lambda: partition or group name: " + str(name))
         logger.info("restore_DAG_structures_lambda: state: " + str(state))
+        # These are the collections from which we previously deallocated information
+        # and saved the deallocated info. Restore this info.
+        # We remove key-value pairs from saved structures. This raises an exception 
+        # if the key is not found. This is a terminal error. 
         self.current_version_DAG_info.DAG_map[state] = self.current_version_DAG_info_DAG_map_save[state]
+        try:
+            del self.current_version_DAG_info_DAG_map_save[state]
+        except KeyError:
+            logger.exception("[Error]: KeyError: key " + str(state))
+            traceback.print_exc() 
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                logging.shutdown()
+                os._exit(0)
+
         self.current_version_DAG_info.DAG_states[name] = self.current_version_DAG_info_DAG_states_save[name]
+        try:
+            del self.current_version_DAG_info_DAG_states_save[name]
+        except KeyError:
+            logger.exception("[Error]: KeyError: key " + str(state))
+            traceback.print_exc() 
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                logging.shutdown()
+                os._exit(0)
         self.current_version_DAG_info.DAG_tasks[name] = self.current_version_DAG_info_DAG_tasks_save[name]
+        try:
+            del self.current_version_DAG_info_DAG_tasks_save[name]
+        except KeyError:
+            logger.exception("[Error]: KeyError: key " + str(state))
+            traceback.print_exc() 
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                logging.shutdown()
+                os._exit(0)
 
     def restore_DAG_structures_partitions(self,requested_version_number_DAG_info):
         """
@@ -1508,19 +1540,25 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 if len(self._buffer) == 0:
                     logger.info("DAG_infoBuffer_Monitor_for_Lambdas: no withdraw tuples so no lambdas started.")
 
-
-#brc: ToDo: What about the save structures? clear them? or just remove key when we
-# grab the restored value. We can clear since we are adding key-value pairs so
-# not using list.
-
+                # Reset global variables.
                 # The start index needs to be reset even if there are no tuples since a
                 # new DAG that is deposited has not had any deallocations done on it.
 #brc: ToDo: Thus will change when we deposit an increment.
                 if DAG_executor_constants.DEALLOCATE_DAG_INFO_STRUCTURES_FOR_LAMBDAS \
                         and (self.num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
+                    # no dealocations have been done, so start by deallocating 1
                     self.deallocation_start_index_groups = 1
                     self.deallocation_start_index_partitions = 1
+                    # no dealocations have been done, so end index is 0
                     self.most_recent_deallocation_end_index = 0
+                    # no dealocations have been done, this will be set whenevr we do 
+                    # a deallocation
+                    self.version_number_for_most_recent_deallocation  = 0
+                    # rest saved structures
+                    #The clear() method removes all items from the dictionary. 
+                    self.current_version_DAG_info_DAG_map_save.clear()
+                    self.current_version_DAG_info_DAG_states_save.clear()
+                    self.current_version_DAG_info_DAG_tasks_save.clear()
 
                 # If we are using incremental partitions, then we generate the
                 # DAG by searching the connected components of partitions one component at
@@ -1592,6 +1630,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # deallocatios, so the previous deallocations done to previously
                     # deposited DAGs aer lost.
 
+#brc: #ToDo:
                     # ToDo: For new DAGs we pass to deposit only the differences between the 
                     # new DAG and the current DAG. That allows us to keep the deallocations
                     # that we have been done on the current DAG. If the requested
@@ -1619,6 +1658,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # DAG generation method and the deposit() method (where deposit()
                     # does any deallocs) so DAG generation and deallocation are both
                     # done by bfs() and thus are not concurrent.
+
 # ToDo: do dealloc in withdraw too, which can be concurrent with incremental DAG generation
 # methods adding to DAG. As lambdas call withdraw to get a new DAG and bfs
 # calls incremental DAG generation methods and workers/lambdas run concurrently 
