@@ -118,7 +118,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # Example: list 1 is "PR1_1" and list 2 is "PR2_1, PR2_2L, PR2_3" so the group names
         # at this point will be "PR1_1, PR2_1, PR2_2L, PR2_3".
         self.groups_of_partitions = []
+        # list of all group names, which is generted from the list of groups (names)
+        # in each partition,
         self.group_names = []
+        # list of all partition ames. (See preceding comment)
         self.partition_names = []
         
         # when we dealloctate values we save them in cse we need to restoer them. Essentially
@@ -1487,15 +1490,19 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 logger.info("DAG_infoBuffer_Monitor_for_Lambdas: extended list of partition names:")
                 logger.info(self.partition_names)
 
+#brc: ToDo: can be more than one leaf task
+        """
         try:
             msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
-                + " deposit received more than 1 leaf task."
+                + " deposit received more than 1 leaf task; received: " \
+                + str(len(new_leaf_tasks))
             assert not (len(new_leaf_tasks)>1) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
+        """
         # assertOld: at most one leaf task found
         #if len(new_leaf_tasks)>1:
         #    logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:"
@@ -1597,7 +1604,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     try:
                         msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
                             + " using partitions, but self._buffer has more than one withdraw tuple. "
-                        assert len(self._buffer <= 1) , msg
+                        assert len(self._buffer) <= 1 , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
                         if DAG_executor_constants.exit_program_on_exception:
@@ -1930,6 +1937,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # a leaf task currently in the continue queue that will also be 
                 # started in this deposit().
 
+#brc: ToDo: loop throigh and check whether TBC
                 if DAG_info_is_complete:
                     # If the DAG_info is complete then we can start the leaf task 
                     # as it is also complete. 
@@ -1958,7 +1966,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 
                 # start a lambda to excute the leaf task found on the previous deposit(). When
                 # the leaf task was found it was marked as tobecontinued in the DAG. This is 
-                # the next DAG and in this DAG the leaft task is not tobocontinued and so can 
+                # the next DAG and in this DAG the leaf task is not tobocontinued and so can 
                 # be executed.
                 for work_tuple in self.continue_queue:
                     # pass the state/task the thread is to execute at the start of its DFS path
