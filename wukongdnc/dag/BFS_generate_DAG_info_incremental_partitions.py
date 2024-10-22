@@ -154,14 +154,70 @@ current partition Pi:
   partition P2, we set P1 to complete, but P1 has a collapse
   to the incomplete partition P2. So P1 is marked as complete 
   but we also mark P1 as having a collapse to an incomplete
-  partition. Note that when we process current group Pi, we 
+  partition. Note that when we process current partition Pi, we 
   set Pi-1 to complete (as described in the previous step).
   We also partition Pi-2 to have NO collapse to an incomplete 
   partition, since Pi-1 was set to complete. For example, when we
   process partition P3 in the DAG above, we set P2 to complete,
-  and we set group P1 to have no collapse to an incomplete group.
+  and we set partition P1 to have no collapse to an incomplete partition.
   In the code below, we maintain the index of the current, 
   previous, and previous-previous partitions.
+
+  Note: For example, consider the fist DAG gnerated and deposited, which has
+  partitions 1 and 2. Partition 1 is the first partition identified. We know
+  the nodes in partition 1 (they are related by the parent relation),, but we do 
+  not now the child nodes of the nodes in partition 1. These child nodes will
+  tell us which of the parent pagerank values computed for nodes in partition 1
+  will need to be communicated to partition 2. That is, when we copute the 
+  pagerank output values for partition 1, we will create a list of those output
+  values that need to be sent to child nodes and the destination of these 
+  sent values. For partitions an output of partition is always sent to 
+  partition i+1 (if the value is required by the pagerank calcultion of 
+  partition pi+1). Partition 1 is marked as to-be-continued which means we 
+  should not execute the task for partition 1 yet since we cannot determine
+  how to process partitoion 1's output values. Nxt we will use the chid nodes
+  of partition 1 to generate partition 2, At that point, we can change partition
+  1's status to not-to-be-continued. We add partition 2 to the DAG as to-be-continued
+  since we do not now the child nodes of the nodes in partition 2. Now we can 
+  execute partition 1 (since we can process its outputs) but we do not process
+  the fanins/fanouts/collapses of partition 1. (Partitions only have collapses
+  but if we were using groups partition/group 1 could have fanins/fanouts too.)
+  Instead, the worker/lambda will record that it stopped execution of the DAG
+  after executing partition 1 and it will also record the output of partition.
+  After getting a nwe incremental DAG, the execition will proceed with the 
+  worker/(a started lamba) continuing the paused excution by processing 
+  the fanins/fanout/collapse of partition 1 using the recorded outpus of 
+  partition 1. In the new DAG, parttion 2 will not be to-be-continued and 
+  partition 1 will not have a fanin/fanout/collapse to a to-be-contnued
+  partition (it did in the previous DAG). This will result in the execution 
+  of partition 2. If partition 2 has a fanin/fanout/collapse to partition 3
+  where partition 3 is to-be-continued, then the fanins/fanouts/collapses of
+  partition 2 will not be processed; instead, execution will be paused and
+  the outputs of partition 2 will be recorded, etc. If partition 3 (and any
+  more partitions added to the DAG) is not to-be-continued, then partition
+  2's fanouts/fanouts/collapses can be processed, which results in the 
+  execition of proces 3, etc. Remember that mutiple partitions may be 
+  added to a DAG before the new version of the DAG is published. All the 
+  partitions except the last added partition will not be to-be-continued
+  so all of the partitions excelt the last can be executed. (this was true
+  for the first published DAG with partitions 1 and 2.) 
+
+  For the first DAG with partitions 1 and 2:
+  - partition 1 is marked as not to-be-continued; this means it can be executed
+  - partition 1 is marked as having a collpase to a to-be-contnued partition (2);
+    this means its collapse cannot be processed - we will wait until we get 
+    the next DAG to process the collapse of partition 1 (whcih means we will 
+    execute partition 2)
+  - partition 2 is marked as to-be-continued. This means partiton 1 is marked s 
+    having a collapse to a to-be-contined partition (2) and thus that partition 1's
+    collapse to partition 2 will not be processed.
+  - partition 2 is also marked as having a collapse to a to-be-contined partition
+    even though we have not generated and added a partition 3 to the DAG. If
+    all the nodes in the input graph have been put in some partition, then the 
+    DAG is complete and we will mark partition 2 as being not to-be-continued
+    (since no partition 3 can be generated) and not having a collapse to a 
+    to-be-continued partition. This will allow partition 2 to be executed
+    which will end the execution of the DAG.
 
 Note: During incremental DAG generation, we can deallocate memory on-the-fly in the 
 data structures that hold the data collected for DAG gemeration. This is helpful when

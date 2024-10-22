@@ -1459,7 +1459,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # 
         # if DAG_info is complete then we can start leaf task now as leaf is start of new 
         # component and DAG_info is complete. See below where leaf tasks are started.
-        # In fact, since the leaf task is the last group/partition to be generated, 
+        # In fact, since the leaf task is the last group/partition to be generated in the DAG, 
         # we need to start it now since there will be no more deposits.
         DAG_info_is_complete = kwargs['DAG_info_is_complete']
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
@@ -1938,6 +1938,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # started in this deposit().
 
 #brc: ToDo: loop throigh and check whether TBC
+# get the state, get the state_info and check whether it is to-be-continued.
+# if not then add it to the continue queue to be excuted now. If not,
+# it is added below so it will be executed next deposit()
+
                 if DAG_info_is_complete:
                     # If the DAG_info is complete then we can start the leaf task 
                     # as it is also complete. 
