@@ -19,7 +19,7 @@ logger.addHandler(ch)
 # Note: remote DAG_infoBuffer_Monitor(_for lambdas) stored on tcp_server while local
 # DAG_infoBuffer_Monitor stored locally. Real lambdas always use a remote DAG_infoBuffer_Monitor_for lambdas
 # and simulated lambdas (which are local threads) use a local DAG_infoBuffer_Monitor.
-# So if we are generating the DAD incrementally then we use a DAG_infoBuffer_Monitor
+# So if we are generating the DAG incrementally then we use a DAG_infoBuffer_Monitor
 # or DAG_infoBuffer_Monitor_for_lambdas.
 # 
 # This wrapper deals with the keyword argument parameters

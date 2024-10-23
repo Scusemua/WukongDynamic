@@ -108,14 +108,14 @@ class Synchronizer(object):
         # where init call by Client is init(“Barrier”,”b”,[‘n’,2]): and kwargs passed to Barrier.init
         self._synchronizer_class_name = synchronizer_class_name
 
-        if not synchronizer_class_name in Synchronizer.synchronizers:
+        if synchronizer_class_name not in Synchronizer.synchronizers:
             logger.error("[Error]: synchronizer.py: create: Invalid synchronizer class name: '%s'" % synchronizer_class_name)
             logger.error("[Error]: If you developed a new synch object be sure to register it in Synchronizer.synchronizers.")
             if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         
-        if not synchronizer_class_name in Synchronizer.file_map:
+        if synchronizer_class_name not in Synchronizer.file_map:
             logger.error("[Error]: synchronizer.py: create: Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
             logger.error("[Error]: If you developed a new synch object be sure to register it in Synchronizer.file_map.")
             if DAG_executor_constants.exit_program_on_exception:
@@ -202,7 +202,7 @@ class Synchronizer(object):
 
             logger.trace("synchronizer: synchronize_sync: Value of try_return_value (Block) for fan-in ID %s: %s" % (obj_name, str(try_return_value)))
             
-            if try_return_value == True:   # synchronize op will execute wait so tell client to terminate
+            if try_return_value:   # synchronize op will execute wait so tell client to terminate
                 state.blocking = True 
                 state.return_value = None 
                 

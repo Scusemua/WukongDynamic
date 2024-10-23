@@ -1967,7 +1967,10 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # be worth it if a publication boundary occured right after the leaf partition
                     # was added to DAG_info.
                     pass
-                
+                    #for work_tuple in self.new_leaf_tasks:
+                    #    start_state = work_tuple[0]
+                    # if not sate_info.tbc then add to continue queue
+
                 # start a lambda to excute the leaf task found on the previous deposit(). When
                 # the leaf task was found it was marked as tobecontinued in the DAG. This is 
                 # the next DAG and in this DAG the leaf task is not tobocontinued and so can 
@@ -2041,7 +2044,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     thread.start()
                 # clear the started leaf tasks from the continue_queue
                 self.continue_queue.clear()
-                # add the leaf tasks just found to the continue queue since it is not 
+
+                # Note: This condition uses "not DAG_info_is_complete" while oen 
+                # above used "DAG_info_is_complete". If we did not add new leaf tasks to the 
+                # cobtinue queue above we add them here since we can excute them on 
+                # next deposit.
+                # Add the leaf tasks just found to the continue queue since it is not 
                 # complete and start a lambda for it in next deposit()
                 if not DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
@@ -2228,7 +2236,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer"+task_name)
                 # clear the started leaf tasks
                 self.continue_queue.clear()
-                # add the leaf task to the continue queue since it is not 
+                # Note: This condition uses "not DAG_info_is_complete" while oen 
+                # above used "DAG_info_is_complete". If we did not add new leaf tasks to the 
+                # cobtinue queue above we add them here since we can excute them on 
+                # next deposit.
+                # Add the leaf task to the continue queue since it is not 
                 # complete and start a labda for it in next deposit()
                 if not DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
