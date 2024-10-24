@@ -1966,10 +1966,26 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # a lambda for the leaf task now. But this is a lot of work and it would only
                     # be worth it if a publication boundary occured right after the leaf partition
                     # was added to DAG_info.
-                    pass
-                    #for work_tuple in self.new_leaf_tasks:
-                    #    start_state = work_tuple[0]
-                    # if not sate_info.tbc then add to continue queue
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: process new_leaf_tasks: "
+                        + "new leaf tasks before: " + str(new_leaf_tasks))
+                    survivors = []
+                    added_to_continue_queue = False
+                    for work_tuple in new_leaf_tasks:
+                        start_state = work_tuple[0]
+                        DAG_map = self.current_version_DAG_info.get_DAG_map()
+                        state_info = DAG_map[start_state]
+                        if not state_info.ToBeContinued:
+                            added_to_continue_queue = True
+                            self.continue_queue.append(work_tuple)
+                        else:
+                            survivors.append(work_tuple)
+                    new_leaf_tasks = survivors
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: process new_leaf_tasks:"
+                        + " new leaf tasks after: " + str(new_leaf_tasks)
+                        + " self.continue_queue: " + str(self.continue_queue))
+                    #if added_to_continue_queue:
+                    #    logging.shutdown()
+                    #    os._exit(0)
 
                 # start a lambda to excute the leaf task found on the previous deposit(). When
                 # the leaf task was found it was marked as tobecontinued in the DAG. This is 
@@ -2183,7 +2199,27 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # a lambda for the leaf task now. But this is a lot of work and it would only
                     # be worth it if a publication boundary occured right after the leaf partition
                     # was added to DAG_info.
-                    pass
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: process new_leaf_tasks: "
+                        + "new leaf tasks before: " + str(new_leaf_tasks))
+                    survivors = []
+                    added_to_continue_queue = False
+                    for work_tuple in new_leaf_tasks:
+                        start_state = work_tuple[0]
+                        DAG_map = self.current_version_DAG_info.get_DAG_map()
+                        state_info = DAG_map[start_state]
+                        if not state_info.ToBeContinued:
+                            added_to_continue_queue = True
+                            self.continue_queue.append(work_tuple)
+                        else:
+                            survivors.append(work_tuple)
+                    new_leaf_tasks = survivors
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: process new_leaf_tasks:"
+                        + " new leaf tasks after: " + str(new_leaf_tasks)
+                        + " self.continue_queue: " + str(self.continue_queue))
+                    #if added_to_continue_queue:
+                    #    logging.shutdown()
+                    #    os._exit(0)
+
                 # start a lambda to excute the leaf task found on the previous deposit()
                 for work_tuple in self.continue_queue:
                     # pass the state/task the thread is to execute at the start of its DFS path
